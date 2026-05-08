@@ -14,15 +14,18 @@ pnpm install
 cp .env.example .env.local
 ```
 
-`.env.local` を実値で埋める。Phase 1 で必要なのは以下:
+`.env.local` を実値で埋める。
 
-| 変数 | 用途 |
-|---|---|
-| `MICROCMS_SERVICE_DOMAIN` | `https://<x>.microcms.io` の `<x>` 部分 |
-| `MICROCMS_API_KEY` | コンテンツ取得用 API キー |
-| `MICROCMS_WEBHOOK_SECRET` | microCMS Webhook で設定するシークレット（自分で生成） |
-| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` |
-| `BYPASS_AUTH` | `true`（ローカル開発時のみ） |
+| 変数 | 用途 | Phase |
+|---|---|---|
+| `MICROCMS_SERVICE_DOMAIN` | `https://<x>.microcms.io` の `<x>` 部分 | 1 |
+| `MICROCMS_API_KEY` | コンテンツ取得用 API キー | 1 |
+| `MICROCMS_WEBHOOK_SECRET` | microCMS Webhook で設定するシークレット（自分で生成） | 1 |
+| `MICROCMS_MANAGEMENT_API_KEY` | 投稿/編集/削除用。Service Key またはコンテンツ書き込み権限のキー | 2 |
+| `CF_ACCESS_TEAM_DOMAIN` | 例 `yourteam.cloudflareaccess.com`（本番のみ） | 2 |
+| `CF_ACCESS_AUD` | Access Application の AUD タグ（本番のみ） | 2 |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | 1 |
+| `BYPASS_AUTH` | `true`（ローカル開発時のみ） | 2 |
 
 ## 通常開発（推奨）
 
@@ -33,9 +36,19 @@ pnpm dev
 - http://localhost:3000 でトップページ
 - http://localhost:3000/feed でリストビュー
 - http://localhost:3000/tweets/[id] で単体ビュー
+- http://localhost:3000/admin で投稿画面（`BYPASS_AUTH=true` のとき認証スキップ）
+- http://localhost:3000/admin/drafts で下書き一覧
+- http://localhost:3000/admin/edit/[id] で編集
 
 `next dev` は OpenNext のビルドを通さず、Next.js の dev サーバで直接動作する。
 ホットリロードが効くので普段はこちらで開発する。
+
+## 認証（Cloudflare Access）
+
+- 本番では `/admin/*`, `/api/tweets/*`, `/api/og-preview` を Cloudflare Access で保護する
+- ローカルは `BYPASS_AUTH=true` かつ `NODE_ENV=development` のときに `proxy.ts` が認証を素通り
+- 本番デプロイ時は Workers Secrets に `CF_ACCESS_TEAM_DOMAIN` と `CF_ACCESS_AUD` を登録
+- `/api/revalidate` は Cloudflare Access の Bypass Policy 対象にする（HMAC 署名で検証）
 
 ## Cloudflare Workers ローカル実行（本番に近い環境）
 
