@@ -1,5 +1,6 @@
 import type {
   MicroCMSContentId,
+  MicroCMSDate,
   MicroCMSImage,
   MicroCMSListResponse,
 } from "microcms-js-sdk";
@@ -25,6 +26,16 @@ export type TweetFields = {
 
 export type Tweet = TweetFields & MicroCMSContentId & EchologDate;
 
+// 管理画面で扱う型。publishedAt が無い（=下書き）状態もありうる。
+export type AdminTweet = TweetFields & MicroCMSContentId & MicroCMSDate;
+
 export type TweetListResponse = Omit<MicroCMSListResponse<TweetFields>, "contents"> & {
   contents: Tweet[];
+};
+
+export type AdminTweetListResponse = Omit<
+  MicroCMSListResponse<TweetFields>,
+  "contents"
+> & {
+  contents: AdminTweet[];
 };
