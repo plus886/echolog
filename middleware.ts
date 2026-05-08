@@ -6,11 +6,15 @@ import {
   verifyAccess,
 } from "@/lib/access";
 
+// Next.js 16 では middleware は deprecated で proxy.ts が後継だが、proxy は
+// Node.js runtime 固定で OpenNext for Cloudflare（Edge middleware のみサポート）
+// と互換性が無い。Cloudflare Workers にデプロイする限り middleware.ts のまま
+// Edge runtime で動かす必要がある。
 export const config = {
   matcher: ["/admin", "/admin/:path*", "/api/tweets/:path*", "/api/og-preview"],
 };
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const jwt = request.headers.get(ACCESS_JWT_HEADER);
   const email = request.headers.get(ACCESS_EMAIL_HEADER);
 
