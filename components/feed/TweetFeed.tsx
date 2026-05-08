@@ -13,10 +13,13 @@ export async function TweetFeed({
   limit = FEED_PAGE_SIZE,
   showHeader = true,
 }: Props) {
-  const { contents: tweets } = await listTweets({
+  const { contents } = await listTweets({
     limit,
     orders: "-publishedAt",
   });
+  // 公開済みのみを表示。read API key でも何らかの事情で publishedAt 欠落の
+  // レスポンスが返ってきても prerender を落とさないための防御。
+  const tweets = contents.filter((t) => Boolean(t.publishedAt));
 
   return (
     <section className="flex flex-col gap-4">

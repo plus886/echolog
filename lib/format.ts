@@ -1,8 +1,11 @@
 import { format, formatDistanceToNow, isThisYear, parseISO } from "date-fns";
 import { ja } from "date-fns/locale";
 
-export function formatTweetTimestamp(iso: string): string {
+export function formatTweetTimestamp(iso: string | null | undefined): string {
+  if (!iso) return "";
   const date = parseISO(iso);
+  if (Number.isNaN(date.getTime())) return "";
+
   const diffMs = Date.now() - date.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
 
@@ -15,6 +18,11 @@ export function formatTweetTimestamp(iso: string): string {
   return format(date, "yyyy年M月d日", { locale: ja });
 }
 
-export function formatAbsoluteTimestamp(iso: string): string {
-  return format(parseISO(iso), "yyyy/MM/dd HH:mm", { locale: ja });
+export function formatAbsoluteTimestamp(
+  iso: string | null | undefined,
+): string {
+  if (!iso) return "";
+  const date = parseISO(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return format(date, "yyyy/MM/dd HH:mm", { locale: ja });
 }
