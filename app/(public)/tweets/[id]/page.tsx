@@ -70,8 +70,9 @@ export default async function TweetPage({
   const tweet = await fetchTweetOrNull(id);
   if (!tweet) notFound();
 
-  // RT 単体ビュー（B 案）: スレッドではなく単独で表示
-  if (getRetweetKind(tweet)) {
+  // コメントなし RT は本文を持たない「ポインタ」なのでスレッドを持たず単独表示する（B 案）。
+  // 引用 RT は自分のコメントが本体でスレッドの起点になり得るので通常通りスレッド処理。
+  if (getRetweetKind(tweet) === "retweet") {
     return (
       <main className="mx-auto max-w-2xl w-full px-4 py-8 flex flex-col gap-4">
         <BackLink />
@@ -86,10 +87,9 @@ export default async function TweetPage({
     ? (await fetchTweetOrNull(tweet.parent.id)) ?? tweet
     : tweet;
 
-  const { contents: replies } =
-    root === tweet || tweet.parent
-      ? await listThreadReplies(root.id, { limit: 100 })
-      : { contents: [] };
+  const { contents: replies } = await listThreadReplies(root.id, {
+    limit: 100,
+  });
 
   return (
     <main className="mx-auto max-w-2xl w-full px-4 py-8 flex flex-col gap-4">
