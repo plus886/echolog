@@ -11,7 +11,13 @@ import {
 // と互換性が無い。Cloudflare Workers にデプロイする限り middleware.ts のまま
 // Edge runtime で動かす必要がある。
 export const config = {
-  matcher: ["/admin", "/admin/:path*", "/api/tweets/:path*", "/api/og-preview"],
+  matcher: [
+    "/admin",
+    "/admin/:path*",
+    "/api/tweets/:path*",
+    "/api/og-preview",
+    "/api/uploads",
+  ],
 };
 
 export async function middleware(request: NextRequest) {

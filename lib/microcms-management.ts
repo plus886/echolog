@@ -1,6 +1,10 @@
 import "server-only";
 
-import { createClient, type MicroCMSQueries } from "microcms-js-sdk";
+import {
+  createClient,
+  createManagementClient,
+  type MicroCMSQueries,
+} from "microcms-js-sdk";
 
 import { env } from "@/lib/env";
 import type {
@@ -12,6 +16,8 @@ import type {
 const TWEETS_ENDPOINT = "tweets";
 
 let cachedClient: ReturnType<typeof createClient> | null = null;
+let cachedManagementClient: ReturnType<typeof createManagementClient> | null =
+  null;
 
 function getWriteClient() {
   if (!env.MICROCMS_MANAGEMENT_API_KEY) {
@@ -26,6 +32,25 @@ function getWriteClient() {
     });
   }
   return cachedClient;
+}
+
+function getManagementClient() {
+  if (!env.MICROCMS_MANAGEMENT_API_KEY) {
+    throw new Error(
+      "MICROCMS_MANAGEMENT_API_KEY is not set. Required for media uploads.",
+    );
+  }
+  if (!cachedManagementClient) {
+    cachedManagementClient = createManagementClient({
+      serviceDomain: env.MICROCMS_SERVICE_DOMAIN,
+      apiKey: env.MICROCMS_MANAGEMENT_API_KEY,
+    });
+  }
+  return cachedManagementClient;
+}
+
+export async function uploadMedia(file: File): Promise<{ url: string }> {
+  return getManagementClient().uploadMedia({ data: file });
 }
 
 const noStoreInit: RequestInit = { cache: "no-store" };
