@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { formatAbsoluteTimestamp } from "@/lib/format";
-import { getTweet } from "@/lib/microcms";
+import { TweetCard } from "@/components/feed/TweetCard";
+import { getTweet, listThreadReplies } from "@/lib/microcms";
+import { getRetweetKind, type Tweet } from "@/types/microcms";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -29,15 +29,19 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const tweet = await fetchTweetOrNull(id);
+  if (!tweet) return { title: "Tweet not found" };
 
-  if (!tweet) {
-    return { title: "Tweet not found" };
-  }
+  // RT (retweet) の場合は元ツイート本文をメタにも反映する（B案）
+  const kind = getRetweetKind(tweet);
+  const sourceBody =
+    kind === "retweet" ? tweet.retweetOf?.body ?? "" : tweet.body ?? "";
+  const sourceImage =
+    (kind === "retweet"
+      ? tweet.retweetOf?.images?.[0]?.url
+      : tweet.images?.[0]?.url) ?? null;
 
-  const body = tweet.body ?? "";
-  const title = body.slice(0, META_TITLE_LENGTH) || "echolog tweet";
-  const description = body.slice(0, META_DESC_LENGTH) || "echolog tweet";
-  const ogImage = tweet.images?.[0]?.url;
+  const title = sourceBody.slice(0, META_TITLE_LENGTH) || "echolog tweet";
+  const description = sourceBody.slice(0, META_DESC_LENGTH) || "echolog tweet";
 
   return {
     title,
@@ -46,13 +50,13 @@ export async function generateMetadata({
       title,
       description,
       type: "article",
-      images: ogImage ? [{ url: ogImage }] : undefined,
+      images: sourceImage ? [{ url: sourceImage }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: ogImage ? [ogImage] : undefined,
+      images: sourceImage ? [sourceImage] : undefined,
     },
   };
 }
@@ -64,55 +68,56 @@ export default async function TweetPage({
 }) {
   const { id } = await params;
   const tweet = await fetchTweetOrNull(id);
+  if (!tweet) notFound();
 
-  if (!tweet) {
-    notFound();
+  // RT 単体ビュー（B 案）: スレッドではなく単独で表示
+  if (getRetweetKind(tweet)) {
+    return (
+      <main className="mx-auto max-w-2xl w-full px-4 py-8 flex flex-col gap-4">
+        <BackLink />
+        <TweetCard tweet={tweet} detail highlight />
+      </main>
+    );
   }
 
+  // スレッド表示: parent をルート、子リプライを時系列で並べる。
+  // ネストは 1 段のみなので、ルートを 1 度引いて parent[equals]rootId のリプライを取る。
+  const root: Tweet = tweet.parent
+    ? (await fetchTweetOrNull(tweet.parent.id)) ?? tweet
+    : tweet;
+
+  const { contents: replies } =
+    root === tweet || tweet.parent
+      ? await listThreadReplies(root.id, { limit: 100 })
+      : { contents: [] };
+
   return (
-    <main className="mx-auto max-w-2xl w-full px-4 py-8">
-      <nav className="mb-6 text-sm text-muted">
-        <Link href="/feed" prefetch={false} className="hover:underline">
-          ← フィードに戻る
-        </Link>
-      </nav>
-
-      <article className="border border-border rounded-lg p-6">
-        {tweet.body && (
-          <p className="whitespace-pre-wrap text-lg leading-relaxed">
-            {tweet.body}
-          </p>
-        )}
-
-        {tweet.images && tweet.images.length > 0 && (
-          <div
-            className={`mt-4 grid gap-2 ${
-              tweet.images.length === 1 ? "grid-cols-1" : "grid-cols-2"
-            }`}
-          >
-            {tweet.images.map((image) => (
-              <div
-                key={image.url}
-                className="relative aspect-video overflow-hidden rounded-md border border-border"
-              >
-                <Image
-                  src={image.url}
-                  alt=""
-                  fill
-                  sizes="(max-width: 640px) 100vw, 480px"
-                  className="object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        )}
-
-        <footer className="mt-4 text-sm text-muted">
-          <time dateTime={tweet.publishedAt}>
-            {formatAbsoluteTimestamp(tweet.publishedAt)}
-          </time>
-        </footer>
-      </article>
+    <main className="mx-auto max-w-2xl w-full px-4 py-8 flex flex-col gap-4">
+      <BackLink />
+      <TweetCard tweet={root} detail highlight={root.id === tweet.id} />
+      {replies.length > 0 && (
+        <ol className="flex flex-col gap-3 border-l border-border pl-4">
+          {replies.map((reply) => (
+            <li key={reply.id}>
+              <TweetCard
+                tweet={reply}
+                detail
+                highlight={reply.id === tweet.id}
+              />
+            </li>
+          ))}
+        </ol>
+      )}
     </main>
+  );
+}
+
+function BackLink() {
+  return (
+    <nav className="text-sm text-muted">
+      <Link href="/feed" prefetch={false} className="hover:underline">
+        ← フィードに戻る
+      </Link>
+    </nav>
   );
 }
