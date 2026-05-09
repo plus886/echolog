@@ -63,13 +63,26 @@ export type TweetWriteFields = Pick<
   retweetOf?: string;
 };
 
+// microCMS の「画像（複数）」フィールドは GET 時は { url, width?, height? }[]、
+// POST/PATCH 時は URL の string[] を要求する非対称仕様。SDK はそのまま投げるので
+// 書き込み境界でフラットに変換する。
+function toMicroCMSPayload(
+  content: Partial<TweetWriteFields>,
+): Record<string, unknown> {
+  const payload: Record<string, unknown> = { ...content };
+  if (content.images) {
+    payload.images = content.images.map((image) => image.url);
+  }
+  return payload;
+}
+
 export async function createTweet(
   content: TweetWriteFields,
   options?: { isDraft?: boolean },
 ): Promise<{ id: string }> {
   return getWriteClient().create({
     endpoint: TWEETS_ENDPOINT,
-    content,
+    content: toMicroCMSPayload(content),
     isDraft: options?.isDraft ?? false,
     customRequestInit: noStoreInit,
   });
@@ -83,7 +96,7 @@ export async function updateTweet(
   return getWriteClient().update({
     endpoint: TWEETS_ENDPOINT,
     contentId,
-    content,
+    content: toMicroCMSPayload(content),
     isDraft: options?.isDraft,
     customRequestInit: noStoreInit,
   });
