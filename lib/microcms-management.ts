@@ -101,3 +101,29 @@ export async function getAdminTweet(
   });
   return tweet as unknown as AdminTweet;
 }
+
+// 自分が retweet（コメントなし RT）した元ツイート ID の集合を返す。
+// /admin の右カラム描画時に「既に RT 済み」判定で使う。
+export async function listMyRetweetTargetIds(): Promise<Set<string>> {
+  const { contents } = await listAdminTweets({
+    filters: "retweetType[contains]retweet",
+    fields: "id,retweetOf",
+    depth: 1,
+    limit: 100,
+  });
+  const ids = new Set<string>();
+  for (const c of contents) {
+    if (c.retweetOf?.id) ids.add(c.retweetOf.id);
+  }
+  return ids;
+}
+
+// 同一ツイートに対する retweet（コメントなし RT）が既に存在するか確認。
+export async function hasExistingRetweet(targetId: string): Promise<boolean> {
+  const { totalCount } = await listAdminTweets({
+    filters: `retweetOf[equals]${targetId}[and]retweetType[contains]retweet`,
+    fields: "id",
+    limit: 1,
+  });
+  return totalCount > 0;
+}
