@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TweetCard } from "@/components/feed/TweetCard";
+import { env } from "@/lib/env";
 import { getTweet, listThreadReplies } from "@/lib/microcms";
 import { getRetweetKind, type Tweet } from "@/types/microcms";
 
@@ -42,14 +43,19 @@ export async function generateMetadata({
 
   const title = sourceBody.slice(0, META_TITLE_LENGTH) || "echolog tweet";
   const description = sourceBody.slice(0, META_DESC_LENGTH) || "echolog tweet";
+  const canonical = `${env.NEXT_PUBLIC_SITE_URL}/tweets/${tweet.id}`;
 
   return {
     title,
     description,
+    alternates: { canonical },
     openGraph: {
       title,
       description,
       type: "article",
+      url: canonical,
+      publishedTime: tweet.publishedAt,
+      modifiedTime: tweet.revisedAt,
       images: sourceImage ? [{ url: sourceImage }] : undefined,
     },
     twitter: {
@@ -58,6 +64,23 @@ export async function generateMetadata({
       description,
       images: sourceImage ? [sourceImage] : undefined,
     },
+  };
+}
+
+function buildJsonLd(tweet: Tweet) {
+  const kind = getRetweetKind(tweet);
+  const source = kind === "retweet" && tweet.retweetOf ? tweet.retweetOf : tweet;
+  const body = source.body ?? "";
+  return {
+    "@context": "https://schema.org",
+    "@type": "SocialMediaPosting",
+    "@id": `${env.NEXT_PUBLIC_SITE_URL}/tweets/${tweet.id}`,
+    url: `${env.NEXT_PUBLIC_SITE_URL}/tweets/${tweet.id}`,
+    datePublished: tweet.publishedAt,
+    dateModified: tweet.revisedAt,
+    headline: body.slice(0, 100) || "echolog tweet",
+    articleBody: body,
+    image: source.images?.map((image) => image.url) ?? undefined,
   };
 }
 
@@ -77,19 +100,20 @@ export default async function TweetPage({
       <main className="mx-auto max-w-2xl w-full px-4 py-8 flex flex-col gap-4">
         <BackLink />
         <TweetCard tweet={tweet} detail highlight />
+        <JsonLd data={buildJsonLd(tweet)} />
       </main>
     );
   }
 
   // スレッド表示: parent をルート、子リプライを時系列で並べる。
-  // ネストは 1 段のみなので、ルートを 1 度引いて parent[equals]rootId のリプライを取る。
-  const root: Tweet = tweet.parent
-    ? (await fetchTweetOrNull(tweet.parent.id)) ?? tweet
-    : tweet;
-
-  const { contents: replies } = await listThreadReplies(root.id, {
-    limit: 100,
-  });
+  // 親フェッチとリプライ取得は依存していないので並列化する。
+  const rootId = tweet.parent?.id ?? tweet.id;
+  const [maybeRoot, repliesResp] = await Promise.all([
+    tweet.parent ? fetchTweetOrNull(tweet.parent.id) : Promise.resolve(null),
+    listThreadReplies(rootId, { limit: 100 }),
+  ]);
+  const root: Tweet = maybeRoot ?? tweet;
+  const replies = repliesResp.contents;
 
   return (
     <main className="mx-auto max-w-2xl w-full px-4 py-8 flex flex-col gap-4">
@@ -108,6 +132,7 @@ export default async function TweetPage({
           ))}
         </ol>
       )}
+      <JsonLd data={buildJsonLd(tweet)} />
     </main>
   );
 }
@@ -119,5 +144,14 @@ function BackLink() {
         ← フィードに戻る
       </Link>
     </nav>
+  );
+}
+
+function JsonLd({ data }: { data: object }) {
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
   );
 }
