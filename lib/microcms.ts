@@ -19,15 +19,48 @@ const cachedRequestInit: RequestInit = {
   next: { revalidate: DEFAULT_REVALIDATE },
 };
 
+// depth=1 で parent / retweetOf を 1段だけ展開して取得する。
+const DEFAULT_DEPTH = 1 as const;
+
+function withDefaultDepth(queries?: MicroCMSQueries): MicroCMSQueries {
+  return { depth: DEFAULT_DEPTH, ...queries };
+}
+
 export async function listTweets(
   queries?: MicroCMSQueries,
 ): Promise<TweetListResponse> {
   const response = await client.getList<TweetFields>({
     endpoint: TWEETS_ENDPOINT,
-    queries,
+    queries: withDefaultDepth(queries),
     customRequestInit: cachedRequestInit,
   });
   return response as TweetListResponse;
+}
+
+// 親ツイート（=スレッドの起点）のみを取得する。
+// /feed と TweetFeed コンポーネントで使う。
+export async function listRootTweets(
+  queries?: MicroCMSQueries,
+): Promise<TweetListResponse> {
+  return listTweets({
+    ...queries,
+    filters: combineFilters("parent[not_exists]", queries?.filters),
+  });
+}
+
+// あるツイートのスレッド（直接の子リプライ）を時系列昇順で取得する。
+export async function listThreadReplies(
+  rootId: string,
+  queries?: MicroCMSQueries,
+): Promise<TweetListResponse> {
+  return listTweets({
+    ...queries,
+    filters: combineFilters(
+      `parent[equals]${rootId}`,
+      queries?.filters,
+    ),
+    orders: queries?.orders ?? "publishedAt",
+  });
 }
 
 export async function getTweet(
@@ -37,8 +70,15 @@ export async function getTweet(
   const tweet = await client.getListDetail<TweetFields>({
     endpoint: TWEETS_ENDPOINT,
     contentId,
-    queries,
+    queries: withDefaultDepth(queries),
     customRequestInit: cachedRequestInit,
   });
   return tweet as Tweet;
+}
+
+function combineFilters(
+  base: string,
+  extra: string | undefined,
+): string {
+  return extra ? `${base}[and]${extra}` : base;
 }

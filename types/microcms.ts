@@ -14,7 +14,13 @@ export type EchologDate = {
   revisedAt: string;
 };
 
-export type TweetReference = MicroCMSContentId & EchologDate;
+// depth=1 で展開された参照ツイート（自身は parent / retweetOf を持たない）
+export type TweetReference = {
+  body?: string;
+  images?: MicroCMSImage[];
+  retweetType?: [RetweetType] | [];
+} & MicroCMSContentId &
+  EchologDate;
 
 export type TweetFields = {
   body?: string;
@@ -39,3 +45,13 @@ export type AdminTweetListResponse = Omit<
 > & {
   contents: AdminTweet[];
 };
+
+export function getRetweetKind(
+  tweet: Pick<TweetFields, "retweetOf" | "retweetType">,
+): "retweet" | "quote" | null {
+  if (!tweet.retweetOf) return null;
+  const kind = tweet.retweetType?.[0];
+  if (kind === "retweet") return "retweet";
+  if (kind === "quote") return "quote";
+  return null;
+}
