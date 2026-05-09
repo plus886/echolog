@@ -14,15 +14,36 @@ import {
 } from "@/lib/microcms-management";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
+const MAX_IMAGES = 4;
+
+const ImageSchema = z.object({
+  url: z.string().url(),
+});
+
+const ImagesArraySchema = z
+  .array(ImageSchema)
+  .max(MAX_IMAGES);
+
 const ComposeSchema = z
   .object({
     body: z.string().max(10_000),
     parent: z.string().min(1).optional(),
     retweetOf: z.string().min(1).optional(),
+    images: ImagesArraySchema.default([]),
   })
   .refine((d) => !(d.parent && d.retweetOf), {
     message: "parent と retweetOf は同時に指定できません",
   });
+
+function parseImagesField(raw: FormDataEntryValue | null) {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(String(raw));
+    return ImagesArraySchema.parse(parsed);
+  } catch {
+    return [];
+  }
+}
 
 export type ActionResult =
   | { ok: true; id: string }
@@ -39,6 +60,7 @@ function buildContent(input: {
   body: string;
   parent?: string;
   retweetOf?: string;
+  images?: { url: string }[];
 }): TweetWriteFields {
   const content: TweetWriteFields = { body: input.body };
   if (input.parent) content.parent = input.parent;
@@ -46,6 +68,9 @@ function buildContent(input: {
     content.retweetOf = input.retweetOf;
     // 引用 RT のみ ComposeForm 経由で作成される（コメントなし RT は retweetAction）
     content.retweetType = ["quote"];
+  }
+  if (input.images && input.images.length > 0) {
+    content.images = input.images;
   }
   return content;
 }
@@ -68,6 +93,7 @@ function readCompose(formData: FormData) {
     body: formData.get("body") ?? "",
     parent: formData.get("parent") || undefined,
     retweetOf: formData.get("retweetOf") || undefined,
+    images: parseImagesField(formData.get("images")),
   });
 }
 
@@ -76,8 +102,9 @@ export async function publishTweetAction(
 ): Promise<ActionResult> {
   try {
     const parsed = readCompose(formData);
-    if (!parsed.body.trim()) {
-      return { ok: false, error: "本文を入力してください" };
+    const hasContent = parsed.body.trim().length > 0 || parsed.images.length > 0;
+    if (!hasContent) {
+      return { ok: false, error: "本文か画像を入力してください" };
     }
     assertWithinLimit(parsed.body);
 
@@ -97,8 +124,9 @@ export async function saveDraftAction(
 ): Promise<ActionResult> {
   try {
     const parsed = readCompose(formData);
-    if (!parsed.body.trim()) {
-      return { ok: false, error: "本文を入力してください" };
+    const hasContent = parsed.body.trim().length > 0 || parsed.images.length > 0;
+    if (!hasContent) {
+      return { ok: false, error: "本文か画像を入力してください" };
     }
     assertWithinLimit(parsed.body);
 

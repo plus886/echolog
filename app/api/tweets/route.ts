@@ -6,11 +6,18 @@ import { MAX_TWEET_LENGTH } from "@/lib/constants";
 import { createTweet } from "@/lib/microcms-management";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
+const MAX_IMAGES = 4;
+
 const PostSchema = z.object({
-  body: z.string().max(10_000),
+  body: z.string().max(10_000).optional().default(""),
   parent: z.string().min(1).optional(),
   retweetOf: z.string().min(1).optional(),
   retweetType: z.enum(["retweet", "quote"]).optional(),
+  images: z
+    .array(z.object({ url: z.string().url() }))
+    .max(MAX_IMAGES)
+    .optional()
+    .default([]),
   isDraft: z.boolean().optional(),
 });
 
@@ -38,16 +45,21 @@ export async function POST(request: Request) {
     );
   }
 
-  if (input.body || (input.retweetType ?? "quote") !== "retweet") {
-    if (!input.body.trim()) {
+  // body は retweet (コメントなし RT) のときのみ任意。それ以外は本文か画像が必要。
+  const isCommentlessRT = input.retweetType === "retweet";
+  if (!isCommentlessRT) {
+    const hasContent = input.body.trim().length > 0 || input.images.length > 0;
+    if (!hasContent) {
       return NextResponse.json({ error: "body-required" }, { status: 400 });
     }
-    const status = evaluateTweetText(input.body);
-    if (status.isOver) {
-      return NextResponse.json(
-        { error: "body-too-long", limit: MAX_TWEET_LENGTH },
-        { status: 400 },
-      );
+    if (input.body) {
+      const status = evaluateTweetText(input.body);
+      if (status.isOver) {
+        return NextResponse.json(
+          { error: "body-too-long", limit: MAX_TWEET_LENGTH },
+          { status: 400 },
+        );
+      }
     }
   }
 
@@ -58,6 +70,7 @@ export async function POST(request: Request) {
         parent: input.parent,
         retweetOf: input.retweetOf,
         retweetType: input.retweetType ? [input.retweetType] : undefined,
+        images: input.images.length > 0 ? input.images : undefined,
       },
       { isDraft: input.isDraft ?? false },
     );
@@ -66,6 +79,7 @@ export async function POST(request: Request) {
     revalidatePath("/");
     revalidatePath(`/tweets/${id}`);
     if (input.parent) revalidatePath(`/tweets/${input.parent}`);
+    if (input.retweetOf) revalidatePath(`/tweets/${input.retweetOf}`);
 
     return NextResponse.json({ id }, { status: 201 });
   } catch (e) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useMemo, useState, useTransition } from "react";
 
 import {
   publishTweetAction,
@@ -9,7 +9,10 @@ import {
   type ActionResult,
 } from "@/app/(admin)/admin/_actions";
 import { CharCounter } from "@/components/admin/CharCounter";
+import { ImageUploader } from "@/components/admin/ImageUploader";
+import { LinkPreview } from "@/components/admin/LinkPreview";
 import { evaluateTweetText } from "@/lib/tweet-text";
+import { extractFirstUrl } from "@/lib/url-detect";
 import type { TweetReference } from "@/types/microcms";
 
 const initialState: ActionResult = { ok: true, id: "" };
@@ -25,12 +28,16 @@ type Props = {
 
 export function ComposeForm({ mode = { kind: "new" } }: Props) {
   const [body, setBody] = useState("");
+  const [images, setImages] = useState<{ url: string }[]>([]);
   const [isDraftPending, startDraftTransition] = useTransition();
 
   const [publishState, publishFormAction, isPublishPending] = useActionState(
     async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
       const result = await publishTweetAction(formData);
-      if (result.ok) setBody("");
+      if (result.ok) {
+        setBody("");
+        setImages([]);
+      }
       return result;
     },
     initialState,
@@ -39,16 +46,20 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
   const [draftState, setDraftState] = useState<ActionResult>(initialState);
 
   const status = evaluateTweetText(body);
+  const previewUrl = useMemo(() => extractFirstUrl(body), [body]);
   const submitDisabled =
     !status.isValid || isPublishPending || isDraftPending;
 
   const handleSaveDraft = () => {
     if (!body.trim() || status.isOver) return;
-    const formData = buildFormData(body, mode);
+    const formData = buildFormData(body, mode, images);
     startDraftTransition(async () => {
       const result = await saveDraftAction(formData);
       setDraftState(result);
-      if (result.ok) setBody("");
+      if (result.ok) {
+        setBody("");
+        setImages([]);
+      }
     });
   };
 
@@ -65,6 +76,7 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
       {mode.kind === "quote" && (
         <input type="hidden" name="retweetOf" value={mode.target.id} />
       )}
+      <input type="hidden" name="images" value={JSON.stringify(images)} />
 
       {mode.kind !== "new" && (
         <ModeBanner mode={mode} />
@@ -86,20 +98,24 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
         className="w-full resize-none rounded-md border border-border bg-transparent p-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-foreground/20"
       />
 
+      <ImageUploader value={images} onChange={setImages} />
+
+      <LinkPreview url={previewUrl} />
+
       <div className="flex items-center justify-between">
         <CharCounter status={status} />
         <div className="flex gap-2">
           <button
             type="button"
             onClick={handleSaveDraft}
-            disabled={submitDisabled || !body.trim()}
+            disabled={submitDisabled || (!body.trim() && images.length === 0)}
             className="rounded-md border border-border px-4 py-1.5 text-sm hover:bg-foreground/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isDraftPending ? "保存中…" : "下書き保存"}
           </button>
           <button
             type="submit"
-            disabled={submitDisabled || !body.trim()}
+            disabled={submitDisabled || (!body.trim() && images.length === 0)}
             className="rounded-md bg-foreground px-4 py-1.5 text-sm text-background hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPublishPending
@@ -120,11 +136,16 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
   );
 }
 
-function buildFormData(body: string, mode: ComposeMode): FormData {
+function buildFormData(
+  body: string,
+  mode: ComposeMode,
+  images: { url: string }[],
+): FormData {
   const formData = new FormData();
   formData.set("body", body);
   if (mode.kind === "reply") formData.set("parent", mode.target.id);
   if (mode.kind === "quote") formData.set("retweetOf", mode.target.id);
+  formData.set("images", JSON.stringify(images));
   return formData;
 }
 
