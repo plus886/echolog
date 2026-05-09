@@ -8,15 +8,21 @@ import { MAX_TWEET_LENGTH } from "@/lib/constants";
 import {
   createTweet,
   deleteTweet,
+  hasExistingRetweet,
   updateTweet,
   type TweetWriteFields,
 } from "@/lib/microcms-management";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
-const TweetInputSchema = z.object({
-  body: z.string().max(10_000),
-  parent: z.string().min(1).optional(),
-});
+const ComposeSchema = z
+  .object({
+    body: z.string().max(10_000),
+    parent: z.string().min(1).optional(),
+    retweetOf: z.string().min(1).optional(),
+  })
+  .refine((d) => !(d.parent && d.retweetOf), {
+    message: "parent と retweetOf は同時に指定できません",
+  });
 
 export type ActionResult =
   | { ok: true; id: string }
@@ -32,36 +38,51 @@ function assertWithinLimit(body: string) {
 function buildContent(input: {
   body: string;
   parent?: string;
+  retweetOf?: string;
 }): TweetWriteFields {
   const content: TweetWriteFields = { body: input.body };
   if (input.parent) content.parent = input.parent;
+  if (input.retweetOf) {
+    content.retweetOf = input.retweetOf;
+    // 引用 RT のみ ComposeForm 経由で作成される（コメントなし RT は retweetAction）
+    content.retweetType = ["quote"];
+  }
   return content;
 }
 
-function revalidateAfterWrite(id: string, parent?: string) {
+function revalidateAfterWrite(
+  id: string,
+  refs: { parent?: string; retweetOf?: string } = {},
+) {
   revalidatePath("/feed");
   revalidatePath("/");
   revalidatePath(`/tweets/${id}`);
-  if (parent) revalidatePath(`/tweets/${parent}`);
+  if (refs.parent) revalidatePath(`/tweets/${refs.parent}`);
+  if (refs.retweetOf) revalidatePath(`/tweets/${refs.retweetOf}`);
   revalidatePath("/admin");
   revalidatePath("/admin/drafts");
+}
+
+function readCompose(formData: FormData) {
+  return ComposeSchema.parse({
+    body: formData.get("body") ?? "",
+    parent: formData.get("parent") || undefined,
+    retweetOf: formData.get("retweetOf") || undefined,
+  });
 }
 
 export async function publishTweetAction(
   formData: FormData,
 ): Promise<ActionResult> {
   try {
-    const parsed = TweetInputSchema.parse({
-      body: formData.get("body") ?? "",
-      parent: formData.get("parent") || undefined,
-    });
+    const parsed = readCompose(formData);
     if (!parsed.body.trim()) {
       return { ok: false, error: "本文を入力してください" };
     }
     assertWithinLimit(parsed.body);
 
     const { id } = await createTweet(buildContent(parsed));
-    revalidateAfterWrite(id, parsed.parent);
+    revalidateAfterWrite(id, parsed);
     return { ok: true, id };
   } catch (e) {
     return {
@@ -75,10 +96,7 @@ export async function saveDraftAction(
   formData: FormData,
 ): Promise<ActionResult> {
   try {
-    const parsed = TweetInputSchema.parse({
-      body: formData.get("body") ?? "",
-      parent: formData.get("parent") || undefined,
-    });
+    const parsed = readCompose(formData);
     if (!parsed.body.trim()) {
       return { ok: false, error: "本文を入力してください" };
     }
@@ -130,4 +148,33 @@ export async function deleteTweetAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/drafts");
   redirect("/admin");
+}
+
+// コメントなし RT。即時実行 + 重複チェック。
+const RetweetSchema = z.object({
+  targetId: z.string().min(1),
+});
+
+export async function retweetAction(formData: FormData): Promise<ActionResult> {
+  try {
+    const { targetId } = RetweetSchema.parse({
+      targetId: formData.get("targetId") ?? "",
+    });
+
+    if (await hasExistingRetweet(targetId)) {
+      return { ok: false, error: "既にリツイート済みです" };
+    }
+
+    const { id } = await createTweet({
+      retweetOf: targetId,
+      retweetType: ["retweet"],
+    });
+    revalidateAfterWrite(id, { retweetOf: targetId });
+    return { ok: true, id };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "RT に失敗しました",
+    };
+  }
 }
