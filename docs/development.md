@@ -90,20 +90,69 @@ pnpm lint        # ESLint
 pnpm cf:build    # OpenNext でのビルド（Cloudflare 向け）
 ```
 
-## 本番デプロイ（Phase 1 では未実施）
-
-Phase 2 で Cloudflare Access の設定後に実施する。
-コマンドは以下を想定:
+## 本番デプロイ
 
 ```bash
 # シークレット登録（初回のみ）
+pnpm wrangler secret put MICROCMS_SERVICE_DOMAIN
 pnpm wrangler secret put MICROCMS_API_KEY
+pnpm wrangler secret put MICROCMS_MANAGEMENT_API_KEY
 pnpm wrangler secret put MICROCMS_WEBHOOK_SECRET
-# ... 他の秘匿変数も同様
+pnpm wrangler secret put CF_ACCESS_TEAM_DOMAIN
+pnpm wrangler secret put CF_ACCESS_AUD
 
 # R2 バケット作成（初回のみ）
 pnpm wrangler r2 bucket create echolog-opennext-cache
 
+# D1 データベース作成 + スキーマ適用（初回のみ。tag cache 用）
+pnpm wrangler d1 create echolog-tag-cache
+# → 出力された database_id を wrangler.jsonc の d1_databases に貼る
+pnpm wrangler d1 migrations apply NEXT_TAG_CACHE_D1 --remote
+
 # デプロイ
 pnpm cf:deploy
 ```
+
+`wrangler secret put` はビルド時には使われない（ビルドはローカル実行）ので、
+`.env.local` と Workers Secrets の **両方** に同じ値を入れる必要がある。
+
+## Cloudflare Access の設定（本番のみ）
+
+Zero Trust ダッシュボード → Access → Applications で以下を設定:
+
+- Self-hosted application: 対象ドメイン（例: `echolog.<account>.workers.dev`）
+- Identity provider: One-time PIN またはお好みの IdP
+- Policy 1（保護対象）: Allow / 自分のメールのみ
+- Policy 2（公開パスは Bypass）: `/`, `/feed`, `/tweets/*`, `/api/revalidate`
+
+Application Audience (AUD) Tag を `CF_ACCESS_AUD` に、team domain を
+`CF_ACCESS_TEAM_DOMAIN` に登録すれば、`middleware.ts` が JWT 検証で活用する。
+
+## Rate Limiting（Cloudflare ダッシュボード側）
+
+コード変更不要。Cloudflare ダッシュボード → 該当ゾーン →
+**Security → WAF → Rate Limiting Rules** から設定する。
+
+推奨ルール例:
+
+| Match | Rate | Action |
+|---|---|---|
+| `http.request.uri.path matches "^/api/(tweets\|uploads\|og-preview)"` | 30 req / 10s / IP | Block (60s) |
+| `http.request.uri.path eq "/api/revalidate"` | 10 req / 60s / IP | Block (300s) |
+| 全体 | 200 req / 10s / IP | Block (60s) |
+
+`*.workers.dev` で運用する場合、Cloudflare WAF は使えないので、
+カスタムドメイン化したタイミングで設定する。
+
+## 公開ビューのキャッシュ
+
+| パス | キャッシュ | 再検証 |
+|---|---|---|
+| `/` | ISR (revalidate=3600) | webhook で /api/revalidate → revalidatePath('/') |
+| `/feed` | ISR (revalidate=3600) | 同上 |
+| `/tweets/[id]` | ISR (revalidate=3600) | 同上、対象 ID 単独でも revalidate |
+| `/admin/*` | force-dynamic | キャッシュなし |
+| `/api/og-preview` | レスポンス内 fetch を 24h キャッシュ | 同 URL 再アクセス時は高速 |
+
+OpenNext for Cloudflare の R2 + D1 構成で、`revalidatePath` / `revalidateTag` が
+正しく反映される。詳細は `open-next.config.ts` を参照。
