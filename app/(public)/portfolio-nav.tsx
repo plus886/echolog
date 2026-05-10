@@ -3,6 +3,19 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+// Helper: each visible label is duplicated as two stacked spans so the
+// hover handler in CSS can slide the original up out of frame and the
+// clone into frame from below — vertical "flip" effect.
+function NavLabel({ children }: { children: string }) {
+  return (
+    <span className="k-nav-text" aria-hidden="true">
+      <span className="before">{children}</span>
+      <span className="after">{children}</span>
+      <span className="visually-hidden">{children}</span>
+    </span>
+  );
+}
+
 // Top nav with the same skeleton as the reference:
 //  - 5 slots distributed across a 24-column grid (brand · portfolio ·
 //    information w/ dropdown · about · contact, last item right-aligned)
@@ -35,23 +48,33 @@ export function PortfolioNav() {
     <header className="k-nav">
       <ul className="k-nav-row">
         <li className="k-nav-brand">
-          <Link href="/">Ko Kaiji</Link>
+          <Link href="/" className="k-nav-link">
+            <NavLabel>Ko Kaiji</NavLabel>
+          </Link>
         </li>
         <li>
-          <Link href="#portfolio">Portfolio</Link>
+          <Link href="#portfolio" className="k-nav-link">
+            <NavLabel>Portfolio</NavLabel>
+          </Link>
         </li>
         <li className="k-nav-dropdown">
-          <span className="k-nav-trigger">Information</span>
+          <span className="k-nav-link k-nav-trigger">
+            <NavLabel>Information</NavLabel>
+          </span>
           <ul className="k-nav-sub">
             <li><Link href="#portfolio">Series</Link></li>
             <li><Link href="#portfolio">Editions</Link></li>
           </ul>
         </li>
         <li>
-          <Link href="#about">About</Link>
+          <Link href="#about" className="k-nav-link">
+            <NavLabel>About</NavLabel>
+          </Link>
         </li>
         <li className="k-nav-end">
-          <Link href="#contact">Contact</Link>
+          <Link href="#contact" className="k-nav-link">
+            <NavLabel>Contact</NavLabel>
+          </Link>
         </li>
       </ul>
 

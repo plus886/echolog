@@ -1,7 +1,29 @@
+import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
 import Link from "next/link";
 
 import { PortfolioNav } from "./portfolio-nav";
 import "./portfolio.css";
+
+// Webfonts replacing the system fallback. Body uses Inter Tight at a
+// single weight; em swaps to Cormorant Garamond italic at thin weight,
+// which lands close to the Miller Display feel without the licence.
+// Trim weights and disable preload so Turbopack doesn't grow its
+// dev-time font cache (it OOM'd at 12GB last time we loaded too many).
+const interTight = Inter_Tight({
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+  variable: "--k-font-sans",
+  preload: false,
+});
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300"],
+  style: ["italic"],
+  display: "swap",
+  variable: "--k-font-serif",
+  preload: false,
+});
 
 // Mockup that mirrors the structural skeleton of elkevandenende.com:
 //  - Sans body in tiny editorial sizes; em → display serif as the only
@@ -62,8 +84,14 @@ const EXPLORE = [
 ];
 
 export default function HomePage() {
+  const wrapperClass = [
+    "k-shell",
+    interTight.variable,
+    cormorant.variable,
+  ].join(" ");
+
   return (
-    <div className="k-shell">
+    <div className={wrapperClass}>
       {/* Top navigation (fixed, mix-blend-mode: difference) */}
       <PortfolioNav />
 

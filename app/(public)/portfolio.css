@@ -23,10 +23,12 @@
   --ink-15: rgba(56, 56, 56, 0.15);
   --grey-light: #cecece;
 
-  --serif: ui-serif, "Iowan Old Style", "Times New Roman",
-    "YuMincho", "Hiragino Mincho ProN", serif;
-  --sans: "Helvetica Neue", "HelveticaNeue", Helvetica, Arial,
-    "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
+  /* next/font CSS vars come from page.tsx; system fallbacks chain after */
+  --serif: var(--k-font-serif), ui-serif, "Iowan Old Style",
+    "Times New Roman", "YuMincho", "Hiragino Mincho ProN", serif;
+  --sans: var(--k-font-sans), "Helvetica Neue", "HelveticaNeue",
+    Helvetica, Arial, "Hiragino Kaku Gothic ProN",
+    "Hiragino Sans", sans-serif;
 
   background: var(--paper);
   color: var(--ink);
@@ -116,6 +118,80 @@
   & .k-nav-row > li > a,
   & .k-nav-row > li > span {
     cursor: pointer;
+  }
+
+  /* Slide-up label: each nav item has its text duplicated as .before
+     and .after; on hover the original slides up out of frame and the
+     clone slides up into frame. Visible accessible text stays in
+     .visually-hidden so screen readers and the link's own value still
+     read normally. */
+  & .k-nav-link {
+    position: relative;
+    display: inline-block;
+    line-height: 1.1;
+    color: transparent;
+    overflow: hidden;
+    padding-bottom: 1px;
+  }
+  & .k-nav-text {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+    line-height: 1.1;
+    height: 1.1em;
+  }
+  & .k-nav-text .before,
+  & .k-nav-text .after {
+    display: block;
+    color: var(--grey-light);
+    transition: transform 420ms ease-out;
+    will-change: transform;
+  }
+  & .k-nav-text .after {
+    position: absolute;
+    inset: 0;
+    transform: translateY(105%);
+  }
+  & .k-nav-link:hover .k-nav-text .before,
+  & .k-nav-link:focus-visible .k-nav-text .before,
+  & .k-nav-dropdown:hover .k-nav-trigger .k-nav-text .before {
+    transform: translateY(-105%);
+  }
+  & .k-nav-link:hover .k-nav-text .after,
+  & .k-nav-link:focus-visible .k-nav-text .after,
+  & .k-nav-dropdown:hover .k-nav-trigger .k-nav-text .after {
+    transform: translateY(0);
+  }
+  /* Animated underline that draws from left → right on hover. */
+  & .k-nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--grey-light);
+    transform: scaleX(0);
+    transform-origin: right center;
+    transition: transform 480ms ease-out;
+  }
+  & .k-nav-link:hover::after,
+  & .k-nav-link:focus-visible::after,
+  & .k-nav-dropdown:hover .k-nav-trigger::after {
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+  /* Accessible label stays in the DOM but is removed from layout. */
+  & .visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   & .k-nav-dropdown {
