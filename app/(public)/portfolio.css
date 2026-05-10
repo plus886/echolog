@@ -1,16 +1,13 @@
 /* ============================================================
-   Portfolio mockup — scoped to .k-shell.
-   Skeleton modeled on the elkevandenende.com home page:
-     · cream paper (#F9F8F2) + soft near-black ink (#383838)
-     · sans body (system sans), em → display serif as italic accent
-     · tiny editorial type scale (13–15px base)
-     · 24-column horizontal grid for chrome and gutters
-     · gallery is absolutely-positioned plates on a tall surface,
-       not a masonry algorithm
-     · enormous vertical whitespace between blocks
-   The CSS is original; numerical design tokens (colour hex, font
-   sizes, percentage-of-24 gutters) follow the reference. Class
-   names are this project's own.
+   Portfolio mockup — slim companion sheet for the Tailwind JSX.
+   Holds only what Tailwind utilities can't express cleanly:
+     · design-token CSS custom properties scoped to .k-shell
+     · font-family chains (depend on next/font vars on .k-shell)
+     · 24-column grid percentages
+     · the nav slide-up before/after animation
+     · the scroll-cue keyframes
+     · parent-state cascades driven by .k-shell.is-scrolled
+     · prefers-reduced-motion overrides
    ============================================================ */
 
 .k-shell {
@@ -23,9 +20,9 @@
   --ink-15: rgba(56, 56, 56, 0.15);
   --grey-light: #cecece;
 
-  /* Serif: FOT 筑紫Cオールド明朝 Pr6N R loaded via FontPlus
-     (script in app/layout.tsx). Cormorant Garamond italic and the
-     system serif chain stay as fallbacks during the FontPlus fetch. */
+  /* FOT 筑紫Cオールド明朝 (loaded via FontPlus in layout.tsx) is the
+     intended display serif. Cormorant Garamond from next/font and the
+     system serif chain stand in while FontPlus fetches the face. */
   --serif:
     "FOT-筑紫Cオールド明朝 Pr6N R", var(--k-font-serif), ui-serif,
     "Iowan Old Style", "Times New Roman", "YuMincho", "Hiragino Mincho ProN",
@@ -34,482 +31,72 @@
     var(--k-font-sans), "Helvetica Neue", "HelveticaNeue", Helvetica, Arial,
     "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
 
+  /* Override Tailwind's preset --font-serif token within this scope so
+     the `font-serif` utility class resolves to our FOT-mincho chain
+     instead of Tailwind's default ui-serif/Georgia stack. */
+  --font-serif: var(--serif);
+
+  /* Body sans + paper background. Other typographic and layout
+     properties are applied via Tailwind utility classes on the
+     wrapper / sections / individual elements. */
   background: var(--paper);
   color: var(--ink);
   font-family: var(--sans);
-  font-weight: 400;
-  font-size: 15px;
-  line-height: 1.45;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: geometricPrecision;
   font-feature-settings: "kern", "liga", "palt";
-  min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
-
-  & *,
-  & *::before,
-  & *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-  & a {
-    color: inherit;
-    text-decoration: none;
-    transition: opacity 200ms ease;
-  }
-  & a:hover {
-    opacity: 0.6;
-  }
-  & ul {
-    list-style: none;
-  }
-  & img {
-    display: block;
-    max-width: 100%;
-    height: auto;
-  }
-
-  /* The em element is the only italic. It swaps to a display serif
-     at thin weight — the visual the rest of the page is set against. */
-  & em {
-    /* font-family: var(--serif); */
-    font-style: normal;
-    /* font-weight: 300;
-    line-height: 1; */
-  }
-
-  /* Scroll-triggered fade-in. Pure opacity transition (no transform)
-     so that elements with their own transforms (.k-plate uses
-     translateX(-50%)) don't get clobbered. ScrollReveal flips the
-     .is-revealed class once an element first crosses into view. */
-  & [data-reveal] {
-    opacity: 0;
-    transition: opacity 1.4s ease-out;
-  }
-  & [data-reveal].is-revealed {
-    opacity: 1;
-  }
-
-  /* ─── Top navigation (fixed, mix-blend-mode chrome) ─── */
-  /* Hidden above the viewport at first; ScrollState toggles
-     .is-scrolled on the shell once the user crosses ~40vh. */
-  & .k-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 20;
-    mix-blend-mode: difference;
-    color: var(--grey-light);
-    padding: 36px calc(1 / 24 * 100%) 0;
-    pointer-events: none;
-    transform: translateY(-100%);
-    transition: transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1);
-  }
-  &.is-scrolled .k-nav {
-    transform: translateY(0);
-  }
-  & .k-nav-row {
-    display: flex;
-    align-items: baseline;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-size: 12px;
-    font-weight: 400;
-    pointer-events: auto;
-  }
-  & .k-nav-row > li {
-    width: calc(4 / 24 * 100%);
-  }
-  & .k-nav-brand {
-    width: calc(5 / 24 * 100%) !important;
-    letter-spacing: 0.16em;
-  }
-  & .k-nav-row > li:nth-child(3) {
-    width: calc(8 / 24 * 100%);
-  }
-  & .k-nav-row > li:nth-child(4) {
-    width: calc(3 / 24 * 100%);
-    margin-left: auto;
-  }
-  & .k-nav-end {
-    width: calc(2 / 24 * 100%) !important;
-    text-align: right;
-  }
-  & .k-nav-row > li > a,
-  & .k-nav-row > li > span {
-    cursor: pointer;
-  }
-
-  /* Slide-up label: each nav item has its text duplicated as .before
-     and .after; on hover the original slides up out of frame and the
-     clone slides up into frame. Visible accessible text stays in
-     .visually-hidden so screen readers and the link's own value still
-     read normally. */
-  & .k-nav-link {
-    position: relative;
-    display: inline-block;
-    line-height: 1.1;
-    color: transparent;
-    overflow: hidden;
-    padding-bottom: 1px;
-  }
-  & .k-nav-text {
-    position: relative;
-    display: inline-block;
-    overflow: hidden;
-    line-height: 1.1;
-    height: 1.1em;
-  }
-  & .k-nav-text .before,
-  & .k-nav-text .after {
-    display: block;
-    color: var(--grey-light);
-    transition: transform 420ms ease-out;
-    will-change: transform;
-  }
-  & .k-nav-text .after {
-    position: absolute;
-    inset: 0;
-    transform: translateY(105%);
-  }
-  & .k-nav-link:hover .k-nav-text .before,
-  & .k-nav-link:focus-visible .k-nav-text .before,
-  & .k-nav-dropdown:hover .k-nav-trigger .k-nav-text .before {
-    transform: translateY(-105%);
-  }
-  & .k-nav-link:hover .k-nav-text .after,
-  & .k-nav-link:focus-visible .k-nav-text .after,
-  & .k-nav-dropdown:hover .k-nav-trigger .k-nav-text .after {
-    transform: translateY(0);
-  }
-  /* Animated underline that draws from left → right on hover. */
-  & .k-nav-link::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 1px;
-    background: var(--grey-light);
-    transform: scaleX(0);
-    transform-origin: right center;
-    transition: transform 480ms ease-out;
-  }
-  & .k-nav-link:hover::after,
-  & .k-nav-link:focus-visible::after,
-  & .k-nav-dropdown:hover .k-nav-trigger::after {
-    transform: scaleX(1);
-    transform-origin: left center;
-  }
-  /* Accessible label stays in the DOM but is removed from layout. */
-  & .visually-hidden {
-    position: absolute !important;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  & .k-nav-dropdown {
-    position: relative;
-  }
-  & .k-nav-dropdown .k-nav-trigger {
-    cursor: default;
-  }
-  & .k-nav-sub {
-    position: absolute;
-    top: 100%;
-    left: 20%;
-    margin-top: 12px;
-    text-transform: lowercase;
-    letter-spacing: 0.04em;
-    font-size: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    opacity: 0;
-    visibility: hidden;
-    transition:
-      opacity 300ms ease,
-      visibility 0s linear 300ms;
-  }
-  & .k-nav-dropdown:hover .k-nav-sub,
-  & .k-nav-dropdown:focus-within .k-nav-sub {
-    opacity: 1;
-    visibility: visible;
-    transition:
-      opacity 300ms ease,
-      visibility 0s;
-  }
-
-  & .k-nav-toggle {
-    display: none;
-    background: none;
-    border: none;
-    padding: 0;
-    color: inherit;
-    font: inherit;
-    text-transform: lowercase;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-    pointer-events: auto;
-  }
-  & .k-nav-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 25;
-    background: var(--paper);
-    color: var(--ink);
-    mix-blend-mode: normal;
-    padding: 96px calc(2 / 24 * 100%) 48px;
-    overflow-y: auto;
-    pointer-events: auto;
-  }
-  & .k-nav-overlay > ul {
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-size: 22px;
-  }
-  & .k-nav-overlay-group > span {
-    display: block;
-    margin-bottom: 12px;
-  }
-  & .k-nav-overlay-group > ul {
-    margin-left: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    text-transform: lowercase;
-    font-size: 16px;
-    color: var(--ink-70);
-  }
-
-  /* ─── Tiny postcard hero (top right) ─── */
-  & .k-tiny-hero {
-    position: absolute;
-    top: 36px;
-    right: calc(2 / 24 * 100%);
-    width: 92px;
-    z-index: 5;
-  }
-  & .k-tiny-hero img {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 4 / 5;
-    object-fit: cover;
-  }
-
-  /* ─── 100vh hero: wordmark centered + scroll cue at the bottom ─── */
-  & .k-hero {
-    position: relative;
-    height: 100vh;
-    min-height: 560px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  & .k-wordmark {
-    position: relative;
-    z-index: 1;
-    margin: 0;
-    text-align: center;
-    font-family: var(--sans);
-    font-weight: 400;
-    font-size: clamp(12px, 1.2vw, 18px);
-    letter-spacing: 1.55em;
-    text-indent: 0.55em; /* visually balance the wide tracking */
-    text-transform: uppercase;
-    color: var(--ink);
-  }
-
-  /* Animated scroll cue: small label + a vertical line that pulses
-     downward. Fades out once the user has begun scrolling. */
-  & .k-scroll-cue {
-    position: absolute;
-    left: 50%;
-    bottom: 56px;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    color: var(--ink-50);
-    transition: opacity 320ms ease-out;
-    pointer-events: none;
-  }
-  & .k-scroll-cue .label {
-    font-family: var(--sans);
-    font-size: 11px;
-    letter-spacing: 0.32em;
-    text-transform: lowercase;
-  }
-  & .k-scroll-cue .line {
-    display: block;
-    width: 1px;
-    height: 44px;
-    background: currentColor;
-    transform-origin: top center;
-    animation: k-cue-pulse 2s ease-in-out infinite;
-  }
-  &.is-scrolled .k-scroll-cue {
-    opacity: 0;
-  }
-
-  /* ─── Italic intro paragraph, narrow column on the left ─── */
-  /* Hero already contributes 100vh; the intro can sit closer to it. */
-  & .k-intro {
-    margin-top: 40px;
-    margin-left: calc(2 / 24 * 100%);
-    width: calc(10 / 24 * 100%);
-    min-width: 260px;
-  }
-  & .k-intro p {
-    font-family: var(--serif);
-    font-size: 18px;
-    line-height: 1.8;
-    color: var(--ink);
-    letter-spacing: 0.1rem;
-  }
-  & .k-intro em {
-    font-size: 1.05em;
-    font-weight: 600;
-  }
-
-  /* ─── Gallery: absolutely-positioned plates ─── */
-  & .k-gallery {
-    position: relative;
-    margin-top: 120px;
-    width: 100%;
-  }
-  & .k-plate {
-    position: absolute;
-    transform: translateX(-50%);
-  }
-  & .k-plate img {
-    width: 100%;
-    height: auto;
-    background: var(--paper-2);
-  }
-
-  /* ─── Inline CTA — short paragraphs, narrow left column ─── */
-  & .k-cta {
-    margin-top: 220px;
-    margin-left: calc(2 / 24 * 100%);
-    width: calc(8 / 24 * 100%);
-    min-width: 280px;
-  }
-  & .k-cta p {
-    font-family: var(--sans);
-    font-size: 13px;
-    line-height: 1.7;
-    margin-bottom: 18px;
-  }
-  & .k-cta a {
-    border-bottom: 1px solid currentColor;
-    padding-bottom: 1px;
-  }
-
-  /* ─── (explore) row: parenthetical label + 4 small cards ─── */
-  & .k-explore {
-    margin-top: 220px;
-    padding: 0 calc(2 / 24 * 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 14px;
-  }
-  & .k-explore-label {
-    font-family: var(--sans);
-    font-size: 12px;
-    letter-spacing: 0.04em;
-    color: var(--ink-50);
-  }
-  & .k-explore-row {
-    display: flex;
-    gap: 8px;
-  }
-  & .k-explore-card {
-    width: 78px;
-    flex: none;
-  }
-  & .k-explore-card img {
-    width: 100%;
-    aspect-ratio: 4 / 5;
-    object-fit: cover;
-    background: var(--paper-2);
-  }
-
-  /* ─── Footer ─── */
-  & .k-footer {
-    margin-top: 160px;
-    padding: 0 calc(2 / 24 * 100%) 60px;
-    font-family: var(--sans);
-    font-size: 12px;
-    line-height: 1.7;
-    color: var(--ink);
-  }
-  & .k-footer-row {
-    display: grid;
-    grid-template-columns: calc(3 / 22 * 100%) calc(7 / 22 * 100%) calc(
-        7 / 22 * 100%
-      );
-    gap: 0 calc(1 / 22 * 100%);
-    margin-bottom: 60px;
-  }
-  & .k-footer-col {
-    font-size: 12px;
-  }
-  & .k-footer-col p {
-    margin-bottom: 6px;
-  }
-  & .k-footer-col ul li {
-    margin-bottom: 3px;
-    text-transform: lowercase;
-  }
-  & .k-footer-label {
-    font-style: normal;
-    color: var(--ink-50);
-    margin-bottom: 10px !important;
-  }
-  & .k-link-underlined {
-    border-bottom: 1px solid currentColor;
-    padding-bottom: 1px;
-  }
-  & .k-footer-credits {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    align-items: end;
-    border-top: 1px solid var(--ink-15);
-    padding-top: 28px;
-    font-size: 11px;
-    color: var(--ink-70);
-  }
-  & .k-footer-credits-col p {
-    margin-bottom: 4px;
-  }
-  & .k-footer-credits-col em {
-    font-size: 1em;
-  }
-  & .k-footer-credits-col:nth-child(2) {
-    text-align: center;
-  }
-  & .k-footer-credits-col:nth-child(3) {
-    text-align: right;
-  }
 }
 
-/* Vertical "drip" pulse for the scroll cue */
-@keyframes k-cue-pulse {
+/* The user has em set to non-italic, sans-stack — leave the
+   font-family override commented out so it can be re-enabled later. */
+.k-shell em {
+  /* font-family: var(--serif); */
+  font-style: normal;
+  /* font-weight: 300;
+  line-height: 1; */
+}
+
+/* ─── 24-column grid helpers (Tailwind has no built-in N/24 utilities) */
+.k-shell .col-1 {
+  width: calc(1 / 24 * 100%);
+}
+.k-shell .col-2 {
+  width: calc(2 / 24 * 100%);
+}
+.k-shell .col-3 {
+  width: calc(3 / 24 * 100%);
+}
+.k-shell .col-4 {
+  width: calc(4 / 24 * 100%);
+}
+.k-shell .col-5 {
+  width: calc(5 / 24 * 100%);
+}
+.k-shell .col-6 {
+  width: calc(6 / 24 * 100%);
+}
+.k-shell .col-8 {
+  width: calc(8 / 24 * 100%);
+}
+.k-shell .col-20 {
+  width: calc(20 / 24 * 100%);
+}
+.k-shell .ml-col-1 {
+  margin-left: calc(1 / 24 * 100%);
+}
+.k-shell .ml-col-2 {
+  margin-left: calc(2 / 24 * 100%);
+}
+.k-shell .px-col-1 {
+  padding-inline: calc(1 / 24 * 100%);
+}
+.k-shell .px-col-2 {
+  padding-inline: calc(2 / 24 * 100%);
+}
+.k-shell .right-col-2 {
+  right: calc(2 / 24 * 100%);
+}
+
+/* ─── Scroll-cue keyframes + utility */
+@keyframes k-scroll-cue-pulse {
   0%,
   100% {
     transform: scaleY(0.3);
@@ -520,87 +107,137 @@
     opacity: 0.9;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .k-shell [data-reveal] {
-    opacity: 1;
-    transition: none;
-  }
-  .k-shell .k-nav {
-    transition: none;
-  }
-  .k-shell .k-scroll-cue .line {
-    animation: none;
-  }
+.k-shell .animate-scroll-cue {
+  animation: k-scroll-cue-pulse 2s ease-in-out infinite;
+  transform-origin: top center;
 }
 
-@media (max-width: 880px) {
-  .k-shell .k-nav-row {
-    display: none;
+/* ─── Parent-state cascades driven by ScrollState's `.is-scrolled` */
+.k-shell .k-nav {
+  transition: transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  transform: translateY(-100%);
+}
+.k-shell.is-scrolled .k-nav {
+  transform: translateY(0);
+}
+.k-shell .k-scroll-cue {
+  transition: opacity 320ms ease-out;
+}
+.k-shell.is-scrolled .k-scroll-cue {
+  opacity: 0;
+}
+
+/* ─── Nav slide-up: each label is two stacked .before/.after spans;
+       on hover the original slides up out of frame and the clone in. */
+.k-shell .k-nav-text {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  height: 1.1em;
+  line-height: 1.1;
+}
+.k-shell .k-nav-text .before,
+.k-shell .k-nav-text .after {
+  display: block;
+  color: var(--grey-light);
+  transition: transform 420ms ease-out;
+  will-change: transform;
+}
+.k-shell .k-nav-text .after {
+  position: absolute;
+  inset: 0;
+  transform: translateY(105%);
+}
+.k-shell .k-nav-link:hover .k-nav-text .before,
+.k-shell .k-nav-link:focus-visible .k-nav-text .before,
+.k-shell .k-nav-dropdown:hover .k-nav-trigger .k-nav-text .before {
+  transform: translateY(-105%);
+}
+.k-shell .k-nav-link:hover .k-nav-text .after,
+.k-shell .k-nav-link:focus-visible .k-nav-text .after,
+.k-shell .k-nav-dropdown:hover .k-nav-trigger .k-nav-text .after {
+  transform: translateY(0);
+}
+/* Animated underline that draws left → right on hover */
+.k-shell .k-nav-link {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  color: transparent;
+  line-height: 1.1;
+  padding-bottom: 1px;
+}
+.k-shell .k-nav-link::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--grey-light);
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 480ms ease-out;
+}
+.k-shell .k-nav-link:hover::after,
+.k-shell .k-nav-link:focus-visible::after,
+.k-shell .k-nav-dropdown:hover .k-nav-trigger::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+/* Dropdown submenu (Information → Series / Editions) */
+.k-shell .k-nav-sub {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 300ms ease,
+    visibility 0s linear 300ms;
+}
+.k-shell .k-nav-dropdown:hover .k-nav-sub,
+.k-shell .k-nav-dropdown:focus-within .k-nav-sub {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 300ms ease,
+    visibility 0s;
+}
+
+/* Accessible label kept in DOM but hidden from layout */
+.k-shell .visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ─── Reveal-on-scroll: .is-revealed class flipped by ScrollReveal */
+.k-shell [data-reveal] {
+  opacity: 0;
+  transition: opacity 1.4s ease-out;
+}
+.k-shell [data-reveal].is-revealed {
+  opacity: 1;
+}
+
+/* ─── prefers-reduced-motion: kill every transition / keyframe */
+@media (prefers-reduced-motion: reduce) {
+  .k-shell .k-nav,
+  .k-shell .k-scroll-cue,
+  .k-shell [data-reveal],
+  .k-shell .k-nav-text .before,
+  .k-shell .k-nav-text .after,
+  .k-shell .k-nav-link::after {
+    transition: none;
   }
-  .k-shell .k-nav {
-    padding-top: 28px;
+  .k-shell .animate-scroll-cue {
+    animation: none;
   }
-  .k-shell .k-nav-toggle {
-    display: inline-block;
-    position: fixed;
-    top: 28px;
-    right: calc(2 / 24 * 100%);
-    z-index: 21;
-    color: var(--ink);
-    font-size: 14px;
-    mix-blend-mode: normal;
-  }
-  .k-shell .k-tiny-hero {
-    top: 28px;
-    right: calc(2 / 24 * 100%);
-    width: 60px;
-    display: none; /* hides the tiny postcard since the toggle now lives there */
-  }
-  .k-shell .k-hero {
-    min-height: 480px;
-  }
-  .k-shell .k-wordmark {
-    font-size: 18px;
-    letter-spacing: 0.4em;
-    text-indent: 0.4em;
-  }
-  .k-shell .k-scroll-cue {
-    bottom: 36px;
-  }
-  .k-shell .k-scroll-cue .line {
-    height: 32px;
-  }
-  .k-shell .k-intro {
-    margin-top: 24px;
-    margin-left: calc(2 / 24 * 100%);
-    width: calc(20 / 24 * 100%);
-    min-width: 0;
-  }
-  .k-shell .k-gallery {
-    margin-top: 70px;
-  }
-  .k-shell .k-cta {
-    margin-top: 140px;
-    width: calc(20 / 24 * 100%);
-  }
-  .k-shell .k-explore {
-    margin-top: 140px;
-  }
-  .k-shell .k-footer {
-    margin-top: 100px;
-  }
-  .k-shell .k-footer-row {
-    grid-template-columns: 1fr;
-    gap: 36px;
-  }
-  .k-shell .k-footer-credits {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    text-align: left;
-  }
-  .k-shell .k-footer-credits-col:nth-child(2),
-  .k-shell .k-footer-credits-col:nth-child(3) {
-    text-align: left;
+  .k-shell [data-reveal] {
+    opacity: 1;
   }
 }
