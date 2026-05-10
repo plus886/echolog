@@ -1,0 +1,419 @@
+/* ============================================================
+   Portfolio mockup — scoped to .k-shell.
+   Skeleton modeled on the elkevandenende.com home page:
+     · cream paper (#F9F8F2) + soft near-black ink (#383838)
+     · sans body (system sans), em → display serif as italic accent
+     · tiny editorial type scale (13–15px base)
+     · 24-column horizontal grid for chrome and gutters
+     · gallery is absolutely-positioned plates on a tall surface,
+       not a masonry algorithm
+     · enormous vertical whitespace between blocks
+   The CSS is original; numerical design tokens (colour hex, font
+   sizes, percentage-of-24 gutters) follow the reference. Class
+   names are this project's own.
+   ============================================================ */
+
+.k-shell {
+  --paper: #f9f8f2;
+  --paper-2: #f1ede2;
+  --ink: #383838;
+  --ink-70: rgba(56, 56, 56, 0.72);
+  --ink-50: rgba(56, 56, 56, 0.5);
+  --ink-30: rgba(56, 56, 56, 0.32);
+  --ink-15: rgba(56, 56, 56, 0.15);
+  --grey-light: #cecece;
+
+  --serif: ui-serif, "Iowan Old Style", "Times New Roman",
+    "YuMincho", "Hiragino Mincho ProN", serif;
+  --sans: "Helvetica Neue", "HelveticaNeue", Helvetica, Arial,
+    "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+  font-feature-settings: "kern", "liga", "palt";
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+
+  & *,
+  & *::before,
+  & *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  & a {
+    color: inherit;
+    text-decoration: none;
+    transition: opacity 200ms ease;
+  }
+  & a:hover {
+    opacity: 0.6;
+  }
+  & ul {
+    list-style: none;
+  }
+  & img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* The em element is the only italic. It swaps to a display serif
+     at thin weight — the visual the rest of the page is set against. */
+  & em {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  /* ─── Top navigation (fixed, mix-blend-mode chrome) ─── */
+  & .k-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    mix-blend-mode: difference;
+    color: var(--grey-light);
+    padding: 36px calc(1 / 24 * 100%) 0;
+    pointer-events: none;
+  }
+  & .k-nav-row {
+    display: flex;
+    align-items: baseline;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 12px;
+    font-weight: 400;
+    pointer-events: auto;
+  }
+  & .k-nav-row > li {
+    width: calc(4 / 24 * 100%);
+  }
+  & .k-nav-brand {
+    width: calc(5 / 24 * 100%) !important;
+    letter-spacing: 0.16em;
+  }
+  & .k-nav-row > li:nth-child(3) {
+    width: calc(8 / 24 * 100%);
+  }
+  & .k-nav-row > li:nth-child(4) {
+    width: calc(3 / 24 * 100%);
+    margin-left: auto;
+  }
+  & .k-nav-end {
+    width: calc(2 / 24 * 100%) !important;
+    text-align: right;
+  }
+  & .k-nav-row > li > a,
+  & .k-nav-row > li > span {
+    cursor: pointer;
+  }
+
+  & .k-nav-dropdown {
+    position: relative;
+  }
+  & .k-nav-dropdown .k-nav-trigger {
+    cursor: default;
+  }
+  & .k-nav-sub {
+    position: absolute;
+    top: 100%;
+    left: 20%;
+    margin-top: 12px;
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 300ms ease, visibility 0s linear 300ms;
+  }
+  & .k-nav-dropdown:hover .k-nav-sub,
+  & .k-nav-dropdown:focus-within .k-nav-sub {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 300ms ease, visibility 0s;
+  }
+
+  & .k-nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    text-transform: lowercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  & .k-nav-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    background: var(--paper);
+    color: var(--ink);
+    mix-blend-mode: normal;
+    padding: 96px calc(2 / 24 * 100%) 48px;
+    overflow-y: auto;
+    pointer-events: auto;
+  }
+  & .k-nav-overlay > ul {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 22px;
+  }
+  & .k-nav-overlay-group > span {
+    display: block;
+    margin-bottom: 12px;
+  }
+  & .k-nav-overlay-group > ul {
+    margin-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-transform: lowercase;
+    font-size: 16px;
+    color: var(--ink-70);
+  }
+
+  /* ─── Tiny postcard hero (top right) ─── */
+  & .k-tiny-hero {
+    position: absolute;
+    top: 36px;
+    right: calc(2 / 24 * 100%);
+    width: 92px;
+    z-index: 5;
+  }
+  & .k-tiny-hero img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+
+  /* ─── Page wordmark, dead center, just below the chrome ─── */
+  & .k-wordmark {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    margin-top: 150px;
+    font-family: var(--sans);
+    font-weight: 400;
+    font-size: 18px;
+    letter-spacing: 0.5em;
+    text-indent: 0.5em; /* visually balance the wide tracking */
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  /* ─── Italic intro paragraph, narrow column on the left ─── */
+  & .k-intro {
+    margin-top: 110px;
+    margin-left: calc(2 / 24 * 100%);
+    width: calc(6 / 24 * 100%);
+    min-width: 260px;
+  }
+  & .k-intro p {
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  & .k-intro em {
+    font-size: 1.05em;
+  }
+
+  /* ─── Gallery: absolutely-positioned plates ─── */
+  & .k-gallery {
+    position: relative;
+    margin-top: 120px;
+    width: 100%;
+  }
+  & .k-plate {
+    position: absolute;
+    transform: translateX(-50%);
+  }
+  & .k-plate img {
+    width: 100%;
+    height: auto;
+    background: var(--paper-2);
+  }
+
+  /* ─── Inline CTA — short paragraphs, narrow left column ─── */
+  & .k-cta {
+    margin-top: 220px;
+    margin-left: calc(2 / 24 * 100%);
+    width: calc(8 / 24 * 100%);
+    min-width: 280px;
+  }
+  & .k-cta p {
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 18px;
+  }
+  & .k-cta a {
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 1px;
+  }
+
+  /* ─── (explore) row: parenthetical label + 4 small cards ─── */
+  & .k-explore {
+    margin-top: 220px;
+    padding: 0 calc(2 / 24 * 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 14px;
+  }
+  & .k-explore-label {
+    font-family: var(--sans);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--ink-50);
+  }
+  & .k-explore-row {
+    display: flex;
+    gap: 8px;
+  }
+  & .k-explore-card {
+    width: 78px;
+    flex: none;
+  }
+  & .k-explore-card img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    background: var(--paper-2);
+  }
+
+  /* ─── Footer ─── */
+  & .k-footer {
+    margin-top: 160px;
+    padding: 0 calc(2 / 24 * 100%) 60px;
+    font-family: var(--sans);
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--ink);
+  }
+  & .k-footer-row {
+    display: grid;
+    grid-template-columns: calc(3 / 22 * 100%) calc(7 / 22 * 100%) calc(7 / 22 * 100%);
+    gap: 0 calc(1 / 22 * 100%);
+    margin-bottom: 60px;
+  }
+  & .k-footer-col {
+    font-size: 12px;
+  }
+  & .k-footer-col p {
+    margin-bottom: 6px;
+  }
+  & .k-footer-col ul li {
+    margin-bottom: 3px;
+    text-transform: lowercase;
+  }
+  & .k-footer-label {
+    font-style: normal;
+    color: var(--ink-50);
+    margin-bottom: 10px !important;
+  }
+  & .k-link-underlined {
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 1px;
+  }
+  & .k-footer-credits {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    align-items: end;
+    border-top: 1px solid var(--ink-15);
+    padding-top: 28px;
+    font-size: 11px;
+    color: var(--ink-70);
+  }
+  & .k-footer-credits-col p {
+    margin-bottom: 4px;
+  }
+  & .k-footer-credits-col em {
+    font-size: 1em;
+  }
+  & .k-footer-credits-col:nth-child(2) {
+    text-align: center;
+  }
+  & .k-footer-credits-col:nth-child(3) {
+    text-align: right;
+  }
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 880px) {
+  .k-shell .k-nav-row { display: none; }
+  .k-shell .k-nav { padding-top: 28px; }
+  .k-shell .k-nav-toggle {
+    display: inline-block;
+    position: fixed;
+    top: 28px;
+    right: calc(2 / 24 * 100%);
+    z-index: 21;
+    color: var(--ink);
+    font-size: 14px;
+    mix-blend-mode: normal;
+  }
+  .k-shell .k-tiny-hero {
+    top: 28px;
+    right: calc(2 / 24 * 100%);
+    width: 60px;
+    display: none;        /* hides the tiny postcard since the toggle now lives there */
+  }
+  .k-shell .k-wordmark {
+    margin-top: 90px;
+    font-size: 14px;
+    letter-spacing: 0.4em;
+  }
+  .k-shell .k-intro {
+    margin-top: 70px;
+    margin-left: calc(2 / 24 * 100%);
+    width: calc(20 / 24 * 100%);
+    min-width: 0;
+  }
+  .k-shell .k-gallery {
+    margin-top: 70px;
+  }
+  .k-shell .k-cta {
+    margin-top: 140px;
+    width: calc(20 / 24 * 100%);
+  }
+  .k-shell .k-explore {
+    margin-top: 140px;
+  }
+  .k-shell .k-footer {
+    margin-top: 100px;
+  }
+  .k-shell .k-footer-row {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .k-shell .k-footer-credits {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    text-align: left;
+  }
+  .k-shell .k-footer-credits-col:nth-child(2),
+  .k-shell .k-footer-credits-col:nth-child(3) {
+    text-align: left;
+  }
+}
