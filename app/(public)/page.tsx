@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { PortfolioNav } from "./portfolio-nav";
 import { ScrollReveal } from "./scroll-reveal";
+import { ScrollState } from "./scroll-state";
 import "./portfolio.css";
 
 // Webfonts replacing the system fallback. Body uses Inter Tight at a
@@ -102,8 +103,15 @@ export default function HomePage() {
         <img src={HERO_IMAGE} alt="" />
       </figure>
 
-      {/* Page wordmark, dead center, just below the chrome */}
-      <h1 className="k-wordmark">KOKAIJI</h1>
+      {/* Full-viewport hero: only the wordmark + a scroll cue. The nav
+          stays hidden until ScrollState flips .is-scrolled on the shell. */}
+      <section className="k-hero">
+        <h1 className="k-wordmark">KOKAIJI</h1>
+        <div className="k-scroll-cue" aria-hidden="true">
+          <span className="label">scroll</span>
+          <span className="line" />
+        </div>
+      </section>
 
       {/* Italic intro paragraph, narrow column, sits to the left */}
       <section className="k-intro">
@@ -224,6 +232,7 @@ export default function HomePage() {
       </footer>
 
       <ScrollReveal />
+      <ScrollState />
     </div>
   );
 }
