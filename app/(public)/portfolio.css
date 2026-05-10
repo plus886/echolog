@@ -76,6 +76,18 @@
     line-height: 1;
   }
 
+  /* Scroll-triggered fade-in. Pure opacity transition (no transform)
+     so that elements with their own transforms (.k-plate uses
+     translateX(-50%)) don't get clobbered. ScrollReveal flips the
+     .is-revealed class once an element first crosses into view. */
+  & [data-reveal] {
+    opacity: 0;
+    transition: opacity 1.4s ease-out;
+  }
+  & [data-reveal].is-revealed {
+    opacity: 1;
+  }
+
   /* ─── Top navigation (fixed, mix-blend-mode chrome) ─── */
   & .k-nav {
     position: fixed;
@@ -436,6 +448,13 @@
 }
 
 /* ─── Responsive ─── */
+@media (prefers-reduced-motion: reduce) {
+  .k-shell [data-reveal] {
+    opacity: 1;
+    transition: none;
+  }
+}
+
 @media (max-width: 880px) {
   .k-shell .k-nav-row { display: none; }
   .k-shell .k-nav { padding-top: 28px; }

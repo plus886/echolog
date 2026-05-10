@@ -2,6 +2,7 @@ import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
 import Link from "next/link";
 
 import { PortfolioNav } from "./portfolio-nav";
+import { ScrollReveal } from "./scroll-reveal";
 import "./portfolio.css";
 
 // Webfonts replacing the system fallback. Body uses Inter Tight at a
@@ -120,6 +121,7 @@ export default function HomePage() {
           <figure
             key={plate.src}
             className="k-plate"
+            data-reveal
             style={{
               left: plate.left,
               top: plate.top,
@@ -137,20 +139,20 @@ export default function HomePage() {
       </section>
 
       {/* Inline CTA — short paragraph, narrow column on the left */}
-      <section id="about" className="k-cta">
+      <section id="about" className="k-cta" data-reveal>
         <p>
-          Eager to create artist reading photography? I&apos;d love to hear
-          from you &mdash; visit my <Link href="#contact">contact page</Link>
-          {" "}to reach out.
+          If a project is brewing on your end and you think the way I see
+          might suit it, send a note via the{" "}
+          <Link href="#contact">contact page</Link>.
         </p>
         <p>
-          For a more spontaneous exploration, head over to my{" "}
-          <Link href="#portfolio">portfolio</Link>.
+          For something more wandering, the long{" "}
+          <Link href="#portfolio">portfolio</Link> is upstairs.
         </p>
       </section>
 
       {/* (explore) — small parenthetical label + 4 tiny teaser cards */}
-      <section className="k-explore">
+      <section className="k-explore" data-reveal>
         <p className="k-explore-label">(explore)</p>
         <div className="k-explore-row">
           {EXPLORE.map((src, i) => (
@@ -163,7 +165,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer — 4 columns of links + credits row at the bottom */}
-      <footer id="contact" className="k-footer">
+      <footer id="contact" className="k-footer" data-reveal>
         <div className="k-footer-row">
           <div className="k-footer-col">
             <p className="k-footer-label">(menu)</p>
@@ -220,6 +222,8 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      <ScrollReveal />
     </div>
   );
 }
