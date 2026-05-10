@@ -23,12 +23,16 @@
   --ink-15: rgba(56, 56, 56, 0.15);
   --grey-light: #cecece;
 
-  /* next/font CSS vars come from page.tsx; system fallbacks chain after */
-  --serif: var(--k-font-serif), ui-serif, "Iowan Old Style",
-    "Times New Roman", "YuMincho", "Hiragino Mincho ProN", serif;
-  --sans: var(--k-font-sans), "Helvetica Neue", "HelveticaNeue",
-    Helvetica, Arial, "Hiragino Kaku Gothic ProN",
-    "Hiragino Sans", sans-serif;
+  /* Serif: FOT 筑紫Cオールド明朝 Pr6N R loaded via FontPlus
+     (script in app/layout.tsx). Cormorant Garamond italic and the
+     system serif chain stay as fallbacks during the FontPlus fetch. */
+  --serif:
+    "FOT-筑紫Cオールド明朝 Pr6N R", var(--k-font-serif), ui-serif,
+    "Iowan Old Style", "Times New Roman", "YuMincho", "Hiragino Mincho ProN",
+    serif;
+  --sans:
+    var(--k-font-sans), "Helvetica Neue", "HelveticaNeue", Helvetica, Arial,
+    "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
 
   background: var(--paper);
   color: var(--ink);
@@ -70,10 +74,10 @@
   /* The em element is the only italic. It swaps to a display serif
      at thin weight — the visual the rest of the page is set against. */
   & em {
-    font-family: var(--serif);
-    font-style: italic;
-    font-weight: 300;
-    line-height: 1;
+    /* font-family: var(--serif); */
+    font-style: normal;
+    /* font-weight: 300;
+    line-height: 1; */
   }
 
   /* Scroll-triggered fade-in. Pure opacity transition (no transform)
@@ -232,13 +236,17 @@
     gap: 6px;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 300ms ease, visibility 0s linear 300ms;
+    transition:
+      opacity 300ms ease,
+      visibility 0s linear 300ms;
   }
   & .k-nav-dropdown:hover .k-nav-sub,
   & .k-nav-dropdown:focus-within .k-nav-sub {
     opacity: 1;
     visibility: visible;
-    transition: opacity 300ms ease, visibility 0s;
+    transition:
+      opacity 300ms ease,
+      visibility 0s;
   }
 
   & .k-nav-toggle {
@@ -317,8 +325,8 @@
     text-align: center;
     font-family: var(--sans);
     font-weight: 400;
-    font-size: clamp(24px, 2.4vw, 32px);
-    letter-spacing: 0.55em;
+    font-size: clamp(12px, 1.2vw, 18px);
+    letter-spacing: 1.55em;
     text-indent: 0.55em; /* visually balance the wide tracking */
     text-transform: uppercase;
     color: var(--ink);
@@ -362,17 +370,19 @@
   & .k-intro {
     margin-top: 40px;
     margin-left: calc(2 / 24 * 100%);
-    width: calc(6 / 24 * 100%);
+    width: calc(10 / 24 * 100%);
     min-width: 260px;
   }
   & .k-intro p {
-    font-family: var(--sans);
-    font-size: 13px;
-    line-height: 1.6;
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.8;
     color: var(--ink);
+    letter-spacing: 0.1rem;
   }
   & .k-intro em {
     font-size: 1.05em;
+    font-weight: 600;
   }
 
   /* ─── Gallery: absolutely-positioned plates ─── */
@@ -450,7 +460,9 @@
   }
   & .k-footer-row {
     display: grid;
-    grid-template-columns: calc(3 / 22 * 100%) calc(7 / 22 * 100%) calc(7 / 22 * 100%);
+    grid-template-columns: calc(3 / 22 * 100%) calc(7 / 22 * 100%) calc(
+        7 / 22 * 100%
+      );
     gap: 0 calc(1 / 22 * 100%);
     margin-bottom: 60px;
   }
@@ -523,8 +535,12 @@
 }
 
 @media (max-width: 880px) {
-  .k-shell .k-nav-row { display: none; }
-  .k-shell .k-nav { padding-top: 28px; }
+  .k-shell .k-nav-row {
+    display: none;
+  }
+  .k-shell .k-nav {
+    padding-top: 28px;
+  }
   .k-shell .k-nav-toggle {
     display: inline-block;
     position: fixed;
@@ -539,7 +555,7 @@
     top: 28px;
     right: calc(2 / 24 * 100%);
     width: 60px;
-    display: none;        /* hides the tiny postcard since the toggle now lives there */
+    display: none; /* hides the tiny postcard since the toggle now lives there */
   }
   .k-shell .k-hero {
     min-height: 480px;
