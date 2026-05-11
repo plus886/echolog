@@ -155,9 +155,11 @@
   display: inline-block;
 }
 .k-shell .k-nav-char.is-rippling {
-  animation: k-nav-ripple 700ms ease-out var(--ripple-delay, 0ms) both;
+  animation: k-ripple-dip 700ms ease-out var(--ripple-delay, 0ms) both;
 }
-@keyframes k-nav-ripple {
+/* nav の per-char ripple と gallery の hover dip で共有する波形。
+   opacity 1 → 0.2 → 1 の一往復。 */
+@keyframes k-ripple-dip {
   0%,
   100% {
     opacity: 1;
@@ -187,14 +189,17 @@
        カバレッジ的にも演出的にも合わない)。*/
 .k-shell [data-reveal] {
   opacity: 0;
-  filter: blur(8px);
+  /* sepia(0) を予め関数リストに含めておくことで、後段の :has() hover で
+     sepia(0.8) に値だけ変える transition が同じ関数列の補間として
+     滑らかに動く (関数の数が違うと CSS は補間できず snap になる)。*/
+  filter: blur(8px) sepia(0);
   transition:
     opacity 1.4s ease-out,
     filter 1s ease-out;
 }
 .k-shell [data-reveal].is-revealed {
   opacity: 1;
-  filter: blur(0);
+  filter: blur(0) sepia(0);
 }
 
 /* gallery items: radial-gradient mask を中央から拡張することで、円形に
@@ -275,6 +280,25 @@
   writing-mode: vertical-rl;
   font-feature-settings: initial;
   height: 100%;
+}
+
+/* Gallery 内アイテムの hover focus。:has() で「ホバー中の兄弟がある」状態
+   を検知し、ホバー対象 *以外* (= :not(:hover)) を opacity 0.3 にし、写真
+   はさらに sepia 0.8 を重ねる。ホバー対象自体は無変化で残り、相対的に
+   フォーカスされたように見える。hover-in は専用の 400ms transition で
+   素早く、hover-out は基底 reveal の 1.4s でゆっくり戻る。*/
+.k-shell #portfolio:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
+  figure[data-reveal]:not(:hover) {
+  opacity: 0.3;
+  filter: blur(0) sepia(0.8);
+  transition:
+    opacity 400ms ease-out,
+    filter 400ms ease-out;
+}
+.k-shell #portfolio:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
+  .k-quote-wrap:not(:hover) {
+  opacity: 0.3;
+  transition: opacity 400ms ease-out;
 }
 
 /* ─── prefers-reduced-motion: kill every transition / keyframe */
