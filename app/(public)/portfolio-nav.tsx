@@ -3,18 +3,45 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-// Helper: each visible label is duplicated as two stacked spans so the
-// hover handler in CSS can slide the original up out of frame and the
-// clone into frame from below — vertical "flip" effect.
+// Each visible character is wrapped in its own .k-nav-char span so the
+// ripple handler can drive their opacity individually.
 function NavLabel({ children }: { children: string }) {
   return (
-    <span className="k-nav-text" aria-hidden="true">
-      <span className="before">{children}</span>
-      <span className="after">{children}</span>
-      <span className="visually-hidden">{children}</span>
+    <span className="k-nav-text">
+      {[...children].map((ch, i) => (
+        <span key={i} className="k-nav-char">
+          {ch === " " ? " " : ch}
+        </span>
+      ))}
     </span>
   );
 }
+
+// Per-link ripple: from the entry point (mouseenter clientX or the
+// focused link's left edge) compute each character's distance and use
+// it as an animation-delay so the opacity dip spreads outward from the
+// touched character to the ends of the label.
+function dispatchRipple(link: HTMLElement, originX: number) {
+  const chars = link.querySelectorAll<HTMLElement>(".k-nav-char");
+  chars.forEach((c) => {
+    const r = c.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const d = Math.abs(cx - originX);
+    c.style.setProperty("--ripple-delay", `${d * 5}ms`);
+    c.classList.remove("is-rippling");
+    // Force reflow so the animation restarts from frame 0.
+    void c.offsetWidth;
+    c.classList.add("is-rippling");
+  });
+}
+
+const onEnter = (e: React.MouseEvent<HTMLElement>) => {
+  dispatchRipple(e.currentTarget, e.clientX);
+};
+const onFocus = (e: React.FocusEvent<HTMLElement>) => {
+  const r = e.currentTarget.getBoundingClientRect();
+  dispatchRipple(e.currentTarget, r.left);
+};
 
 // Top nav skeleton:
 //  - 5 slots distributed across a 24-column grid (brand · portfolio ·
@@ -22,9 +49,8 @@ function NavLabel({ children }: { children: string }) {
 //  - mix-blend-difference so chrome stays legible against any background
 //  - Below 880px the row collapses to a (menu) / (close) toggle that
 //    opens a full-bleed overlay
-//  - .k-nav-* class hooks remain so portfolio.css can drive the
-//    slide-up label animation, the underline draw, and the parent-state
-//    show/hide cascade from .k-shell.is-scrolled
+//  - Hovering a label triggers a per-character opacity ripple that
+//    emanates from the cursor's entry point through that label only.
 export function PortfolioNav() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -50,17 +76,32 @@ export function PortfolioNav() {
     <header className="k-nav pointer-events-none fixed inset-x-0 top-0 z-20 mix-blend-difference px-col-1 pt-9 text-(--grey-light)">
       <ul className="k-nav-row pointer-events-auto hidden items-baseline text-[12px] font-normal uppercase tracking-[0.1em] min-[880px]:flex">
         <li className="k-nav-brand col-5 tracking-[0.16em]">
-          <Link href="/" className="k-nav-link">
+          <Link
+            href="/"
+            className="k-nav-link"
+            onMouseEnter={onEnter}
+            onFocus={onFocus}
+          >
             <NavLabel>Ko Kaiji</NavLabel>
           </Link>
         </li>
         <li className="col-4">
-          <Link href="#portfolio" className="k-nav-link">
+          <Link
+            href="#portfolio"
+            className="k-nav-link"
+            onMouseEnter={onEnter}
+            onFocus={onFocus}
+          >
             <NavLabel>Portfolio</NavLabel>
           </Link>
         </li>
         <li className="k-nav-dropdown col-8 relative">
-          <span className="k-nav-link k-nav-trigger">
+          <span
+            className="k-nav-link k-nav-trigger"
+            onMouseEnter={onEnter}
+            tabIndex={0}
+            onFocus={onFocus}
+          >
             <NavLabel>Information</NavLabel>
           </span>
           <ul className="k-nav-sub absolute left-1/5 top-full mt-3 flex flex-col gap-1.5 text-[12px] tracking-[0.04em] lowercase">
@@ -73,12 +114,22 @@ export function PortfolioNav() {
           </ul>
         </li>
         <li className="col-3 ml-auto">
-          <Link href="#about" className="k-nav-link">
+          <Link
+            href="#about"
+            className="k-nav-link"
+            onMouseEnter={onEnter}
+            onFocus={onFocus}
+          >
             <NavLabel>About</NavLabel>
           </Link>
         </li>
         <li className="k-nav-end col-2 text-right">
-          <Link href="#contact" className="k-nav-link">
+          <Link
+            href="#contact"
+            className="k-nav-link"
+            onMouseEnter={onEnter}
+            onFocus={onFocus}
+          >
             <NavLabel>Contact</NavLabel>
           </Link>
         </li>

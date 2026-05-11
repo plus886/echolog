@@ -48,10 +48,9 @@
 /* The user has em set to non-italic, sans-stack — leave the
    font-family override commented out so it can be re-enabled later. */
 .k-shell em {
-  /* font-family: var(--serif); */
-  font-style: normal;
-  /* font-weight: 300;
-  line-height: 1; */
+  font-family: var(--serif);
+  font-weight: 300;
+  line-height: 1;
 }
 
 /* ─── 24-column grid helpers (Tailwind has no built-in N/24 utilities) */
@@ -127,62 +126,28 @@
   opacity: 0;
 }
 
-/* ─── Nav slide-up: each label is two stacked .before/.after spans;
-       on hover the original slides up out of frame and the clone in. */
+/* ─── Nav hover ripple: per-character opacity dip on the hovered label
+       only. portfolio-nav.tsx sets --ripple-delay on each .k-nav-char
+       based on its horizontal distance from the cursor's entry point,
+       producing a wave that emanates outward through the label. */
 .k-shell .k-nav-text {
-  position: relative;
   display: inline-block;
-  overflow: hidden;
-  height: 1.1em;
   line-height: 1.1;
 }
-.k-shell .k-nav-text .before,
-.k-shell .k-nav-text .after {
-  display: block;
-  color: var(--grey-light);
-  transition: transform 420ms ease-out;
-  will-change: transform;
-}
-.k-shell .k-nav-text .after {
-  position: absolute;
-  inset: 0;
-  transform: translateY(105%);
-}
-.k-shell .k-nav-link:hover .k-nav-text .before,
-.k-shell .k-nav-link:focus-visible .k-nav-text .before,
-.k-shell .k-nav-dropdown:hover .k-nav-trigger .k-nav-text .before {
-  transform: translateY(-105%);
-}
-.k-shell .k-nav-link:hover .k-nav-text .after,
-.k-shell .k-nav-link:focus-visible .k-nav-text .after,
-.k-shell .k-nav-dropdown:hover .k-nav-trigger .k-nav-text .after {
-  transform: translateY(0);
-}
-/* Animated underline that draws left → right on hover */
-.k-shell .k-nav-link {
-  position: relative;
+.k-shell .k-nav-char {
   display: inline-block;
-  overflow: hidden;
-  color: transparent;
-  line-height: 1.1;
-  padding-bottom: 1px;
 }
-.k-shell .k-nav-link::after {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  height: 1px;
-  background: var(--grey-light);
-  transform: scaleX(0);
-  transform-origin: right center;
-  transition: transform 480ms ease-out;
+.k-shell .k-nav-char.is-rippling {
+  animation: k-nav-ripple 700ms ease-out var(--ripple-delay, 0ms) both;
 }
-.k-shell .k-nav-link:hover::after,
-.k-shell .k-nav-link:focus-visible::after,
-.k-shell .k-nav-dropdown:hover .k-nav-trigger::after {
-  transform: scaleX(1);
-  transform-origin: left center;
+@keyframes k-nav-ripple {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
 }
 
 /* Dropdown submenu (Information → Series / Editions) */
@@ -228,13 +193,11 @@
 @media (prefers-reduced-motion: reduce) {
   .k-shell .k-nav,
   .k-shell .k-scroll-cue,
-  .k-shell [data-reveal],
-  .k-shell .k-nav-text .before,
-  .k-shell .k-nav-text .after,
-  .k-shell .k-nav-link::after {
+  .k-shell [data-reveal] {
     transition: none;
   }
-  .k-shell .animate-scroll-cue {
+  .k-shell .animate-scroll-cue,
+  .k-shell .k-nav-char.is-rippling {
     animation: none;
   }
   .k-shell [data-reveal] {
