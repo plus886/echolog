@@ -180,13 +180,91 @@
   border: 0;
 }
 
-/* ─── Reveal-on-scroll: .is-revealed class flipped by ScrollReveal */
+/* ─── Reveal-on-scroll: .is-revealed class flipped by ScrollReveal.
+       全 [data-reveal] には opacity + blur を、ギャラリー要素 (figure と
+       .k-quote) には追加で clip-path の circle 広がりエフェクトを重ねる。
+       clip-path を section 全体には当てない (大きすぎる要素では
+       カバレッジ的にも演出的にも合わない)。*/
 .k-shell [data-reveal] {
   opacity: 0;
-  transition: opacity 1.4s ease-out;
+  filter: blur(8px);
+  transition:
+    opacity 1.4s ease-out,
+    filter 1s ease-out;
 }
 .k-shell [data-reveal].is-revealed {
   opacity: 1;
+  filter: blur(0);
+}
+
+/* gallery items: radial-gradient mask を中央から拡張することで、円形に
+   可視領域が広がりつつ「境界がグラデーション fade」になる。これにより
+   blur によって矩形エッジで生じる『もやっとしたフリンジ』がそのまま透明
+   へ溶け込んで隠れる。最終的に mask-size が要素を大きく超える 300% に
+   達した時点で、solid black 帯が要素全体を覆い、鮮明な写真本体が見える。
+   ScrollReveal が .is-revealed を付与した瞬間に animation が forwards で
+   走り、その時点の状態 (mask: 30%) から完全可視 (mask: 300%) へ。 */
+.k-shell figure[data-reveal],
+.k-shell .k-quote[data-reveal] {
+  -webkit-mask-image: radial-gradient(ellipse, black 50%, transparent 90%);
+  mask-image: radial-gradient(ellipse, black 50%, transparent 90%);
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 60% 60%;
+  mask-size: 60% 60%;
+}
+@keyframes k-gallery-mask {
+  from {
+    -webkit-mask-size: 60% 60%;
+    mask-size: 60% 60%;
+  }
+  to {
+    -webkit-mask-size: 300% 300%;
+    mask-size: 300% 300%;
+  }
+}
+.k-shell figure[data-reveal].is-revealed,
+.k-shell .k-quote[data-reveal].is-revealed {
+  animation: k-gallery-mask 1s ease-out forwards;
+}
+
+/* Gallery slot 共通: left は runtime に CSS clamp() で評価して、左右端から
+   --side-margin (px) を必ず空ける一方で、広い viewport では --ideal-left
+   (%) の peripheral 位置をそのまま使う。--w は要素自身の幅 (px)。 */
+.k-shell .k-pos {
+  --side-margin: 60px;
+  left: clamp(
+    calc(var(--side-margin) + var(--w, 0px) / 2),
+    calc(var(--ideal-left, 50) * 1%),
+    calc(100% - var(--side-margin) - var(--w, 0px) / 2)
+  );
+}
+
+/* Gallery 内の quote ラッパー。横方向のセンタリングと、GalleryParallax が
+   駆動する縦方向のパララックス (--k-parallax-y) を一つの transform に乗せる。
+   parallax は scroll 中に毎フレーム更新されるので transition は付けない。*/
+.k-shell .k-quote-wrap {
+  position: absolute;
+  margin: 0;
+  transform: translateX(-50%) translateY(calc(var(--k-parallax-y, 0) * 1px));
+  will-change: transform;
+}
+
+/* quote 本文側は ScrollReveal の opacity に加えて、少し下から浮き上がる
+   translateY を重ねる ("ふわっと浮き上がる")。これは wrap の parallax と
+   別レイヤーなので、reveal の 1.4s transition と parallax の毎フレーム
+   更新が干渉しない。*/
+.k-shell .k-quote[data-reveal] {
+  transform: translateY(14px);
+  transition:
+    opacity 1.4s ease-out,
+    transform 1.4s ease-out,
+    filter 1.4s ease-out;
+}
+.k-shell .k-quote[data-reveal].is-revealed {
+  transform: translateY(0);
 }
 
 /* ─── prefers-reduced-motion: kill every transition / keyframe */
@@ -202,5 +280,18 @@
   }
   .k-shell [data-reveal] {
     opacity: 1;
+    filter: none;
+  }
+  .k-shell figure[data-reveal],
+  .k-shell .k-quote[data-reveal] {
+    -webkit-mask-image: none;
+    mask-image: none;
+    animation: none;
+  }
+  .k-shell .k-quote[data-reveal] {
+    transform: none;
+  }
+  .k-shell .k-quote-wrap {
+    transform: translateX(-50%);
   }
 }

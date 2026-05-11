@@ -1,10 +1,13 @@
 import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
 import Link from "next/link";
 
-import { generatePlateLayout } from "@/lib/gallery-layout";
+import { composeGalleryItems } from "@/lib/gallery-compose";
+import { generateGalleryLayout, type LayoutItem } from "@/lib/gallery-layout";
+import { MOCK_TWEETS } from "@/lib/gallery-mock-tweets";
 import { loadGalleryDays } from "@/lib/microcms";
 import type { Day } from "@/types/microcms";
 
+import { GalleryParallax } from "./gallery-parallax";
 import { PortfolioNav } from "./portfolio-nav";
 import { ScrollReveal } from "./scroll-reveal";
 import { ScrollWordmark } from "./scroll-wordmark";
@@ -56,12 +59,19 @@ export default async function HomePage() {
   } catch (err) {
     console.error("[home] loadGalleryDays failed", err);
   }
-  const { plates, totalHeight } = generatePlateLayout(
-    days.map((d) => ({
-      width: d.image.width ?? 0,
-      height: d.image.height ?? 0,
-    })),
+  const items = composeGalleryItems(days, MOCK_TWEETS);
+  const layoutItems: LayoutItem[] = items.map((it) =>
+    it.kind === "photo"
+      ? {
+          kind: "photo",
+          image: {
+            width: it.day.image.width ?? 0,
+            height: it.day.image.height ?? 0,
+          },
+        }
+      : { kind: "quote", chars: it.text.length },
   );
+  const { slots, totalHeight } = generateGalleryLayout(layoutItems);
 
   return (
     <div className={shellClass}>
@@ -120,38 +130,64 @@ export default async function HomePage() {
         </p>
       </section>
 
-      {/* Gallery — up to 50 plates from microCMS /days, each absolutely
-          positioned at generatePlateLayout()-derived coordinates and
-          revealed progressively via [data-reveal] + ScrollReveal. */}
-      {days.length > 0 && (
+      {/* Gallery — microCMS /days と (今はモックの) tweet 引用が混ざった
+          スクロール面。各 slot は generateGalleryLayout() で絶対座標化され、
+          ScrollReveal の [data-reveal] で順次フェードイン。*/}
+      {items.length > 0 && (
         <section
           id="portfolio"
           className="relative mt-16 w-full min-[880px]:mt-30"
           style={{ height: totalHeight }}
         >
-          {days.map((day, i) => {
-            const plate = plates[i];
-            if (!plate) return null;
+          {items.map((item, i) => {
+            const slot = slots[i];
+            if (!slot) return null;
+            if (item.kind === "photo") {
+              return (
+                <figure
+                  key={item.day.id}
+                  data-reveal
+                  className="k-pos absolute m-0 -translate-x-1/2 bg-(--paper-2)"
+                  style={
+                    {
+                      "--w": `${slot.w}px`,
+                      "--ideal-left": slot.leftPct,
+                      top: slot.top,
+                      width: slot.w,
+                      height: slot.h,
+                    } as React.CSSProperties
+                  }
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`${item.day.image.url}?w=400`}
+                    alt={item.day.date ?? ""}
+                    loading="lazy"
+                    className="block h-full w-full object-cover"
+                  />
+                </figure>
+              );
+            }
             return (
-              <figure
-                key={day.id}
-                data-reveal
-                className="absolute m-0 -translate-x-1/2 bg-(--paper-2)"
-                style={{
-                  left: plate.left,
-                  top: plate.top,
-                  width: plate.w,
-                  height: plate.h,
-                }}
+              <div
+                key={`q-${i}`}
+                className="k-quote-wrap k-pos"
+                style={
+                  {
+                    "--w": `${slot.w}px`,
+                    "--ideal-left": slot.leftPct,
+                    top: slot.top,
+                    width: slot.w,
+                  } as React.CSSProperties
+                }
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`${day.image.url}?w=400`}
-                  alt={day.date ?? ""}
-                  loading="lazy"
-                  className="block h-full w-full object-cover"
-                />
-              </figure>
+                <blockquote
+                  data-reveal
+                  className="k-quote m-0 font-serif text-[14px] leading-[1.85] text-(--ink-70)"
+                >
+                  {item.text}
+                </blockquote>
+              </div>
             );
           })}
         </section>
@@ -296,6 +332,7 @@ export default async function HomePage() {
 
       <ScrollReveal />
       <ScrollWordmark />
+      <GalleryParallax />
     </div>
   );
 }
