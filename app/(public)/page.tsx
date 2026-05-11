@@ -2,7 +2,7 @@ import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
 import Link from "next/link";
 
 import { generatePlateLayout } from "@/lib/gallery-layout";
-import { listDays } from "@/lib/microcms";
+import { loadGalleryDays } from "@/lib/microcms";
 import type { Day } from "@/types/microcms";
 
 import { PortfolioNav } from "./portfolio-nav";
@@ -52,12 +52,16 @@ export default async function HomePage() {
 
   let days: Day[] = [];
   try {
-    const res = await listDays({ limit: 50, orders: "-date" });
-    days = res.contents;
+    days = await loadGalleryDays();
   } catch (err) {
-    console.error("[home] listDays failed", err);
+    console.error("[home] loadGalleryDays failed", err);
   }
-  const { plates, totalHeight } = generatePlateLayout(days.length);
+  const { plates, totalHeight } = generatePlateLayout(
+    days.map((d) => ({
+      width: d.image.width ?? 0,
+      height: d.image.height ?? 0,
+    })),
+  );
 
   return (
     <div className={shellClass}>
@@ -137,6 +141,7 @@ export default async function HomePage() {
                   left: plate.left,
                   top: plate.top,
                   width: plate.w,
+                  height: plate.h,
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -144,7 +149,7 @@ export default async function HomePage() {
                   src={`${day.image.url}?w=400`}
                   alt={day.date ?? ""}
                   loading="lazy"
-                  className="block h-auto w-full"
+                  className="block h-full w-full object-cover"
                 />
               </figure>
             );

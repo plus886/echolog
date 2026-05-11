@@ -102,3 +102,56 @@ export async function listDays(
   });
   return response as DayListResponse;
 }
+
+// Portfolio gallery 用：最新25件 + 全件からランダム25件 (重複なし) を
+// インタリーブして返す。ランダムは ISR revalidate ごとに更新。
+export async function loadGalleryDays(): Promise<Day[]> {
+  const LATEST_SIZE = 25;
+  const RANDOM_SIZE = 25;
+
+  const latestRes = await listDays({
+    limit: LATEST_SIZE,
+    orders: "-date",
+  });
+  const latest = latestRes.contents;
+  const total = latestRes.totalCount;
+  const restCount = Math.max(0, total - LATEST_SIZE);
+  if (restCount <= 0) return latest;
+
+  const sampleSize = Math.min(RANDOM_SIZE, restCount);
+  const offsets = pickUniqueOffsets(LATEST_SIZE, total, sampleSize);
+  const sampled = await Promise.all(
+    offsets.map((offset) =>
+      listDays({ limit: 1, offset, orders: "-date" })
+        .then((r) => r.contents[0])
+        .catch(() => undefined),
+    ),
+  );
+  const random = sampled.filter((d): d is Day => Boolean(d));
+  return interleave(latest, random);
+}
+
+function pickUniqueOffsets(
+  lo: number,
+  hiExclusive: number,
+  count: number,
+): number[] {
+  const pool = hiExclusive - lo;
+  const n = Math.min(count, pool);
+  const arr = Array.from({ length: pool }, (_, i) => lo + i);
+  for (let i = arr.length - 1; i > arr.length - 1 - n; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(arr.length - n);
+}
+
+function interleave<T>(a: T[], b: T[]): T[] {
+  const out: T[] = [];
+  const max = Math.max(a.length, b.length);
+  for (let i = 0; i < max; i++) {
+    if (i < a.length) out.push(a[i]);
+    if (i < b.length) out.push(b[i]);
+  }
+  return out;
+}
