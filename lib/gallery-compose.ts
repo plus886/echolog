@@ -1,8 +1,10 @@
 import type { Day } from "@/types/microcms";
 
+export type GalleryQuote = { id: string; text: string };
+
 export type GalleryItem =
   | { kind: "photo"; day: Day }
-  | { kind: "quote"; text: string };
+  | { kind: "quote"; id: string; text: string };
 
 // 写真リストと tweet リストを混ぜる。総スロット数を tweetCount 個のセグメントに
 // 分割し、各セグメント内で「端を避けた」位置を Math.random で1つ選んで quote を
@@ -10,7 +12,7 @@ export type GalleryItem =
 // (= 「写真をはさまずに quote が連続」を構造的に排除)。
 export function composeGalleryItems(
   days: Day[],
-  tweets: string[],
+  tweets: GalleryQuote[],
 ): GalleryItem[] {
   const tweetCount = days.length > 0 ? Math.min(tweets.length, 10) : 0;
   const total = days.length + tweetCount;
@@ -34,7 +36,8 @@ export function composeGalleryItems(
   let tweetIdx = 0;
   for (let i = 0; i < total; i++) {
     if (tweetPositions.has(i) && tweetIdx < tweetCount) {
-      items.push({ kind: "quote", text: tweets[tweetIdx++] });
+      const t = tweets[tweetIdx++];
+      items.push({ kind: "quote", id: t.id, text: t.text });
     } else if (dayIdx < days.length) {
       items.push({ kind: "photo", day: days[dayIdx++] });
     }

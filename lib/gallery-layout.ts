@@ -17,6 +17,8 @@ export type Slot = {
   top: number;
   w: number;
   h: number;
+  // true なら縦書き (writing-mode: vertical-rl)。photo / 横書き quote では undefined。
+  vertical?: boolean;
 };
 
 export type ImageDim = {
@@ -48,6 +50,16 @@ const QUOTE_WIDTH_MAX = 460;
 const QUOTE_CHAR_PX = 14;
 const QUOTE_LINE_HEIGHT = 26;
 const QUOTE_VPAD = 12;
+
+// 縦書き quote (writing-mode: vertical-rl)。高さを 220–300 で振り、本文の
+// 文字数から必要なカラム数を逆算して幅を決める。短文は縦書きにしない。
+const VERTICAL_CHANCE = 0.38;
+const QUOTE_V_HEIGHT_MIN = 220;
+const QUOTE_V_HEIGHT_MAX = 300;
+const QUOTE_V_CHAR_PX = 16; // 1文字あたりの縦方向占有 (= font-size)
+const QUOTE_V_COL_WIDTH = 30; // 1カラム幅 (= font-size × line-height)
+const QUOTE_V_PADDING = 10;
+const QUOTE_V_MIN_CHARS = 20;
 
 // 衝突判定は「サポートする最も狭い desktop viewport」を想定した座標空間で
 // 行う。そこで重ならなければ、CSS clamp() が広い viewport で peripheral を
@@ -81,6 +93,7 @@ export function generateGalleryLayout(
 
     let w: number;
     let h: number;
+    let vertical = false;
     if (item.kind === "photo") {
       const wide = rand() < WIDTH_WIDE_CHANCE;
       w = Math.round(
@@ -92,15 +105,27 @@ export function generateGalleryLayout(
       const aspect = img.width > 0 ? img.height / img.width : 1;
       h = Math.max(1, Math.round(w * aspect));
     } else {
-      // quote: 1 rand() しか消費しない (photo は wide 用に +1)。シーケンスを
-      // 揃えるため空消費はしない。これによりレイアウトは items 内の photo/
-      // quote 構成に応じて変化する。
-      w = Math.round(
-        QUOTE_WIDTH_MIN + rand() * (QUOTE_WIDTH_MAX - QUOTE_WIDTH_MIN),
-      );
-      const charsPerLine = Math.max(1, Math.floor(w / QUOTE_CHAR_PX));
-      const lines = Math.max(1, Math.ceil(item.chars / charsPerLine));
-      h = lines * QUOTE_LINE_HEIGHT + QUOTE_VPAD * 2;
+      // quote: rand() を 2 回消費する (向き判定 + 幅または高さ選択)。
+      vertical = item.chars >= QUOTE_V_MIN_CHARS && rand() < VERTICAL_CHANCE;
+      if (vertical) {
+        h = Math.round(
+          QUOTE_V_HEIGHT_MIN +
+            rand() * (QUOTE_V_HEIGHT_MAX - QUOTE_V_HEIGHT_MIN),
+        );
+        const charsPerCol = Math.max(
+          1,
+          Math.floor((h - 2 * QUOTE_V_PADDING) / QUOTE_V_CHAR_PX),
+        );
+        const cols = Math.max(1, Math.ceil(item.chars / charsPerCol));
+        w = cols * QUOTE_V_COL_WIDTH + 2 * QUOTE_V_PADDING;
+      } else {
+        w = Math.round(
+          QUOTE_WIDTH_MIN + rand() * (QUOTE_WIDTH_MAX - QUOTE_WIDTH_MIN),
+        );
+        const charsPerLine = Math.max(1, Math.floor(w / QUOTE_CHAR_PX));
+        const lines = Math.max(1, Math.ceil(item.chars / charsPerLine));
+        h = lines * QUOTE_LINE_HEIGHT + QUOTE_VPAD * 2;
+      }
     }
 
     // 衝突判定用の座標は「狭い viewport で clamp() が効いた後の位置」を
@@ -109,10 +134,7 @@ export function generateGalleryLayout(
     const halfWidthPct = (w / ASSUMED_CONTAINER_W) * 50;
     const minLeftPct = SAFE_MARGIN_PCT + halfWidthPct;
     const maxLeftPct = 100 - SAFE_MARGIN_PCT - halfWidthPct;
-    const clampedLeftPct = Math.max(
-      minLeftPct,
-      Math.min(maxLeftPct, leftPct),
-    );
+    const clampedLeftPct = Math.max(minLeftPct, Math.min(maxLeftPct, leftPct));
 
     const centerPx = (clampedLeftPct / 100) * ASSUMED_CONTAINER_W;
     const leftEdge = centerPx - w / 2;
@@ -141,7 +163,9 @@ export function generateGalleryLayout(
       }
     }
 
-    slots.push({ leftPct, top, w, h });
+    slots.push(
+      vertical ? { leftPct, top, w, h, vertical } : { leftPct, top, w, h },
+    );
 
     if (top + h > maxBottom) maxBottom = top + h;
 

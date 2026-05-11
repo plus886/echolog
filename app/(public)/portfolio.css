@@ -267,6 +267,16 @@
   transform: translateY(0);
 }
 
+/* 縦書きバリアント。palt などの和欧プロポーショナル設定が縦書きでは
+   不格好なので font-feature-settings を初期値に戻し、ベタ組みで表示する。
+   wrap の固定高さを blockquote が埋めることで、指定高さ内でテキストが
+   自動的に複数カラムへ折り返される。 */
+.k-shell .k-quote-v {
+  writing-mode: vertical-rl;
+  font-feature-settings: initial;
+  height: 100%;
+}
+
 /* ─── prefers-reduced-motion: kill every transition / keyframe */
 @media (prefers-reduced-motion: reduce) {
   .k-shell .k-nav,

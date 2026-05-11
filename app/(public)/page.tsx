@@ -1,10 +1,9 @@
 import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
 import Link from "next/link";
 
-import { composeGalleryItems } from "@/lib/gallery-compose";
+import { composeGalleryItems, type GalleryQuote } from "@/lib/gallery-compose";
 import { generateGalleryLayout, type LayoutItem } from "@/lib/gallery-layout";
-import { MOCK_TWEETS } from "@/lib/gallery-mock-tweets";
-import { loadGalleryDays } from "@/lib/microcms";
+import { listRootTweets, loadGalleryDays } from "@/lib/microcms";
 import type { Day } from "@/types/microcms";
 
 import { GalleryParallax } from "./gallery-parallax";
@@ -54,12 +53,27 @@ export default async function HomePage() {
   ].join(" ");
 
   let days: Day[] = [];
-  try {
-    days = await loadGalleryDays();
-  } catch (err) {
-    console.error("[home] loadGalleryDays failed", err);
+  let tweets: GalleryQuote[] = [];
+  const [daysResult, tweetsResult] = await Promise.allSettled([
+    loadGalleryDays(),
+    listRootTweets({ limit: 10, orders: "-publishedAt" }),
+  ]);
+  if (daysResult.status === "fulfilled") {
+    days = daysResult.value;
+  } else {
+    console.error("[home] loadGalleryDays failed", daysResult.reason);
   }
-  const items = composeGalleryItems(days, MOCK_TWEETS);
+  if (tweetsResult.status === "fulfilled") {
+    tweets = tweetsResult.value.contents
+      .filter((t): t is typeof t & { body: string } =>
+        Boolean(t.body && t.body.trim().length > 0),
+      )
+      .slice(0, 10)
+      .map((t) => ({ id: t.id, text: t.body }));
+  } else {
+    console.error("[home] listRootTweets failed", tweetsResult.reason);
+  }
+  const items = composeGalleryItems(days, tweets);
   const layoutItems: LayoutItem[] = items.map((it) =>
     it.kind === "photo"
       ? {
@@ -170,7 +184,7 @@ export default async function HomePage() {
             }
             return (
               <div
-                key={`q-${i}`}
+                key={`q-${item.id}`}
                 className="k-quote-wrap k-pos"
                 style={
                   {
@@ -178,12 +192,18 @@ export default async function HomePage() {
                     "--ideal-left": slot.leftPct,
                     top: slot.top,
                     width: slot.w,
+                    height: slot.h,
                   } as React.CSSProperties
                 }
               >
                 <blockquote
                   data-reveal
-                  className="k-quote m-0 font-serif text-[14px] leading-[1.85] text-(--ink-70)"
+                  className={[
+                    "k-quote m-0 font-serif text-[16px] leading-[1.85] text-(--ink-70)",
+                    slot.vertical && "k-quote-v",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 >
                   {item.text}
                 </blockquote>
