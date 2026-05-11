@@ -2,6 +2,8 @@ import { createClient, type MicroCMSQueries } from "microcms-js-sdk";
 
 import { env } from "@/lib/env";
 import type {
+  Day,
+  DayListResponse,
   Tweet,
   TweetFields,
   TweetListResponse,
@@ -12,7 +14,14 @@ const client = createClient({
   apiKey: env.MICROCMS_API_KEY,
 });
 
+// ポートフォリオの gallery 用：別ワークスペース formosa-chiaroscuro。
+const formosaClient = createClient({
+  serviceDomain: env.FORMOSA_MICROCMS_SERVICE_DOMAIN,
+  apiKey: env.FORMOSA_MICROCMS_API_KEY,
+});
+
 const TWEETS_ENDPOINT = "tweets";
+const DAYS_ENDPOINT = "days";
 const DEFAULT_REVALIDATE = 3600;
 
 const cachedRequestInit: RequestInit = {
@@ -81,4 +90,15 @@ function combineFilters(
   extra: string | undefined,
 ): string {
   return extra ? `${base}[and]${extra}` : base;
+}
+
+export async function listDays(
+  queries?: MicroCMSQueries,
+): Promise<DayListResponse> {
+  const response = await formosaClient.getList<Day>({
+    endpoint: DAYS_ENDPOINT,
+    queries: { limit: 50, orders: "-date", ...queries },
+    customRequestInit: cachedRequestInit,
+  });
+  return response as DayListResponse;
 }

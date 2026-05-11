@@ -1,10 +1,16 @@
 import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
 import Link from "next/link";
 
+import { generatePlateLayout } from "@/lib/gallery-layout";
+import { listDays } from "@/lib/microcms";
+import type { Day } from "@/types/microcms";
+
 import { PortfolioNav } from "./portfolio-nav";
 import { ScrollReveal } from "./scroll-reveal";
 import { ScrollWordmark } from "./scroll-wordmark";
 import "./portfolio.css";
+
+export const revalidate = 3600;
 
 // next/font: Inter Tight 400 for body / nav / footer; Cormorant Garamond
 // italic 300 sits behind the FontPlus-loaded FOT 筑紫 mincho as a fallback
@@ -26,185 +32,6 @@ const cormorant = Cormorant_Garamond({
   preload: false,
 });
 
-const HERO_IMAGE = "https://picsum.photos/seed/k-hero/420/520";
-
-// 28 plates scattered across the gallery surface; each carries its own
-// hand-positioned (left%, top px, width px) so the editor controls the
-// composition instead of a masonry algorithm.
-type Plate = { src: string; left: string; top: number; w: number };
-const PLATES: Plate[] = [
-  {
-    src: "https://picsum.photos/seed/k-01/600/780",
-    left: "70%",
-    top: 280,
-    w: 150,
-  },
-  {
-    src: "https://picsum.photos/seed/k-02/600/450",
-    left: "33%",
-    top: 460,
-    w: 180,
-  },
-  {
-    src: "https://picsum.photos/seed/k-03/600/780",
-    left: "78%",
-    top: 720,
-    w: 170,
-  },
-  {
-    src: "https://picsum.photos/seed/k-04/600/780",
-    left: "26%",
-    top: 980,
-    w: 160,
-  },
-  {
-    src: "https://picsum.photos/seed/k-05/600/780",
-    left: "55%",
-    top: 1180,
-    w: 145,
-  },
-  {
-    src: "https://picsum.photos/seed/k-06/600/450",
-    left: "10%",
-    top: 1380,
-    w: 195,
-  },
-  {
-    src: "https://picsum.photos/seed/k-07/600/780",
-    left: "76%",
-    top: 1500,
-    w: 130,
-  },
-  {
-    src: "https://picsum.photos/seed/k-08/600/780",
-    left: "44%",
-    top: 1720,
-    w: 175,
-  },
-  {
-    src: "https://picsum.photos/seed/k-09/600/780",
-    left: "82%",
-    top: 1960,
-    w: 155,
-  },
-  {
-    src: "https://picsum.photos/seed/k-10/600/780",
-    left: "18%",
-    top: 2120,
-    w: 165,
-  },
-  {
-    src: "https://picsum.photos/seed/k-11/600/450",
-    left: "60%",
-    top: 2300,
-    w: 200,
-  },
-  {
-    src: "https://picsum.photos/seed/k-12/600/780",
-    left: "30%",
-    top: 2520,
-    w: 140,
-  },
-  {
-    src: "https://picsum.photos/seed/k-13/600/780",
-    left: "78%",
-    top: 2700,
-    w: 170,
-  },
-  {
-    src: "https://picsum.photos/seed/k-14/600/780",
-    left: "10%",
-    top: 2900,
-    w: 160,
-  },
-  {
-    src: "https://picsum.photos/seed/k-15/600/450",
-    left: "48%",
-    top: 3060,
-    w: 200,
-  },
-  {
-    src: "https://picsum.photos/seed/k-16/600/780",
-    left: "76%",
-    top: 3260,
-    w: 145,
-  },
-  {
-    src: "https://picsum.photos/seed/k-17/600/780",
-    left: "26%",
-    top: 3420,
-    w: 175,
-  },
-  {
-    src: "https://picsum.photos/seed/k-18/600/780",
-    left: "55%",
-    top: 3640,
-    w: 155,
-  },
-  {
-    src: "https://picsum.photos/seed/k-19/600/450",
-    left: "12%",
-    top: 3820,
-    w: 190,
-  },
-  {
-    src: "https://picsum.photos/seed/k-20/600/780",
-    left: "70%",
-    top: 4000,
-    w: 165,
-  },
-  {
-    src: "https://picsum.photos/seed/k-21/600/780",
-    left: "33%",
-    top: 4180,
-    w: 145,
-  },
-  {
-    src: "https://picsum.photos/seed/k-22/600/780",
-    left: "82%",
-    top: 4380,
-    w: 155,
-  },
-  {
-    src: "https://picsum.photos/seed/k-23/600/780",
-    left: "18%",
-    top: 4560,
-    w: 170,
-  },
-  {
-    src: "https://picsum.photos/seed/k-24/600/450",
-    left: "50%",
-    top: 4740,
-    w: 200,
-  },
-  {
-    src: "https://picsum.photos/seed/k-25/600/780",
-    left: "76%",
-    top: 4940,
-    w: 145,
-  },
-  {
-    src: "https://picsum.photos/seed/k-26/600/780",
-    left: "30%",
-    top: 5120,
-    w: 160,
-  },
-  {
-    src: "https://picsum.photos/seed/k-27/600/780",
-    left: "10%",
-    top: 5320,
-    w: 175,
-  },
-  {
-    src: "https://picsum.photos/seed/k-28/600/780",
-    left: "60%",
-    top: 5500,
-    w: 150,
-  },
-];
-
-const GALLERY_HEIGHT = 5800;
-
 const EXPLORE = [
   "https://picsum.photos/seed/k-e1/420/520",
   "https://picsum.photos/seed/k-e2/420/520",
@@ -212,7 +39,7 @@ const EXPLORE = [
   "https://picsum.photos/seed/k-e4/420/520",
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
   // .k-shell carries: design-token CSS vars, body font-family, paper bg.
   // next/font CSS vars stack onto the same element so that var() chains
   // resolve. Most everything else is Tailwind utilities.
@@ -222,6 +49,15 @@ export default function HomePage() {
     cormorant.variable,
     "relative min-h-screen overflow-x-hidden text-[15px] leading-[1.45] antialiased",
   ].join(" ");
+
+  let days: Day[] = [];
+  try {
+    const res = await listDays({ limit: 50, orders: "-date" });
+    days = res.contents;
+  } catch (err) {
+    console.error("[home] listDays failed", err);
+  }
+  const { plates, totalHeight } = generatePlateLayout(days.length);
 
   return (
     <div className={shellClass}>
@@ -280,34 +116,41 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* Gallery — 28 plates, each absolutely positioned, fade in via
-          the [data-reveal] attribute + ScrollReveal. */}
-      <section
-        id="portfolio"
-        className="relative mt-16 w-full min-[880px]:mt-30"
-        style={{ height: GALLERY_HEIGHT }}
-      >
-        {PLATES.map((plate, i) => (
-          <figure
-            key={plate.src}
-            data-reveal
-            className="absolute m-0 -translate-x-1/2 bg-(--paper-2)"
-            style={{
-              left: plate.left,
-              top: plate.top,
-              width: plate.w,
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={plate.src}
-              alt={`Plate ${String(i + 1).padStart(2, "0")}`}
-              loading="lazy"
-              className="block h-auto w-full"
-            />
-          </figure>
-        ))}
-      </section>
+      {/* Gallery — up to 50 plates from microCMS /days, each absolutely
+          positioned at generatePlateLayout()-derived coordinates and
+          revealed progressively via [data-reveal] + ScrollReveal. */}
+      {days.length > 0 && (
+        <section
+          id="portfolio"
+          className="relative mt-16 w-full min-[880px]:mt-30"
+          style={{ height: totalHeight }}
+        >
+          {days.map((day, i) => {
+            const plate = plates[i];
+            if (!plate) return null;
+            return (
+              <figure
+                key={day.id}
+                data-reveal
+                className="absolute m-0 -translate-x-1/2 bg-(--paper-2)"
+                style={{
+                  left: plate.left,
+                  top: plate.top,
+                  width: plate.w,
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`${day.image.url}?w=400`}
+                  alt={day.date ?? ""}
+                  loading="lazy"
+                  className="block h-auto w-full"
+                />
+              </figure>
+            );
+          })}
+        </section>
+      )}
 
       {/* Inline CTA — short paragraph, narrow left column */}
       <section

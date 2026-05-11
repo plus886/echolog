@@ -35,7 +35,10 @@ export type Tweet = TweetFields & MicroCMSContentId & EchologDate;
 // 管理画面で扱う型。publishedAt が無い（=下書き）状態もありうる。
 export type AdminTweet = TweetFields & MicroCMSContentId & MicroCMSDate;
 
-export type TweetListResponse = Omit<MicroCMSListResponse<TweetFields>, "contents"> & {
+export type TweetListResponse = Omit<
+  MicroCMSListResponse<TweetFields>,
+  "contents"
+> & {
   contents: Tweet[];
 };
 
@@ -55,3 +58,29 @@ export function getRetweetKind(
   if (kind === "quote") return "quote";
   return null;
 }
+
+// ---- Portfolio gallery (formosa-chiaroscuro / days) ----
+
+export type DayCamera =
+  | "LEICA M11"
+  | "RICOH GRIII"
+  | "APPLE IPHONE 13 MINI"
+  | "APPLE IPHONE 17 PRO MAX";
+
+export type DayFields = {
+  image: MicroCMSImage;
+  date: string;
+  camera: [DayCamera] | [];
+  // lens は今後増減が予想されるので open enum
+  lens?: [string] | [];
+  featured?: boolean;
+};
+
+export type Day = DayFields & MicroCMSContentId & EchologDate;
+
+export type DayListResponse = Omit<
+  MicroCMSListResponse<DayFields>,
+  "contents"
+> & {
+  contents: Day[];
+};
