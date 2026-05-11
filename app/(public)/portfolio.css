@@ -28,8 +28,8 @@
     "Iowan Old Style", "Times New Roman", "YuMincho", "Hiragino Mincho ProN",
     serif;
   --sans:
-    var(--k-font-sans), "Helvetica Neue", "HelveticaNeue", Helvetica, Arial,
-    "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
+    "GillSansMTPro-Book", var(--k-font-sans), "Helvetica Neue", "HelveticaNeue",
+    Helvetica, Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
 
   /* Override Tailwind's preset --font-serif token within this scope so
      the `font-serif` utility class resolves to our FOT-mincho chain

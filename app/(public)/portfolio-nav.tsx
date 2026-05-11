@@ -101,7 +101,9 @@ export function PortfolioNav() {
         >
           <ul className="flex flex-col gap-7 text-[22px] uppercase tracking-[0.06em]">
             <li>
-              <Link href="/" onClick={() => setMenuOpen(false)}>Home</Link>
+              <Link href="/" onClick={() => setMenuOpen(false)}>
+                Home
+              </Link>
             </li>
             <li>
               <Link href="#portfolio" onClick={() => setMenuOpen(false)}>
@@ -124,7 +126,9 @@ export function PortfolioNav() {
               </ul>
             </li>
             <li>
-              <Link href="#about" onClick={() => setMenuOpen(false)}>About</Link>
+              <Link href="#about" onClick={() => setMenuOpen(false)}>
+                About
+              </Link>
             </li>
             <li>
               <Link href="#contact" onClick={() => setMenuOpen(false)}>

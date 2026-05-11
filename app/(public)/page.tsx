@@ -33,34 +33,174 @@ const HERO_IMAGE = "https://picsum.photos/seed/k-hero/420/520";
 // composition instead of a masonry algorithm.
 type Plate = { src: string; left: string; top: number; w: number };
 const PLATES: Plate[] = [
-  { src: "https://picsum.photos/seed/k-01/600/780", left: "70%", top: 280,  w: 150 },
-  { src: "https://picsum.photos/seed/k-02/600/450", left: "33%", top: 460,  w: 180 },
-  { src: "https://picsum.photos/seed/k-03/600/780", left: "78%", top: 720,  w: 170 },
-  { src: "https://picsum.photos/seed/k-04/600/780", left: "26%", top: 980,  w: 160 },
-  { src: "https://picsum.photos/seed/k-05/600/780", left: "55%", top: 1180, w: 145 },
-  { src: "https://picsum.photos/seed/k-06/600/450", left: "10%", top: 1380, w: 195 },
-  { src: "https://picsum.photos/seed/k-07/600/780", left: "76%", top: 1500, w: 130 },
-  { src: "https://picsum.photos/seed/k-08/600/780", left: "44%", top: 1720, w: 175 },
-  { src: "https://picsum.photos/seed/k-09/600/780", left: "82%", top: 1960, w: 155 },
-  { src: "https://picsum.photos/seed/k-10/600/780", left: "18%", top: 2120, w: 165 },
-  { src: "https://picsum.photos/seed/k-11/600/450", left: "60%", top: 2300, w: 200 },
-  { src: "https://picsum.photos/seed/k-12/600/780", left: "30%", top: 2520, w: 140 },
-  { src: "https://picsum.photos/seed/k-13/600/780", left: "78%", top: 2700, w: 170 },
-  { src: "https://picsum.photos/seed/k-14/600/780", left: "10%", top: 2900, w: 160 },
-  { src: "https://picsum.photos/seed/k-15/600/450", left: "48%", top: 3060, w: 200 },
-  { src: "https://picsum.photos/seed/k-16/600/780", left: "76%", top: 3260, w: 145 },
-  { src: "https://picsum.photos/seed/k-17/600/780", left: "26%", top: 3420, w: 175 },
-  { src: "https://picsum.photos/seed/k-18/600/780", left: "55%", top: 3640, w: 155 },
-  { src: "https://picsum.photos/seed/k-19/600/450", left: "12%", top: 3820, w: 190 },
-  { src: "https://picsum.photos/seed/k-20/600/780", left: "70%", top: 4000, w: 165 },
-  { src: "https://picsum.photos/seed/k-21/600/780", left: "33%", top: 4180, w: 145 },
-  { src: "https://picsum.photos/seed/k-22/600/780", left: "82%", top: 4380, w: 155 },
-  { src: "https://picsum.photos/seed/k-23/600/780", left: "18%", top: 4560, w: 170 },
-  { src: "https://picsum.photos/seed/k-24/600/450", left: "50%", top: 4740, w: 200 },
-  { src: "https://picsum.photos/seed/k-25/600/780", left: "76%", top: 4940, w: 145 },
-  { src: "https://picsum.photos/seed/k-26/600/780", left: "30%", top: 5120, w: 160 },
-  { src: "https://picsum.photos/seed/k-27/600/780", left: "10%", top: 5320, w: 175 },
-  { src: "https://picsum.photos/seed/k-28/600/780", left: "60%", top: 5500, w: 150 },
+  {
+    src: "https://picsum.photos/seed/k-01/600/780",
+    left: "70%",
+    top: 280,
+    w: 150,
+  },
+  {
+    src: "https://picsum.photos/seed/k-02/600/450",
+    left: "33%",
+    top: 460,
+    w: 180,
+  },
+  {
+    src: "https://picsum.photos/seed/k-03/600/780",
+    left: "78%",
+    top: 720,
+    w: 170,
+  },
+  {
+    src: "https://picsum.photos/seed/k-04/600/780",
+    left: "26%",
+    top: 980,
+    w: 160,
+  },
+  {
+    src: "https://picsum.photos/seed/k-05/600/780",
+    left: "55%",
+    top: 1180,
+    w: 145,
+  },
+  {
+    src: "https://picsum.photos/seed/k-06/600/450",
+    left: "10%",
+    top: 1380,
+    w: 195,
+  },
+  {
+    src: "https://picsum.photos/seed/k-07/600/780",
+    left: "76%",
+    top: 1500,
+    w: 130,
+  },
+  {
+    src: "https://picsum.photos/seed/k-08/600/780",
+    left: "44%",
+    top: 1720,
+    w: 175,
+  },
+  {
+    src: "https://picsum.photos/seed/k-09/600/780",
+    left: "82%",
+    top: 1960,
+    w: 155,
+  },
+  {
+    src: "https://picsum.photos/seed/k-10/600/780",
+    left: "18%",
+    top: 2120,
+    w: 165,
+  },
+  {
+    src: "https://picsum.photos/seed/k-11/600/450",
+    left: "60%",
+    top: 2300,
+    w: 200,
+  },
+  {
+    src: "https://picsum.photos/seed/k-12/600/780",
+    left: "30%",
+    top: 2520,
+    w: 140,
+  },
+  {
+    src: "https://picsum.photos/seed/k-13/600/780",
+    left: "78%",
+    top: 2700,
+    w: 170,
+  },
+  {
+    src: "https://picsum.photos/seed/k-14/600/780",
+    left: "10%",
+    top: 2900,
+    w: 160,
+  },
+  {
+    src: "https://picsum.photos/seed/k-15/600/450",
+    left: "48%",
+    top: 3060,
+    w: 200,
+  },
+  {
+    src: "https://picsum.photos/seed/k-16/600/780",
+    left: "76%",
+    top: 3260,
+    w: 145,
+  },
+  {
+    src: "https://picsum.photos/seed/k-17/600/780",
+    left: "26%",
+    top: 3420,
+    w: 175,
+  },
+  {
+    src: "https://picsum.photos/seed/k-18/600/780",
+    left: "55%",
+    top: 3640,
+    w: 155,
+  },
+  {
+    src: "https://picsum.photos/seed/k-19/600/450",
+    left: "12%",
+    top: 3820,
+    w: 190,
+  },
+  {
+    src: "https://picsum.photos/seed/k-20/600/780",
+    left: "70%",
+    top: 4000,
+    w: 165,
+  },
+  {
+    src: "https://picsum.photos/seed/k-21/600/780",
+    left: "33%",
+    top: 4180,
+    w: 145,
+  },
+  {
+    src: "https://picsum.photos/seed/k-22/600/780",
+    left: "82%",
+    top: 4380,
+    w: 155,
+  },
+  {
+    src: "https://picsum.photos/seed/k-23/600/780",
+    left: "18%",
+    top: 4560,
+    w: 170,
+  },
+  {
+    src: "https://picsum.photos/seed/k-24/600/450",
+    left: "50%",
+    top: 4740,
+    w: 200,
+  },
+  {
+    src: "https://picsum.photos/seed/k-25/600/780",
+    left: "76%",
+    top: 4940,
+    w: 145,
+  },
+  {
+    src: "https://picsum.photos/seed/k-26/600/780",
+    left: "30%",
+    top: 5120,
+    w: 160,
+  },
+  {
+    src: "https://picsum.photos/seed/k-27/600/780",
+    left: "10%",
+    top: 5320,
+    w: 175,
+  },
+  {
+    src: "https://picsum.photos/seed/k-28/600/780",
+    left: "60%",
+    top: 5500,
+    w: 150,
+  },
 ];
 
 const GALLERY_HEIGHT = 5800;
@@ -89,47 +229,39 @@ export default function HomePage() {
           ScrollState toggles .is-scrolled on the shell to slide it in. */}
       <PortfolioNav />
 
-      {/* Tiny postcard hero, top-right corner — not full-bleed */}
-      <figure
-        className="absolute top-9 right-col-2 z-[5] m-0 w-[92px]"
-        aria-hidden="true"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={HERO_IMAGE}
-          alt=""
-          className="block aspect-[4/5] w-full object-cover"
-        />
-      </figure>
-
       {/* Full-viewport hero — wordmark centered, scroll cue at the bottom */}
       <section className="relative flex h-screen min-h-[560px] items-center justify-center">
-        <h1 className="m-0 text-center font-normal uppercase text-[clamp(24px,2.4vw,32px)] tracking-[0.55em] indent-[0.55em]">
+        <h1 className="m-0 text-center font-normal uppercase text-[clamp(24px,2.4vw,32px)] tracking-[0.55em] indent-[0.55em] font-serif [writing-mode:vertical-rl]">
           康凱爾
         </h1>
         <div
           className="k-scroll-cue pointer-events-none absolute bottom-14 left-1/2 flex -translate-x-1/2 flex-col items-center gap-4 text-(--ink-50)"
           aria-hidden="true"
         >
-          <span className="text-[11px] tracking-[0.32em] lowercase">scroll</span>
+          <span className="text-[11px] tracking-[0.32em] lowercase">
+            scroll
+          </span>
           <span className="block h-11 w-px bg-current animate-scroll-cue" />
         </div>
       </section>
 
       {/* Intro — narrow column, sits to the left, sans body */}
       <section className="ml-col-2 mt-10 w-col-20 min-w-0 min-[880px]:w-col-6 min-[880px]:min-w-[260px] min-[880px]:mt-10">
-        <p className="m-0 text-[13px] leading-[1.6]">
-          <em>台湾研究者</em>。専門は台湾思想・文化論。
+        <p className="m-0 text-[16px] leading-[1.8] font-serif tracking-wider">
+          台湾研究者。
           <br />
-          1981年東京生まれ。東京芸術大学音楽学部楽理科卒業。
+          日本名は出田康一郎。
           <br />
-          國立台灣師範大學台灣語文學系修了。MA。
+          専門は台湾思想・台湾文化論。
+          <br />
+          1981年東京生まれ。
+          <br />
+          東京芸術大学音楽学部楽理科卒業。
+          <br />
+          國立台灣師範大學台灣語文學系修了。
           <br />
           2011年から台湾在住。
           <br />
-          現地企業勤務を経て、東京の教育系ベンチャーにリモートで参画し、プログラマとしてソフトウェア開発に従事する傍ら、日常生活を通して台湾について考えている。
-          <br />
-          時折、音楽作品や映像作品の制作もしている。
         </p>
       </section>
 
@@ -196,7 +328,9 @@ export default function HomePage() {
         data-reveal
         className="mt-35 flex flex-col items-end gap-3.5 px-col-2 min-[880px]:mt-55"
       >
-        <p className="text-[12px] tracking-[0.04em] text-(--ink-50)">(explore)</p>
+        <p className="text-[12px] tracking-[0.04em] text-(--ink-50)">
+          (explore)
+        </p>
         <div className="flex gap-2">
           {EXPLORE.map((src, i) => (
             <Link
@@ -225,20 +359,25 @@ export default function HomePage() {
         <div className="mb-15 grid grid-cols-1 gap-9 min-[880px]:grid-cols-[3fr_7fr_7fr] min-[880px]:gap-x-[calc(1/22*100%)] min-[880px]:gap-y-0">
           <FooterCol label="(menu)">
             <ul>
-              <li className="mb-0.5 lowercase"><Link href="#portfolio">portfolio</Link></li>
-              <li className="mb-0.5 lowercase"><Link href="#portfolio">information</Link></li>
-              <li className="mb-0.5 lowercase"><Link href="#about">about</Link></li>
-              <li className="mb-0.5 lowercase"><Link href="#contact">contact</Link></li>
+              <li className="mb-0.5 lowercase">
+                <Link href="#portfolio">portfolio</Link>
+              </li>
+              <li className="mb-0.5 lowercase">
+                <Link href="#portfolio">information</Link>
+              </li>
+              <li className="mb-0.5 lowercase">
+                <Link href="#about">about</Link>
+              </li>
+              <li className="mb-0.5 lowercase">
+                <Link href="#contact">contact</Link>
+              </li>
             </ul>
           </FooterCol>
           <FooterCol label="(subscribe)">
             <p className="mb-1.5">
               Not a generic letter. A short note four times a year on what I am
               quietly looking at.{" "}
-              <Link
-                href="#"
-                className="border-b border-current pb-px"
-              >
+              <Link href="#" className="border-b border-current pb-px">
                 Join here
               </Link>
               .
@@ -261,7 +400,11 @@ export default function HomePage() {
         <div className="grid grid-cols-1 items-end gap-4.5 border-t border-(--ink-15) pt-7 text-[11px] text-(--ink-70) min-[880px]:grid-cols-3 min-[880px]:gap-0">
           <FooterCreditsCol>
             <p className="mb-1 text-(--ink-50) italic">(follow)</p>
-            <p className="mb-1"><a href="#" className="border-b border-current pb-px">Instagram</a></p>
+            <p className="mb-1">
+              <a href="#" className="border-b border-current pb-px">
+                Instagram
+              </a>
+            </p>
             <p className="mb-1">
               <a
                 href="https://github.com/cubicberry"
@@ -273,12 +416,16 @@ export default function HomePage() {
           </FooterCreditsCol>
           <FooterCreditsCol className="min-[880px]:text-center">
             <p className="mb-1">Designed in Taipei.</p>
-            <p className="mb-1"><em>© {new Date().getFullYear()} Ko Kaiji.</em></p>
+            <p className="mb-1">
+              <em>© {new Date().getFullYear()} Ko Kaiji.</em>
+            </p>
           </FooterCreditsCol>
           <FooterCreditsCol className="min-[880px]:text-right">
             <p className="mb-1 text-(--ink-50) italic">(legal stuff)</p>
             <p className="mb-1">
-              <Link href="#" className="border-b border-current pb-px">Privacy policy</Link>
+              <Link href="#" className="border-b border-current pb-px">
+                Privacy policy
+              </Link>
             </p>
           </FooterCreditsCol>
         </div>
