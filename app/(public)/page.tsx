@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { PortfolioNav } from "./portfolio-nav";
 import { ScrollReveal } from "./scroll-reveal";
-import { ScrollState } from "./scroll-state";
+import { ScrollWordmark } from "./scroll-wordmark";
 import "./portfolio.css";
 
 // next/font: Inter Tight 400 for body / nav / footer; Cormorant Garamond
@@ -226,13 +226,18 @@ export default function HomePage() {
   return (
     <div className={shellClass}>
       {/* Top navigation (fixed, mix-blend-difference). Hidden initially;
-          ScrollState toggles .is-scrolled on the shell to slide it in. */}
+          ScrollWordmark toggles .is-scrolled on the shell to slide it in. */}
       <PortfolioNav />
 
       {/* Full-viewport hero — wordmark centered, scroll cue at the bottom */}
       <section className="relative flex h-screen min-h-[560px] items-center justify-center">
-        <h1 className="m-0 text-center font-normal uppercase text-[clamp(24px,2.4vw,32px)] tracking-[0.55em] indent-[0.55em] font-serif [writing-mode:vertical-rl]">
-          康凱爾
+        <h1 className="m-0 text-center font-normal uppercase flex flex-col items-center gap-8">
+          <span className="text-[clamp(24px,2.4vw,32px)] tracking-[0.55em] indent-[0.55em] font-serif [writing-mode:vertical-rl]">
+            康凱爾
+          </span>
+          <span className="k-wordmark tracking-[0.16em] text-[12px]">
+            KO KAIJI
+          </span>
         </h1>
         <div
           className="k-scroll-cue pointer-events-none absolute bottom-14 left-1/2 flex -translate-x-1/2 flex-col items-center gap-4 text-(--ink-50)"
@@ -244,6 +249,16 @@ export default function HomePage() {
           <span className="block h-11 w-px bg-current animate-scroll-cue" />
         </div>
       </section>
+
+      {/* Sticky clone of the hero KO KAIJI wordmark. Always fixed at the
+          nav line; visibility flipped by .is-scrolled so it lights up
+          exactly where the hero copy was at the threshold. */}
+      <div
+        className="k-wordmark-pin pointer-events-none fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light)"
+        aria-hidden="true"
+      >
+        KO KAIJI
+      </div>
 
       {/* Intro — narrow column, sits to the left, sans body */}
       <section className="ml-col-2 mt-10 w-col-20 min-w-0 min-[880px]:w-col-6 min-[880px]:min-w-[260px] min-[880px]:mt-10">
@@ -432,7 +447,7 @@ export default function HomePage() {
       </footer>
 
       <ScrollReveal />
-      <ScrollState />
+      <ScrollWordmark />
     </div>
   );
 }

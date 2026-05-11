@@ -111,7 +111,7 @@
   transform-origin: top center;
 }
 
-/* ─── Parent-state cascades driven by ScrollState's `.is-scrolled` */
+/* ─── Parent-state cascades driven by ScrollWordmark's `.is-scrolled` */
 .k-shell .k-nav {
   transition: transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1);
   transform: translateY(-100%);
@@ -124,6 +124,23 @@
 }
 .k-shell.is-scrolled .k-scroll-cue {
   opacity: 0;
+}
+
+/* ─── Wordmark pin: the hero's .k-wordmark stays in flow so its
+       parent h1 never reflows (otherwise the vertical 康凱爾 above it
+       would shift back into view at the swap moment). Instead, once
+       .is-scrolled fires, the hero copy is hidden and a fixed clone
+       (.k-wordmark-pin) becomes visible at the exact same on-screen
+       position — making the transition look like a single element
+       pinning to the nav line. */
+.k-shell .k-wordmark-pin {
+  visibility: hidden;
+}
+.k-shell.is-scrolled .k-wordmark-pin {
+  visibility: visible;
+}
+.k-shell.is-scrolled .k-wordmark {
+  visibility: hidden;
 }
 
 /* ─── Nav hover ripple: per-character opacity dip on the hovered label
@@ -148,23 +165,6 @@
   50% {
     opacity: 0.2;
   }
-}
-
-/* Dropdown submenu (Information → Series / Editions) */
-.k-shell .k-nav-sub {
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 300ms ease,
-    visibility 0s linear 300ms;
-}
-.k-shell .k-nav-dropdown:hover .k-nav-sub,
-.k-shell .k-nav-dropdown:focus-within .k-nav-sub {
-  opacity: 1;
-  visibility: visible;
-  transition:
-    opacity 300ms ease,
-    visibility 0s;
 }
 
 /* Accessible label kept in DOM but hidden from layout */
