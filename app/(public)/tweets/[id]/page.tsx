@@ -50,7 +50,7 @@ export default async function TweetPage({
       )}
 
       {tweet.body && (
-        <p className="m-0 whitespace-pre-wrap font-serif text-[24px] leading-[1.75] text-(--ink)">
+        <p className="m-0 whitespace-pre-wrap font-serif text-[24px]  tracking-wide leading-[1.75] text-(--ink)">
           {tweet.body}
         </p>
       )}

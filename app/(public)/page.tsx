@@ -62,7 +62,7 @@ export default async function HomePage() {
       {/* Full-viewport hero — wordmark centered, scroll cue at the bottom */}
       <section className="relative flex h-screen min-h-[560px] items-center justify-center">
         <h1 className="m-0 text-center font-normal uppercase flex flex-col items-center gap-8">
-          <span className="text-[clamp(24px,2.4vw,32px)] tracking-[0.55em] indent-[0.55em] font-serif [writing-mode:vertical-rl]">
+          <span className="text-[clamp(24px,2.4vw,32px)] tracking-[0.55em] indent-[0.55em] font-serif [writing-mode:vertical-rl] [font-feature-settings:initial]">
             康凱爾
           </span>
           <WordmarkLink className="k-wordmark tracking-[0.16em] text-[12px] no-underline text-(--ink)">

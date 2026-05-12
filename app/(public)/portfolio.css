@@ -51,6 +51,31 @@
   animation-timing-function: cubic-bezier(0.32, 0.72, 0.24, 1);
 }
 
+/* 和文 mincho ベースラインに揃った半角数字専用の virtual font。
+   FOT 筑紫C オールド明朝は半角ラテン数字グリフを (FontPlus サブセット
+   経由で) 含まないことがあり、その場合 fallback の Cormorant italic に
+   流れて "343頁" のような混植で数字だけ斜体で浮いた位置に出てしまう。
+   この @font-face を --serif の先頭に置くと、U+0030-0039 の範囲だけ
+   system mincho (Yu Mincho / Hiragino Mincho ProN) の半角数字に
+   差し替わる。これらは和文と同じ baseline で設計されているため、
+   隣の FOT 筑紫の漢字と揃って見える。local() のみで追加 download は無し。
+   Win 環境のため MS Mincho と Yu Mincho を、最終フォールバックとして
+   Times New Roman を含めている。 */
+@font-face {
+  font-family: "_MinchoDigits";
+  src:
+    local("YuMincho"),
+    local("Yu Mincho"),
+    local("YuMincho Medium"),
+    local("Hiragino Mincho ProN"),
+    local("HiraMinProN-W3"),
+    local("MS PMincho"),
+    local("MS Mincho"),
+    local("Times New Roman");
+  unicode-range: U+0030-0039;
+  font-display: swap;
+}
+
 .k-shell {
   --paper: #f9f8f2;
   --paper-2: #f1ede2;
@@ -63,8 +88,12 @@
 
   /* FOT 筑紫Cオールド明朝 (loaded via FontPlus in layout.tsx) is the
      intended display serif. Cormorant Garamond from next/font and the
-     system serif chain stand in while FontPlus fetches the face. */
+     system serif chain stand in while FontPlus fetches the face.
+     _MinchoDigits は unicode-range で U+0030-0039 にだけ反応する
+     virtual font なので、数字だけ system mincho の和文ベースラインに
+     合わせた半角数字に差し変わる (他文字はスルーして FOT が当たる)。 */
   --serif:
+    "_MinchoDigits",
     "FOT-筑紫Cオールド明朝 Pr6N R", var(--k-font-serif), ui-serif,
     "Iowan Old Style", "Times New Roman", "YuMincho", "Hiragino Mincho ProN",
     serif;
