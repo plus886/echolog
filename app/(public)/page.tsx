@@ -1,4 +1,3 @@
-import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
 import Link from "next/link";
 
 import { composeGalleryItems, type GalleryQuote } from "@/lib/gallery-compose";
@@ -7,32 +6,13 @@ import { listRootTweets, loadGalleryDays } from "@/lib/microcms";
 import type { Day } from "@/types/microcms";
 
 import { GalleryParallax } from "./gallery-parallax";
-import { PortfolioNav } from "./portfolio-nav";
+import { ScrollMemory } from "./scroll-memory";
 import { ScrollReveal } from "./scroll-reveal";
 import { ScrollWordmark } from "./scroll-wordmark";
-import "./portfolio.css";
+import { TransitionLink } from "./transition-link";
+import { WordmarkLink } from "./wordmark-link";
 
 export const revalidate = 3600;
-
-// next/font: Inter Tight 400 for body / nav / footer; Cormorant Garamond
-// italic 300 sits behind the FontPlus-loaded FOT 筑紫 mincho as a fallback
-// for em phrases. Both have preload:false so Turbopack's dev-time font
-// cache stays small.
-const interTight = Inter_Tight({
-  subsets: ["latin"],
-  weight: ["400"],
-  display: "swap",
-  variable: "--k-font-sans",
-  preload: false,
-});
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300"],
-  style: ["italic"],
-  display: "swap",
-  variable: "--k-font-serif",
-  preload: false,
-});
 
 const EXPLORE = [
   "https://picsum.photos/seed/k-e1/420/520",
@@ -42,16 +22,6 @@ const EXPLORE = [
 ];
 
 export default async function HomePage() {
-  // .k-shell carries: design-token CSS vars, body font-family, paper bg.
-  // next/font CSS vars stack onto the same element so that var() chains
-  // resolve. Most everything else is Tailwind utilities.
-  const shellClass = [
-    "k-shell",
-    interTight.variable,
-    cormorant.variable,
-    "relative min-h-screen overflow-x-hidden text-[15px] leading-[1.45] antialiased",
-  ].join(" ");
-
   let days: Day[] = [];
   let tweets: GalleryQuote[] = [];
   const [daysResult, tweetsResult] = await Promise.allSettled([
@@ -88,20 +58,16 @@ export default async function HomePage() {
   const { slots, totalHeight } = generateGalleryLayout(layoutItems);
 
   return (
-    <div className={shellClass}>
-      {/* Top navigation (fixed, mix-blend-difference). Hidden initially;
-          ScrollWordmark toggles .is-scrolled on the shell to slide it in. */}
-      <PortfolioNav />
-
+    <>
       {/* Full-viewport hero — wordmark centered, scroll cue at the bottom */}
       <section className="relative flex h-screen min-h-[560px] items-center justify-center">
         <h1 className="m-0 text-center font-normal uppercase flex flex-col items-center gap-8">
           <span className="text-[clamp(24px,2.4vw,32px)] tracking-[0.55em] indent-[0.55em] font-serif [writing-mode:vertical-rl]">
             康凱爾
           </span>
-          <span className="k-wordmark tracking-[0.16em] text-[12px]">
+          <WordmarkLink className="k-wordmark tracking-[0.16em] text-[12px] no-underline text-(--ink)">
             KO KAIJI
-          </span>
+          </WordmarkLink>
         </h1>
         <div
           className="k-scroll-cue pointer-events-none absolute bottom-14 left-1/2 flex -translate-x-1/2 flex-col items-center gap-4 text-(--ink-50)"
@@ -113,16 +79,6 @@ export default async function HomePage() {
           <span className="block h-11 w-px bg-current animate-scroll-cue" />
         </div>
       </section>
-
-      {/* Sticky clone of the hero KO KAIJI wordmark. Always fixed at the
-          nav line; visibility flipped by .is-scrolled so it lights up
-          exactly where the hero copy was at the threshold. */}
-      <div
-        className="k-wordmark-pin pointer-events-none fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light)"
-        aria-hidden="true"
-      >
-        KO KAIJI
-      </div>
 
       {/* Intro — narrow column, sits to the left, sans body */}
       <section className="ml-col-2 mt-10 w-col-20 min-w-0 min-[880px]:w-col-6 min-[880px]:min-w-[260px] min-[880px]:mt-10">
@@ -183,9 +139,10 @@ export default async function HomePage() {
               );
             }
             return (
-              <div
+              <TransitionLink
                 key={`q-${item.id}`}
-                className="k-quote-wrap k-pos"
+                href={`/tweets/${item.id}`}
+                className="k-quote-wrap k-pos block no-underline"
                 style={
                   {
                     "--w": `${slot.w}px`,
@@ -207,7 +164,7 @@ export default async function HomePage() {
                 >
                   {item.text}
                 </blockquote>
-              </div>
+              </TransitionLink>
             );
           })}
         </section>
@@ -353,7 +310,8 @@ export default async function HomePage() {
       <ScrollReveal />
       <ScrollWordmark />
       <GalleryParallax />
-    </div>
+      <ScrollMemory />
+    </>
   );
 }
 

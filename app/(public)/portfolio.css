@@ -10,6 +10,15 @@
      · prefers-reduced-motion overrides
    ============================================================ */
 
+/* View Transitions API のクロスフェード長と easing を上品めに統一。
+   未サポート (Firefox 等) ではこのルールはノーオペレーションになり、
+   ナビゲーションが即時実行される (graceful degradation)。*/
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .k-shell {
   --paper: #f9f8f2;
   --paper-2: #f1ede2;
@@ -124,6 +133,14 @@
 }
 .k-shell.is-scrolled .k-scroll-cue {
   opacity: 0;
+}
+/* ScrollMemory が scroll 位置を復元する短い間だけ付与される。nav の
+   slide-in と scroll-cue の fade-out を transition なしで即時に適用し、
+   「戻ってきた瞬間に nav が下りてくる」「scroll-cue が消えていく」演出を
+   抑えて、ユーザが見ていた状態に静かに帰着させる。 */
+.k-shell.no-shell-transitions .k-nav,
+.k-shell.no-shell-transitions .k-scroll-cue {
+  transition: none;
 }
 
 /* ─── Wordmark pin: the hero's .k-wordmark stays in flow so its

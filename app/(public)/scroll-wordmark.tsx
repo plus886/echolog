@@ -27,7 +27,14 @@ export function ScrollWordmark() {
       shell.classList.toggle("is-scrolled", scrolled);
     };
 
-    const onScroll = () => apply(window.scrollY >= triggerY);
+    const onScroll = () => {
+      // TransitionLink がクライアント遷移中に <html data-navigating="1">
+      // を立てる。その間 Next.js が scrollTo(0) を実行しても、ここで
+      // .is-scrolled を一瞬外して nav が slide-out アニメーション
+      // してしまうのを防ぐためスキップ。
+      if (document.documentElement.dataset.navigating) return;
+      apply(window.scrollY >= triggerY);
+    };
     const onResize = () => {
       measure();
       onScroll();
