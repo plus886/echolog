@@ -66,15 +66,15 @@ export function LinkPreview({ url }: Props) {
 
   if (state.status === "loading") {
     return (
-      <div className="rounded-md border border-border p-3 text-xs text-muted">
-        OGP 取得中… <span className="opacity-60">{url}</span>
+      <div className="border-l border-(--ink-15) py-2 pl-4 text-[12px] italic text-(--ink-50)">
+        loading OGP… <span className="opacity-60 not-italic">{url}</span>
       </div>
     );
   }
   if (state.status === "error") {
     return (
-      <div className="rounded-md border border-border p-3 text-xs text-muted">
-        プレビューを取得できませんでした（{state.message}）
+      <div className="border-l border-(--ink-15) py-2 pl-4 text-[12px] italic text-(--ink-50)">
+        プレビューを取得できませんでした ({state.message})
       </div>
     );
   }
@@ -84,7 +84,7 @@ export function LinkPreview({ url }: Props) {
       href={data.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex gap-3 rounded-md border border-border p-3 hover:bg-foreground/[0.03]"
+      className="flex gap-4 border-l border-(--ink-30) py-2 pl-4 no-underline transition-opacity hover:opacity-70"
     >
       {data.image && (
         // microCMS と無関係の外部画像なので next/image は使わず生 img を使う。
@@ -92,20 +92,24 @@ export function LinkPreview({ url }: Props) {
         <img
           src={data.image}
           alt=""
-          className="h-20 w-32 shrink-0 rounded-sm object-cover"
+          className="h-20 w-32 shrink-0 bg-(--paper-2) object-cover"
         />
       )}
-      <div className="min-w-0 flex flex-col gap-1">
+      <div className="flex min-w-0 flex-col gap-1">
         {data.siteName && (
-          <p className="text-xs text-muted">{data.siteName}</p>
+          <p className="m-0 text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+            {data.siteName}
+          </p>
         )}
         {data.title && (
-          <p className="text-sm font-medium leading-snug line-clamp-2">
+          <p className="m-0 line-clamp-2 font-serif text-[15px] leading-[1.6] text-(--ink)">
             {data.title}
           </p>
         )}
         {data.description && (
-          <p className="text-xs text-muted line-clamp-2">{data.description}</p>
+          <p className="m-0 line-clamp-2 font-serif text-[13px] leading-[1.7] text-(--ink-70)">
+            {data.description}
+          </p>
         )}
       </div>
     </a>

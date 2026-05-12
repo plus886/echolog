@@ -39,25 +39,29 @@ export function AdminTweetRow({
   };
 
   return (
-    <article className="border-b border-border last:border-b-0 py-3">
-      <p className="whitespace-pre-wrap text-sm">
+    <article className="py-5">
+      <p className="m-0 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink)">
         {isRetweet ? (
-          <span className="text-muted">🔁 自分が RT</span>
+          <span className="text-[11px] uppercase tracking-[0.16em] text-(--ink-50) not-italic">
+            ↻ self retweet
+          </span>
         ) : (
-          tweet.body ?? "(本文なし)"
+          tweet.body ?? (
+            <span className="italic text-(--ink-50)">(本文なし)</span>
+          )
         )}
       </p>
 
-      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted">
+      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] uppercase tracking-[0.12em] text-(--ink-50)">
         {isDraft ? (
-          <span className="rounded bg-yellow-100 px-1.5 py-0.5 text-yellow-900">
-            下書き
+          <span className="border border-(--ink-30) px-2 py-0.5 italic text-(--ink-70)">
+            draft
           </span>
         ) : (
           <Link
             href={`/tweets/${tweet.id}`}
             prefetch={false}
-            className="hover:underline"
+            className="normal-case tracking-normal transition-opacity hover:opacity-60"
           >
             {formatTweetTimestamp(timestamp)}
           </Link>
@@ -68,29 +72,29 @@ export function AdminTweetRow({
             <Link
               href={`/admin?mode=reply&target=${tweet.id}`}
               prefetch={false}
-              className="hover:underline"
+              className="lowercase transition-opacity hover:opacity-60"
             >
-              ↩ リプライ
+              reply
             </Link>
             <Link
               href={`/admin?mode=quote&target=${tweet.id}`}
               prefetch={false}
-              className="hover:underline"
+              className="lowercase transition-opacity hover:opacity-60"
             >
-              💬 引用RT
+              quote
             </Link>
             <button
               type="button"
               onClick={handleRetweet}
               disabled={alreadyRetweeted || isRetweeting}
-              className="hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-not-allowed cursor-pointer"
+              className="cursor-pointer lowercase transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
               title={alreadyRetweeted ? "既に RT 済み" : "コメントなし RT"}
             >
               {isRetweeting
-                ? "RT 中…"
+                ? "retweeting…"
                 : alreadyRetweeted
-                  ? "🔁 RT済"
-                  : "🔁 RT"}
+                  ? "↻ retweeted"
+                  : "↻ retweet"}
             </button>
           </>
         )}
@@ -98,9 +102,9 @@ export function AdminTweetRow({
         <Link
           href={`/admin/edit/${tweet.id}`}
           prefetch={false}
-          className="hover:underline"
+          className="lowercase transition-opacity hover:opacity-60"
         >
-          編集
+          edit
         </Link>
         <form
           action={deleteTweetAction}
@@ -112,9 +116,9 @@ export function AdminTweetRow({
           <input type="hidden" name="id" value={tweet.id} />
           <button
             type="submit"
-            className="text-red-600 hover:underline cursor-pointer"
+            className="cursor-pointer italic lowercase tracking-normal text-(--ink-70) transition-opacity hover:opacity-60"
           >
-            削除
+            delete
           </button>
         </form>
       </div>

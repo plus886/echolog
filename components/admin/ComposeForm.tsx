@@ -69,7 +69,7 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
     null;
 
   return (
-    <form action={publishFormAction} className="flex flex-col gap-3">
+    <form action={publishFormAction} className="flex flex-col gap-5">
       {mode.kind === "reply" && (
         <input type="hidden" name="parent" value={mode.target.id} />
       )}
@@ -78,9 +78,7 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
       )}
       <input type="hidden" name="images" value={JSON.stringify(images)} />
 
-      {mode.kind !== "new" && (
-        <ModeBanner mode={mode} />
-      )}
+      {mode.kind !== "new" && <ModeBanner mode={mode} />}
 
       <textarea
         name="body"
@@ -93,44 +91,51 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
               ? "引用ツイートにコメント"
               : "いまどうしてる？"
         }
-        rows={4}
+        rows={6}
         autoFocus={mode.kind !== "new"}
-        className="w-full resize-none rounded-md border border-border bg-transparent p-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-foreground/20"
+        className="w-full resize-none border-0 bg-(--paper-2) p-5 font-serif text-[18px] leading-[1.85] text-(--ink) placeholder:text-(--ink-50) placeholder:italic focus:outline-none focus:ring-1 focus:ring-(--ink-30)"
+        // FontPlus が hydration 前に inline style="font-family: fontplus-..."
+        // を差し込むため、controlled textarea の attribute 比較で
+        // mismatch 警告が出る。最終的な font-family は意図通りなので、
+        // この要素についてのみ警告を抑止する。
+        suppressHydrationWarning
       />
 
       <ImageUploader value={images} onChange={setImages} />
 
       <LinkPreview url={previewUrl} />
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <CharCounter status={status} />
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={handleSaveDraft}
             disabled={submitDisabled || (!body.trim() && images.length === 0)}
-            className="rounded-md border border-border px-4 py-1.5 text-sm hover:bg-foreground/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="border border-(--ink-30) px-5 py-2 text-[11px] uppercase tracking-[0.16em] text-(--ink-70) transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isDraftPending ? "保存中…" : "下書き保存"}
+            {isDraftPending ? "saving…" : "save draft"}
           </button>
           <button
             type="submit"
             disabled={submitDisabled || (!body.trim() && images.length === 0)}
-            className="rounded-md bg-foreground px-4 py-1.5 text-sm text-background hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-(--ink) px-5 py-2 text-[11px] uppercase tracking-[0.16em] text-(--paper) transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isPublishPending
-              ? "投稿中…"
+              ? "posting…"
               : mode.kind === "reply"
-                ? "返信"
+                ? "reply"
                 : mode.kind === "quote"
-                  ? "引用RT"
-                  : "投稿"}
+                  ? "quote"
+                  : "publish"}
           </button>
         </div>
       </div>
 
       {errorMessage && (
-        <p className="text-sm text-red-600">{errorMessage}</p>
+        <p className="font-serif text-[14px] italic text-(--ink-70)">
+          {errorMessage}
+        </p>
       )}
     </form>
   );
@@ -154,17 +159,21 @@ function ModeBanner({
 }: {
   mode: Extract<ComposeMode, { kind: "reply" | "quote" }>;
 }) {
-  const label =
-    mode.kind === "reply" ? "↩ セルフリプライ中" : "💬 引用RT 中";
+  const label = mode.kind === "reply" ? "In reply to" : "Quoting";
   return (
-    <div className="rounded-md border border-border bg-foreground/[0.03] p-3 text-xs">
-      <div className="flex items-center justify-between text-muted">
-        <span>{label}</span>
-        <Link href="/admin" className="hover:underline">
-          ✕ キャンセル
+    <div className="border-l border-(--ink-30) pl-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="m-0 text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+          {label}
+        </p>
+        <Link
+          href="/admin"
+          className="text-[11px] lowercase text-(--ink-50) transition-opacity hover:opacity-60"
+        >
+          cancel
         </Link>
       </div>
-      <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-foreground/80">
+      <p className="mt-2 line-clamp-3 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink-70)">
         {mode.target.body || "(本文なし)"}
       </p>
     </div>

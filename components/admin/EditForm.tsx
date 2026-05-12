@@ -38,45 +38,51 @@ export function EditForm({ id, defaultBody, isDraft }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-5">
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
-        rows={5}
-        className="w-full resize-none rounded-md border border-border bg-transparent p-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-foreground/20"
+        rows={7}
+        className="w-full resize-none border-0 bg-(--paper-2) p-5 font-serif text-[18px] leading-[1.85] text-(--ink) placeholder:text-(--ink-50) placeholder:italic focus:outline-none focus:ring-1 focus:ring-(--ink-30)"
+        // FontPlus が hydration 前に inline font-family を注入するため、
+        // controlled textarea で attribute mismatch 警告が出る。
+        // 最終 font は意図通りなのでこの要素のみ警告を抑止。
+        suppressHydrationWarning
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <CharCounter status={status} />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <Link
             href="/admin"
-            className="rounded-md px-3 py-1.5 text-sm text-muted hover:underline"
+            className="text-[11px] uppercase tracking-[0.16em] text-(--ink-50) transition-opacity hover:opacity-60"
           >
-            キャンセル
+            cancel
           </Link>
           <button
             type="button"
             onClick={() => handleSubmit(false)}
             disabled={submitDisabled}
-            className="rounded-md border border-border px-4 py-1.5 text-sm hover:bg-foreground/[0.04] disabled:opacity-50"
+            className="border border-(--ink-30) px-5 py-2 text-[11px] uppercase tracking-[0.16em] text-(--ink-70) transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isPending ? "更新中…" : "保存"}
+            {isPending ? "saving…" : "save"}
           </button>
           {isDraft && (
             <button
               type="button"
               onClick={() => handleSubmit(true)}
               disabled={submitDisabled}
-              className="rounded-md bg-foreground px-4 py-1.5 text-sm text-background hover:opacity-90 disabled:opacity-50"
+              className="bg-(--ink) px-5 py-2 text-[11px] uppercase tracking-[0.16em] text-(--paper) transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {isPending ? "公開中…" : "公開する"}
+              {isPending ? "publishing…" : "publish"}
             </button>
           )}
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="font-serif text-[14px] italic text-(--ink-70)">{error}</p>
+      )}
     </div>
   );
 }

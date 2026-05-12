@@ -23,12 +23,14 @@ export default async function EditTweetPage({
   const isDraft = !tweet.publishedAt;
 
   return (
-    <main className="mx-auto max-w-2xl w-full px-4 py-6">
-      <header className="mb-4 flex items-baseline justify-between">
-        <h1 className="text-lg font-semibold">編集</h1>
+    <main className="mx-auto mt-6 w-full max-w-[720px]">
+      <header className="mb-8 flex items-baseline justify-between">
+        <h1 className="text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+          Edit
+        </h1>
         {isDraft && (
-          <span className="text-xs rounded bg-yellow-100 px-2 py-0.5 text-yellow-900">
-            下書き
+          <span className="border border-(--ink-30) px-2 py-0.5 text-[11px] uppercase tracking-[0.1em] italic text-(--ink-70)">
+            draft
           </span>
         )}
       </header>

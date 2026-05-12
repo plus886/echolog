@@ -6,7 +6,7 @@ import { listAdminTweets } from "@/lib/microcms-management";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "下書き",
+  title: "Drafts",
 };
 
 export default async function DraftsPage() {
@@ -19,17 +19,26 @@ export default async function DraftsPage() {
   });
 
   return (
-    <main className="mx-auto max-w-2xl w-full px-4 py-6">
-      <h1 className="mb-4 text-lg font-semibold">下書き一覧</h1>
+    <main className="mx-auto mt-6 w-full max-w-[720px]">
+      <h1 className="mb-8 text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+        Drafts
+      </h1>
 
       {contents.length === 0 ? (
-        <p className="text-sm text-muted">下書きはありません。</p>
+        <p className="font-serif text-[15px] leading-[1.8] text-(--ink-70) italic">
+          下書きはありません。
+        </p>
       ) : (
-        <div className="rounded-md border border-border px-3">
+        <ol className="m-0 flex list-none flex-col p-0">
           {contents.map((tweet) => (
-            <AdminTweetRow key={tweet.id} tweet={tweet} />
+            <li
+              key={tweet.id}
+              className="border-t border-(--ink-15) first:border-t-0"
+            >
+              <AdminTweetRow tweet={tweet} />
+            </li>
           ))}
-        </div>
+        </ol>
       )}
     </main>
   );

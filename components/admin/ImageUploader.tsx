@@ -61,17 +61,17 @@ export function ImageUploader({ value, onChange }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {value.length > 0 && (
         <ul
-          className={`grid gap-2 ${
+          className={`m-0 grid list-none gap-2 p-0 ${
             value.length === 1 ? "grid-cols-1" : "grid-cols-2"
           }`}
         >
           {value.map((image, index) => (
             <li
               key={image.url}
-              className="relative aspect-video overflow-hidden rounded-md border border-border"
+              className="relative aspect-video overflow-hidden bg-(--paper-2)"
             >
               <Image
                 src={image.url}
@@ -85,9 +85,9 @@ export function ImageUploader({ value, onChange }: Props) {
                 type="button"
                 onClick={() => handleRemove(index)}
                 aria-label="画像を削除"
-                className="absolute right-1 top-1 rounded-full bg-foreground/70 px-2 py-0.5 text-xs text-background hover:bg-foreground"
+                className="absolute right-2 top-2 bg-(--ink)/80 px-2 py-0.5 text-[11px] uppercase tracking-[0.1em] text-(--paper) transition-opacity hover:opacity-80"
               >
-                ✕
+                remove
               </button>
             </li>
           ))}
@@ -106,24 +106,24 @@ export function ImageUploader({ value, onChange }: Props) {
             setDragOver(false);
             void handleFiles(e.dataTransfer.files);
           }}
-          className={`rounded-md border border-dashed px-3 py-3 text-center text-xs ${
+          className={`border border-dashed px-4 py-4 text-center text-[12px] ${
             isDragOver
-              ? "border-foreground/40 bg-foreground/[0.04]"
-              : "border-border text-muted"
+              ? "border-(--ink-50) bg-(--paper-2)"
+              : "border-(--ink-15) text-(--ink-50)"
           }`}
         >
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={isUploading}
-            className="hover:underline disabled:opacity-50"
+            className="lowercase tracking-[0.04em] text-(--ink-70) transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isUploading
-              ? "アップロード中…"
-              : `画像を追加（あと ${remaining} 枚 / 最大 ${MAX_IMAGES} 枚）`}
+              ? "uploading…"
+              : `add image (${remaining} of ${MAX_IMAGES} remaining)`}
           </button>
-          <span className="ml-2 text-muted">
-            ドラッグ&ドロップも可
+          <span className="ml-3 italic text-(--ink-50)">
+            or drop a file here
           </span>
           <input
             ref={inputRef}
@@ -136,7 +136,9 @@ export function ImageUploader({ value, onChange }: Props) {
         </div>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="font-serif text-[14px] italic text-(--ink-70)">{error}</p>
+      )}
     </div>
   );
 }

@@ -63,35 +63,44 @@ export default async function AdminPage({
   ]);
   const tweets = listResponse.contents;
 
+  const heading =
+    composeMode.kind === "new"
+      ? "Compose"
+      : composeMode.kind === "reply"
+        ? "Self-reply"
+        : "Quote retweet";
+
   return (
-    <main className="mx-auto grid max-w-5xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[1fr_360px]">
+    <main className="mt-6 grid grid-cols-1 gap-x-10 gap-y-12 min-[880px]:grid-cols-[1fr_320px]">
       <section>
-        <h1 className="mb-4 text-lg font-semibold">
-          {composeMode.kind === "new"
-            ? "新規投稿"
-            : composeMode.kind === "reply"
-              ? "セルフリプライ"
-              : "引用RT"}
+        <h1 className="mb-6 text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+          {heading}
         </h1>
         <ComposeForm mode={composeMode} />
       </section>
 
       <aside>
-        <h2 className="mb-2 text-sm font-semibold text-muted">
-          最近のツイート
+        <h2 className="mb-6 text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+          Recent
         </h2>
         {tweets.length === 0 ? (
-          <p className="text-sm text-muted">まだ投稿がありません。</p>
+          <p className="font-serif text-[15px] leading-[1.8] text-(--ink-70) italic">
+            まだ投稿がありません。
+          </p>
         ) : (
-          <div className="rounded-md border border-border px-3">
+          <ol className="m-0 flex list-none flex-col p-0">
             {tweets.map((tweet) => (
-              <AdminTweetRow
+              <li
                 key={tweet.id}
-                tweet={tweet}
-                retweetedTargetIds={retweetedTargetIds}
-              />
+                className="border-t border-(--ink-15) first:border-t-0"
+              >
+                <AdminTweetRow
+                  tweet={tweet}
+                  retweetedTargetIds={retweetedTargetIds}
+                />
+              </li>
             ))}
-          </div>
+          </ol>
         )}
       </aside>
     </main>
