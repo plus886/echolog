@@ -97,7 +97,7 @@ export function LinkPreview({ url }: Props) {
       )}
       <div className="flex min-w-0 flex-col gap-1">
         {data.siteName && (
-          <p className="m-0 text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+          <p className="m-0 k-label-mini">
             {data.siteName}
           </p>
         )}

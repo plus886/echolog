@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRef, useState } from "react";
 
-export const MAX_IMAGES = 4;
+import { MAX_IMAGES } from "@/lib/constants";
 
 type Props = {
   /** 親フォームに反映する。順序は表示順 = 投稿時の順序。 */

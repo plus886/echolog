@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 
 import { env } from "@/lib/env";
 import { revalidateTweetPaths } from "@/lib/revalidate";
-
-const SIGNATURE_HEADER = "x-microcms-signature";
+import { verifyMicroCMSWebhook } from "@/lib/webhook";
 
 type WebhookPayload = {
   service?: string;
@@ -16,68 +15,23 @@ type WebhookPayload = {
   };
 };
 
-async function verifySignature(rawBody: string, signature: string) {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(env.MICROCMS_WEBHOOK_SECRET),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sigBytes = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(rawBody),
-  );
-  const expected = Array.from(new Uint8Array(sigBytes))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  return timingSafeEqualHex(expected, signature);
-}
-
-function timingSafeEqualHex(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
-}
-
 export async function POST(request: Request) {
-  const signature = request.headers.get(SIGNATURE_HEADER);
-  if (!signature) {
-    return NextResponse.json(
-      { error: "missing signature" },
-      { status: 401 },
-    );
-  }
-
-  const rawBody = await request.text();
-
-  if (!(await verifySignature(rawBody, signature))) {
-    return NextResponse.json(
-      { error: "invalid signature" },
-      { status: 401 },
-    );
-  }
+  const verified = await verifyMicroCMSWebhook(
+    request,
+    env.MICROCMS_WEBHOOK_SECRET,
+  );
+  if (!verified.ok) return verified.response;
 
   let payload: WebhookPayload;
   try {
-    payload = JSON.parse(rawBody) as WebhookPayload;
+    payload = JSON.parse(verified.body) as WebhookPayload;
   } catch {
-    return NextResponse.json(
-      { error: "invalid json" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "invalid json" }, { status: 400 });
   }
 
   const tweetId =
     payload.id ?? payload.contents?.new?.id ?? payload.contents?.old?.id;
-  const parentId =
-    payload.contents?.new?.publishValue?.parent?.id ?? null;
+  const parentId = payload.contents?.new?.publishValue?.parent?.id ?? null;
 
   revalidateTweetPaths(tweetId ?? undefined, {
     parent: parentId ?? undefined,

@@ -163,7 +163,7 @@ function ModeBanner({
   return (
     <div className="border-l border-(--ink-30) pl-5">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="m-0 text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+        <p className="m-0 k-label-mini">
           {label}
         </p>
         <Link

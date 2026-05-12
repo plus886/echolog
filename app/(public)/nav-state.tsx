@@ -1,12 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect } from "react";
 
-// "use client" component なので SSR では useLayoutEffect が警告する。
-// クライアントでのみ useLayoutEffect。
-const useIsoLayoutEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+import { useIsoLayoutEffect } from "@/lib/use-iso-layout-effect";
 
 // pathname に応じて .k-shell の .is-scrolled を管理する。
 // - "/" (home): ScrollWordmark と ScrollMemory に任せて何もしない。

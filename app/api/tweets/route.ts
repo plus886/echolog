@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { MAX_TWEET_LENGTH } from "@/lib/constants";
+import { MAX_IMAGES, MAX_TWEET_LENGTH } from "@/lib/constants";
 import { createTweet } from "@/lib/microcms-management";
 import { revalidateTweetPaths } from "@/lib/revalidate";
 import { evaluateTweetText } from "@/lib/tweet-text";
-
-const MAX_IMAGES = 4;
 
 const PostSchema = z.object({
   body: z.string().max(10_000).optional().default(""),

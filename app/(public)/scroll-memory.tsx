@@ -1,13 +1,10 @@
 "use client";
 
-import { useEffect, useLayoutEffect } from "react";
+import { useEffect } from "react";
+
+import { useIsoLayoutEffect } from "@/lib/use-iso-layout-effect";
 
 const KEY = "k-home-scroll-y";
-
-// "use client" component なので SSR では useLayoutEffect が警告を出す。
-// クライアントでのみ useLayoutEffect を使う iso 変種。
-const useIsoLayoutEffect =
-  typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 // Home (/) の scrollY を sessionStorage に常時保存し、mount 時 (= 戻ってきた時)
 // に復元する。詳細ページから browser back / "← back to portfolio" クリックで

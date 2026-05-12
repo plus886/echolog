@@ -73,14 +73,14 @@ export default async function AdminPage({
   return (
     <main className="mt-6 grid grid-cols-1 gap-x-10 gap-y-12 min-[880px]:grid-cols-[1fr_320px]">
       <section>
-        <h1 className="mb-6 text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+        <h1 className="mb-6 k-label-mini">
           {heading}
         </h1>
         <ComposeForm mode={composeMode} />
       </section>
 
       <aside>
-        <h2 className="mb-6 text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+        <h2 className="mb-6 k-label-mini">
           Recent
         </h2>
         {tweets.length === 0 ? (

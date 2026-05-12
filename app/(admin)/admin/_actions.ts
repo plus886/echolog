@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { MAX_TWEET_LENGTH } from "@/lib/constants";
+import { MAX_IMAGES, MAX_TWEET_LENGTH } from "@/lib/constants";
 import {
   createTweet,
   deleteTweet,
@@ -14,8 +14,6 @@ import {
 } from "@/lib/microcms-management";
 import { revalidateTweetPaths } from "@/lib/revalidate";
 import { evaluateTweetText } from "@/lib/tweet-text";
-
-const MAX_IMAGES = 4;
 
 const ImageSchema = z.object({
   url: z.string().url(),

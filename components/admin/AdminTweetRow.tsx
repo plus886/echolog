@@ -7,7 +7,7 @@ import {
   deleteTweetAction,
   retweetAction,
 } from "@/app/(admin)/admin/_actions";
-import { formatTweetTimestamp } from "@/lib/format";
+import { formatPortfolioTimestamp } from "@/lib/format";
 import type { AdminTweet } from "@/types/microcms";
 
 type Props = {
@@ -42,7 +42,7 @@ export function AdminTweetRow({
     <article className="py-5">
       <p className="m-0 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink)">
         {isRetweet ? (
-          <span className="text-[11px] uppercase tracking-[0.16em] text-(--ink-50) not-italic">
+          <span className="k-label-mini not-italic">
             ↻ self retweet
           </span>
         ) : (
@@ -63,7 +63,7 @@ export function AdminTweetRow({
             prefetch={false}
             className="normal-case tracking-normal transition-opacity hover:opacity-60"
           >
-            {formatTweetTimestamp(timestamp)}
+            {formatPortfolioTimestamp(timestamp)}
           </Link>
         )}
 

@@ -164,6 +164,19 @@
   right: calc(2 / 24 * 100%);
 }
 
+/* ─── Mini label (small uppercase tracked-out caption).
+       詳細ページの "In reply to" / "Quoting" / 投稿日時、admin の
+       section heading / draft chip / "(N) Replies" など、繰り返し使う
+       12 箇所以上の `text-[11px] uppercase tracking-[0.16em] text-(--ink-50)`
+       を一発で表現するための utility。margin / hover / 追加 color は
+       それぞれの呼び出し側で utility class を上乗せして調整する。*/
+.k-shell .k-label-mini {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-50);
+}
+
 /* ─── Scroll-cue keyframes + utility */
 @keyframes k-scroll-cue-pulse {
   0%,

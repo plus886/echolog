@@ -20,7 +20,7 @@ export default async function DraftsPage() {
 
   return (
     <main className="mx-auto mt-6 w-full max-w-[720px]">
-      <h1 className="mb-8 text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+      <h1 className="mb-8 k-label-mini">
         Drafts
       </h1>
 

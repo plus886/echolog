@@ -55,7 +55,7 @@ export function EditForm({ id, defaultBody, isDraft }: Props) {
         <div className="flex items-center gap-4">
           <Link
             href="/admin"
-            className="text-[11px] uppercase tracking-[0.16em] text-(--ink-50) transition-opacity hover:opacity-60"
+            className="k-label-mini transition-opacity hover:opacity-60"
           >
             cancel
           </Link>

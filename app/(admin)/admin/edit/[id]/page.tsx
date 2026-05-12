@@ -25,7 +25,7 @@ export default async function EditTweetPage({
   return (
     <main className="mx-auto mt-6 w-full max-w-[720px]">
       <header className="mb-8 flex items-baseline justify-between">
-        <h1 className="text-[11px] uppercase tracking-[0.16em] text-(--ink-50)">
+        <h1 className="k-label-mini">
           Edit
         </h1>
         {isDraft && (
