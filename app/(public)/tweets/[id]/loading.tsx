@@ -1,12 +1,15 @@
+// View Transitions API ナビゲーション中は OLD ページ (home) の snapshot が
+// 見えているため、ここで skeleton bar / border を描くと NEW snapshot として
+// 一瞬挟まり「枠線のフラッシュ」になる。レイアウト寸法だけ確保した空の
+// article を返し、視覚的には何も挟まないようにする。
+// 直接 URL 叩きの場合も、microCMS のレスポンスはたいてい速いので、
+// 短時間の空白で十分。
 export default function Loading() {
   return (
-    <main className="mx-auto max-w-2xl w-full px-4 py-8 flex flex-col gap-4">
-      <div className="h-4 w-24 animate-pulse rounded bg-foreground/[0.06]" />
-      <div
-        aria-busy="true"
-        aria-live="polite"
-        className="h-40 animate-pulse rounded-lg border border-border bg-foreground/[0.03]"
-      />
-    </main>
+    <article
+      aria-busy="true"
+      aria-live="polite"
+      className="mx-auto mt-40 mb-24 w-full max-w-[844px] px-6 min-[880px]:px-10"
+    />
   );
 }

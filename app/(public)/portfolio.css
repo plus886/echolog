@@ -19,6 +19,38 @@
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Quote 詳細ページの画像 lightbox 用 morph (QuoteImages)。
+   サムネ ↔ overlay を同じ `qimg-<n>` 名で結び、位置/サイズと
+   クロスフェードを少しゆったりした 380ms にする。8 枚まで列挙
+   (microCMS の 1 tweet あたり実用上の上限)。*/
+::view-transition-group(qimg-0),
+::view-transition-group(qimg-1),
+::view-transition-group(qimg-2),
+::view-transition-group(qimg-3),
+::view-transition-group(qimg-4),
+::view-transition-group(qimg-5),
+::view-transition-group(qimg-6),
+::view-transition-group(qimg-7),
+::view-transition-old(qimg-0),
+::view-transition-new(qimg-0),
+::view-transition-old(qimg-1),
+::view-transition-new(qimg-1),
+::view-transition-old(qimg-2),
+::view-transition-new(qimg-2),
+::view-transition-old(qimg-3),
+::view-transition-new(qimg-3),
+::view-transition-old(qimg-4),
+::view-transition-new(qimg-4),
+::view-transition-old(qimg-5),
+::view-transition-new(qimg-5),
+::view-transition-old(qimg-6),
+::view-transition-new(qimg-6),
+::view-transition-old(qimg-7),
+::view-transition-new(qimg-7) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0.24, 1);
+}
+
 .k-shell {
   --paper: #f9f8f2;
   --paper-2: #f1ede2;
@@ -304,17 +336,19 @@
    はさらに sepia 0.8 を重ねる。ホバー対象自体は無変化で残り、相対的に
    フォーカスされたように見える。hover-in は専用の 400ms transition で
    素早く、hover-out は基底 reveal の 1.4s でゆっくり戻る。*/
-.k-shell #portfolio:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
+.k-shell
+  #portfolio:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
   figure[data-reveal]:not(:hover) {
-  opacity: 0.3;
+  opacity: 0.2;
   filter: blur(0) sepia(0.8);
   transition:
     opacity 400ms ease-out,
     filter 400ms ease-out;
 }
-.k-shell #portfolio:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
+.k-shell
+  #portfolio:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
   .k-quote-wrap:not(:hover) {
-  opacity: 0.3;
+  opacity: 0.2;
   transition: opacity 400ms ease-out;
 }
 

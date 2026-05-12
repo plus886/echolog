@@ -3,45 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-// Each visible character is wrapped in its own .k-nav-char span so the
-// ripple handler can drive their opacity individually.
-function NavLabel({ children }: { children: string }) {
-  return (
-    <span className="k-nav-text">
-      {[...children].map((ch, i) => (
-        <span key={i} className="k-nav-char">
-          {ch === " " ? " " : ch}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-// Per-link ripple: from the entry point (mouseenter clientX or the
-// focused link's left edge) compute each character's distance and use
-// it as an animation-delay so the opacity dip spreads outward from the
-// touched character to the ends of the label.
-function dispatchRipple(link: HTMLElement, originX: number) {
-  const chars = link.querySelectorAll<HTMLElement>(".k-nav-char");
-  chars.forEach((c) => {
-    const r = c.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const d = Math.abs(cx - originX);
-    c.style.setProperty("--ripple-delay", `${d * 5}ms`);
-    c.classList.remove("is-rippling");
-    // Force reflow so the animation restarts from frame 0.
-    void c.offsetWidth;
-    c.classList.add("is-rippling");
-  });
-}
-
-const onEnter = (e: React.MouseEvent<HTMLElement>) => {
-  dispatchRipple(e.currentTarget, e.clientX);
-};
-const onFocus = (e: React.FocusEvent<HTMLElement>) => {
-  const r = e.currentTarget.getBoundingClientRect();
-  dispatchRipple(e.currentTarget, r.left);
-};
+import { onRippleEnter, onRippleFocus, RippleLabel } from "./nav-ripple";
 
 // Top nav skeleton:
 //  - 5 slots distributed across a 24-column grid (brand · portfolio ·
@@ -51,6 +13,8 @@ const onFocus = (e: React.FocusEvent<HTMLElement>) => {
 //    opens a full-bleed overlay
 //  - Hovering a label triggers a per-character opacity ripple that
 //    emanates from the cursor's entry point through that label only.
+//    Ripple ロジック (RippleLabel + onRippleEnter/onRippleFocus) は
+//    KO KAIJI ワードマーク (WordmarkLink) と共有 ./nav-ripple.tsx に集約。
 export function PortfolioNav() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -84,20 +48,20 @@ export function PortfolioNav() {
           <Link
             href="#about"
             className="k-nav-link"
-            onMouseEnter={onEnter}
-            onFocus={onFocus}
+            onMouseEnter={onRippleEnter}
+            onFocus={onRippleFocus}
           >
-            <NavLabel>About</NavLabel>
+            <RippleLabel>About</RippleLabel>
           </Link>
         </li>
         <li>
           <Link
             href="#"
             className="k-nav-link"
-            onMouseEnter={onEnter}
-            onFocus={onFocus}
+            onMouseEnter={onRippleEnter}
+            onFocus={onRippleFocus}
           >
-            <NavLabel>Echolog</NavLabel>
+            <RippleLabel>Echolog</RippleLabel>
           </Link>
         </li>
         <li className="invisible" aria-hidden="true">
@@ -108,20 +72,20 @@ export function PortfolioNav() {
           <Link
             href="#portfolio"
             className="k-nav-link"
-            onMouseEnter={onEnter}
-            onFocus={onFocus}
+            onMouseEnter={onRippleEnter}
+            onFocus={onRippleFocus}
           >
-            <NavLabel>Works</NavLabel>
+            <RippleLabel>Works</RippleLabel>
           </Link>
         </li>
         <li>
           <Link
             href="#contact"
             className="k-nav-link"
-            onMouseEnter={onEnter}
-            onFocus={onFocus}
+            onMouseEnter={onRippleEnter}
+            onFocus={onRippleFocus}
           >
-            <NavLabel>Contact</NavLabel>
+            <RippleLabel>Contact</RippleLabel>
           </Link>
         </li>
       </ul>

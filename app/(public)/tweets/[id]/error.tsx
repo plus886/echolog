@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
+
+import { TransitionLink } from "../../transition-link";
 
 export default function TweetError({
   error,
@@ -15,27 +16,25 @@ export default function TweetError({
   }, [error]);
 
   return (
-    <main className="mx-auto max-w-2xl w-full px-4 py-12 flex flex-col gap-3">
-      <h1 className="text-lg font-semibold">ツイートを表示できませんでした</h1>
-      <p className="text-sm text-muted">
-        取得中にエラーが発生しました。
+    <article className="mx-auto mt-40 mb-24 w-full max-w-[844px] px-6 min-[880px]:px-10">
+      <p className="m-0 font-serif text-[24px] leading-[1.75] text-(--ink)">
+        ツイートを表示できませんでした。
       </p>
-      <div className="flex gap-3 text-sm">
+      <p className="mt-6 font-serif text-[15px] leading-[1.8] text-(--ink-70)">
+        取得中にエラーが発生しました。少し時間を置いて再試行してみてください。
+      </p>
+      <div className="mt-12 flex gap-6 text-[12px] tracking-[0.04em] text-(--ink-50)">
         <button
           type="button"
           onClick={reset}
-          className="rounded-md border border-border px-4 py-1.5 hover:bg-foreground/[0.04]"
+          className="border-b border-current pb-px"
         >
-          再試行
+          retry
         </button>
-        <Link
-          href="/feed"
-          prefetch={false}
-          className="rounded-md px-4 py-1.5 text-muted hover:underline"
-        >
-          フィードに戻る
-        </Link>
+        <TransitionLink href="/" className="border-b border-current pb-px">
+          ← back to portfolio
+        </TransitionLink>
       </div>
-    </main>
+    </article>
   );
 }
