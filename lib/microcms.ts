@@ -47,7 +47,7 @@ export async function listTweets(
 }
 
 // 親ツイート（=スレッドの起点）のみを取得する。
-// /feed と TweetFeed コンポーネントで使う。
+// ホームの gallery quote 表示で使う。
 export async function listRootTweets(
   queries?: MicroCMSQueries,
 ): Promise<TweetListResponse> {

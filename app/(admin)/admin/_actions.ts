@@ -12,6 +12,7 @@ import {
   updateTweet,
   type TweetWriteFields,
 } from "@/lib/microcms-management";
+import { revalidateTweetPaths } from "@/lib/revalidate";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
 const MAX_IMAGES = 4;
@@ -75,19 +76,6 @@ function buildContent(input: {
   return content;
 }
 
-function revalidateAfterWrite(
-  id: string,
-  refs: { parent?: string; retweetOf?: string } = {},
-) {
-  revalidatePath("/feed");
-  revalidatePath("/");
-  revalidatePath(`/tweets/${id}`);
-  if (refs.parent) revalidatePath(`/tweets/${refs.parent}`);
-  if (refs.retweetOf) revalidatePath(`/tweets/${refs.retweetOf}`);
-  revalidatePath("/admin");
-  revalidatePath("/admin/drafts");
-}
-
 function readCompose(formData: FormData) {
   return ComposeSchema.parse({
     body: formData.get("body") ?? "",
@@ -109,7 +97,7 @@ export async function publishTweetAction(
     assertWithinLimit(parsed.body);
 
     const { id } = await createTweet(buildContent(parsed));
-    revalidateAfterWrite(id, parsed);
+    revalidateTweetPaths(id, parsed);
     return { ok: true, id };
   } catch (e) {
     return {
@@ -163,7 +151,7 @@ export async function updateTweetAction(formData: FormData) {
     { body: parsed.body },
     parsed.publish ? { isDraft: false } : undefined,
   );
-  revalidateAfterWrite(parsed.id);
+  revalidateTweetPaths(parsed.id);
   redirect("/admin");
 }
 
@@ -171,10 +159,7 @@ export async function deleteTweetAction(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) throw new Error("idが指定されていません");
   await deleteTweet(id);
-  revalidatePath("/feed");
-  revalidatePath("/");
-  revalidatePath("/admin");
-  revalidatePath("/admin/drafts");
+  revalidateTweetPaths(id);
   redirect("/admin");
 }
 
@@ -197,7 +182,7 @@ export async function retweetAction(formData: FormData): Promise<ActionResult> {
       retweetOf: targetId,
       retweetType: ["retweet"],
     });
-    revalidateAfterWrite(id, { retweetOf: targetId });
+    revalidateTweetPaths(id, { retweetOf: targetId });
     return { ok: true, id };
   } catch (e) {
     return {

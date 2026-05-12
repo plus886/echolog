@@ -17,12 +17,3 @@ export function formatTweetTimestamp(iso: string | null | undefined): string {
   }
   return format(date, "yyyy年M月d日", { locale: ja });
 }
-
-export function formatAbsoluteTimestamp(
-  iso: string | null | undefined,
-): string {
-  if (!iso) return "";
-  const date = parseISO(iso);
-  if (Number.isNaN(date.getTime())) return "";
-  return format(date, "yyyy/MM/dd HH:mm", { locale: ja });
-}

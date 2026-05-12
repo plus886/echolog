@@ -1,9 +1,9 @@
-import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { MAX_TWEET_LENGTH } from "@/lib/constants";
 import { deleteTweet, updateTweet } from "@/lib/microcms-management";
+import { revalidateTweetPaths } from "@/lib/revalidate";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
 type Params = { id: string };
@@ -55,9 +55,7 @@ export async function PATCH(
       input.isDraft !== undefined ? { isDraft: input.isDraft } : undefined,
     );
 
-    revalidatePath("/feed");
-    revalidatePath("/");
-    revalidatePath(`/tweets/${id}`);
+    revalidateTweetPaths(id);
 
     return NextResponse.json({ id });
   } catch (e) {
@@ -79,9 +77,7 @@ export async function DELETE(
 
   try {
     await deleteTweet(id);
-    revalidatePath("/feed");
-    revalidatePath("/");
-    revalidatePath(`/tweets/${id}`);
+    revalidateTweetPaths(id);
     return NextResponse.json({ id });
   } catch (e) {
     return NextResponse.json(

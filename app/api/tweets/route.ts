@@ -1,9 +1,9 @@
-import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { MAX_TWEET_LENGTH } from "@/lib/constants";
 import { createTweet } from "@/lib/microcms-management";
+import { revalidateTweetPaths } from "@/lib/revalidate";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
 const MAX_IMAGES = 4;
@@ -75,11 +75,10 @@ export async function POST(request: Request) {
       { isDraft: input.isDraft ?? false },
     );
 
-    revalidatePath("/feed");
-    revalidatePath("/");
-    revalidatePath(`/tweets/${id}`);
-    if (input.parent) revalidatePath(`/tweets/${input.parent}`);
-    if (input.retweetOf) revalidatePath(`/tweets/${input.retweetOf}`);
+    revalidateTweetPaths(id, {
+      parent: input.parent,
+      retweetOf: input.retweetOf,
+    });
 
     return NextResponse.json({ id }, { status: 201 });
   } catch (e) {

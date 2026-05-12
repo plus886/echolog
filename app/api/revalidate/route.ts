@@ -1,7 +1,7 @@
-import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { env } from "@/lib/env";
+import { revalidateTweetPaths } from "@/lib/revalidate";
 
 const SIGNATURE_HEADER = "x-microcms-signature";
 
@@ -79,15 +79,9 @@ export async function POST(request: Request) {
   const parentId =
     payload.contents?.new?.publishValue?.parent?.id ?? null;
 
-  revalidatePath("/feed");
-  revalidatePath("/");
-
-  if (tweetId) {
-    revalidatePath(`/tweets/${tweetId}`);
-  }
-  if (parentId) {
-    revalidatePath(`/tweets/${parentId}`);
-  }
+  revalidateTweetPaths(tweetId ?? undefined, {
+    parent: parentId ?? undefined,
+  });
 
   return NextResponse.json({
     revalidated: true,
