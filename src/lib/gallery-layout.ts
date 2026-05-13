@@ -176,3 +176,125 @@ export function generateGalleryLayout(
 
   return { slots, totalHeight: Math.round(maxBottom + BOTTOM_MARGIN) };
 }
+
+// ─────────────────────────────────────────────────────────────
+// Quote image scatter (tweet 詳細ページの主ツイート直下に置く画像)
+//
+// Home gallery と同じ「decision-jitter + 衝突回避」を、tweet 詳細の
+// 狭い列 (max-w-211 ≒ 844px、padding 込みなら ~720px) 向けに小さく
+// チューニングしたバージョン。
+//
+// 旧実装は `<ul flex-wrap gap-3>` で 96x96 サムネを横並びにするだけ
+// だった。これを Home と同じ "scattered jitter" に置き換える。
+//
+// 決定論性:
+//   seed が同じなら同じ slot 配列を返す。呼び出し側 (tweets/[id].astro)
+//   で tweet.id を `hashStringToSeed` で int に変換して seed に渡せば、
+//   tweet ごとに固定 (ただしユニーク) なレイアウトになる。画像追加 /
+//   差し替えなどで images[] が変わっても seed は同じだが、count や
+//   aspect ratio が変わることで自然に再配置される。
+// ─────────────────────────────────────────────────────────────
+
+export type QuoteImageDim = {
+  width?: number;
+  height?: number;
+};
+
+export type QuoteImageSlot = {
+  leftPct: number;
+  top: number;
+  w: number;
+  h: number;
+};
+
+const QI_ASSUMED_CONTAINER_W = 720;
+const QI_ZONE_JITTER = 6;
+const QI_ROW_BASE = 130;
+const QI_ROW_JITTER = 28;
+const QI_FIRST_TOP = 0;
+const QI_BOTTOM_MARGIN = 24;
+const QI_WIDTH_MIN = 150;
+const QI_WIDTH_MAX = 210;
+const QI_MIN_GAP = 18;
+// `.k-pos` の --side-margin を 0px で上書きする前提でも、画像が極端に
+// 端に寄らないよう内部的に少しだけ余白を確保する。
+const QI_SAFE_MARGIN_PCT = 4;
+const QI_DEFAULT_SEED = 17;
+
+function quoteImageZones(count: number): readonly number[] {
+  if (count <= 1) return [50];
+  if (count === 2) return [32, 68];
+  return [24, 50, 76];
+}
+
+export function generateQuoteImagesLayout(
+  images: QuoteImageDim[],
+  seed: number = QI_DEFAULT_SEED,
+): { slots: QuoteImageSlot[]; totalHeight: number } {
+  const count = images.length;
+  if (count === 0) return { slots: [], totalHeight: 0 };
+
+  const rand = mulberry32(seed);
+  const zones = quoteImageZones(count);
+  const slots: QuoteImageSlot[] = [];
+  let nextTop = QI_FIRST_TOP;
+  let maxBottom = 0;
+
+  for (let i = 0; i < count; i++) {
+    const img = images[i];
+    const zone = zones[i % zones.length];
+    const leftPct = zone + (rand() * 2 - 1) * QI_ZONE_JITTER;
+
+    const w = Math.round(QI_WIDTH_MIN + rand() * (QI_WIDTH_MAX - QI_WIDTH_MIN));
+    const aspect =
+      img.width && img.height && img.width > 0 ? img.height / img.width : 1;
+    const h = Math.max(1, Math.round(w * aspect));
+
+    // 衝突判定: Home gallery と同じ手順で、想定 container 幅における
+    // bounding box を計算し、上方の slot と当たるなら下に押し下げる。
+    const halfWidthPct = (w / QI_ASSUMED_CONTAINER_W) * 50;
+    const minLeftPct = QI_SAFE_MARGIN_PCT + halfWidthPct;
+    const maxLeftPct = 100 - QI_SAFE_MARGIN_PCT - halfWidthPct;
+    const clampedLeftPct = Math.max(minLeftPct, Math.min(maxLeftPct, leftPct));
+    const centerPx = (clampedLeftPct / 100) * QI_ASSUMED_CONTAINER_W;
+    const leftEdge = centerPx - w / 2;
+    const rightEdge = centerPx + w / 2;
+
+    let top = nextTop;
+    for (let j = i - 1; j >= 0; j--) {
+      const p = slots[j];
+      if (p.top + p.h + QI_MIN_GAP <= top) break;
+      const pHalfPct = (p.w / QI_ASSUMED_CONTAINER_W) * 50;
+      const pClamped = Math.max(
+        QI_SAFE_MARGIN_PCT + pHalfPct,
+        Math.min(100 - QI_SAFE_MARGIN_PCT - pHalfPct, p.leftPct),
+      );
+      const pCenter = (pClamped / 100) * QI_ASSUMED_CONTAINER_W;
+      const pLeft = pCenter - p.w / 2;
+      const pRight = pCenter + p.w / 2;
+      const hOverlap =
+        pRight + QI_MIN_GAP > leftEdge && pLeft - QI_MIN_GAP < rightEdge;
+      if (hOverlap) {
+        const minTop = p.top + p.h + QI_MIN_GAP;
+        if (top < minTop) top = minTop;
+      }
+    }
+
+    slots.push({ leftPct, top, w, h });
+    if (top + h > maxBottom) maxBottom = top + h;
+
+    const step = QI_ROW_BASE + (rand() * 2 - 1) * QI_ROW_JITTER;
+    nextTop = top + Math.round(step);
+  }
+
+  return { slots, totalHeight: Math.round(maxBottom + QI_BOTTOM_MARGIN) };
+}
+
+// djb2-xor 風の決定論的文字列ハッシュ。tweet id を seed に変換する用。
+export function hashStringToSeed(s: string): number {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) {
+    h = (((h << 5) + h) ^ s.charCodeAt(i)) >>> 0;
+  }
+  return h >>> 0;
+}

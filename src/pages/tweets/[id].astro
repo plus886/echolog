@@ -3,6 +3,10 @@ import Public from "@/layouts/Public.astro";
 import QuoteImages from "@/components/QuoteImages.tsx";
 import ReferenceCard from "@/components/ReferenceCard.astro";
 import { formatPortfolioTimestamp } from "@/lib/format";
+import {
+  generateQuoteImagesLayout,
+  hashStringToSeed,
+} from "@/lib/gallery-layout";
 import { getTweet, listThreadReplies } from "@/lib/microcms";
 import { getRetweetKind, type Tweet } from "@/types/microcms";
 
@@ -42,6 +46,15 @@ const replies = repliesRes?.contents ?? [];
 const retweetKind = getRetweetKind(tweet);
 const images = tweet.images ?? [];
 
+// 画像 scatter のレイアウトを server-side で決定論的に計算する。seed は
+// tweet.id から生成するので、同じ tweet を何度開いても同じ配置に。images
+// の数 / aspect ratio が変われば自然に再配置される。QuoteImages 自体は
+// client:only なので、計算結果を props に詰めて island に渡す。
+const imageLayout =
+  images.length > 0
+    ? generateQuoteImagesLayout(images, hashStringToSeed(id))
+    : { slots: [], totalHeight: 0 };
+
 // 旧 Next.js の `revalidate = 3600` 相当を CDN cache header で表現。
 // `s-maxage=3600` で Cloudflare edge に 1 時間 cache、
 // `stale-while-revalidate=86400` で 1 日間古い HTML を返しつつ裏で更新。
@@ -51,61 +64,63 @@ Astro.response.headers.set(
 );
 ---
 
-<Public
-  title="Quote"
-  description={tweet.body?.slice(0, 120)}
-  ogType="article"
->
-  <article class="mx-auto mt-40 mb-24 w-full max-w-[844px] px-6 min-[880px]:px-10">
-    {
-      tweet.parent && tweet.parent.body && (
-        <ReferenceCard
-          label="In reply to"
-          body={tweet.parent.body}
-          href={`/tweets/${tweet.parent.id}`}
-          class="mb-12"
-        />
-      )
-    }
+<Public title="Quote" description={tweet.body?.slice(0, 120)} ogType="article">
+  <article class="mx-auto mt-40 mb-24 w-full max-w-211 px-6 min-[880px]:px-10">
+    <div class="flex flex-col max-w-2/3 justify-self-center-safe mb-20">
+      {
+        tweet.parent && tweet.parent.body && (
+          <ReferenceCard
+            label="In reply to"
+            body={tweet.parent.body}
+            href={`/tweets/${tweet.parent.id}`}
+            class="mb-12"
+          />
+        )
+      }
 
-    {
-      tweet.body && (
-        <p class="m-0 whitespace-pre-wrap font-serif text-[24px] leading-[1.75] text-(--ink)">
-          {tweet.body}
-        </p>
-      )
-    }
+      {
+        tweet.body && (
+          <p
+            class="m-0 whitespace-pre-wrap font-serif text-[24px] leading-[1.75] text-(--ink)"
+            set:text={tweet.body}
+          />
+        )
+      }
 
-    {
-      tweet.retweetOf && tweet.retweetOf.body && (
-        <ReferenceCard
-          label={retweetKind === "quote" ? "Quoting" : "Retweeted"}
-          body={tweet.retweetOf.body}
-          href={`/tweets/${tweet.retweetOf.id}`}
-          as="blockquote"
-          class="mt-10"
-        />
-      )
-    }
+      {
+        tweet.retweetOf && tweet.retweetOf.body && (
+          <ReferenceCard
+            label={retweetKind === "quote" ? "Quoting" : "Retweeted"}
+            body={tweet.retweetOf.body}
+            href={`/tweets/${tweet.retweetOf.id}`}
+            as="blockquote"
+            class="mt-10"
+          />
+        )
+      }
 
-    <p class="mt-12 k-label-mini">
-      {formatPortfolioTimestamp(tweet.publishedAt)}
-    </p>
+      <p class="mt-6 k-label-mini">
+        {formatPortfolioTimestamp(tweet.publishedAt)}
+      </p>
+    </div>
 
     {
       images.length > 0 && (
         <div class="mt-10">
-          <QuoteImages images={images} client:only="react" />
+          <QuoteImages
+            images={images}
+            slots={imageLayout.slots}
+            totalHeight={imageLayout.totalHeight}
+            client:only="react"
+          />
         </div>
       )
     }
 
     {
       replies.length > 0 && (
-        <section class="mt-24 text-right">
-          <h2 class="mb-8 k-label-mini">
-            ({replies.length}) Replies
-          </h2>
+        <section class="mt-24 text-right flex flex-col max-w-2/3 justify-self-center-safe">
+          <h2 class="mb-8 k-label-mini">({replies.length}) Replies</h2>
           <ol class="m-0 flex list-none flex-col items-end gap-10 p-0">
             {replies.map((reply) => (
               <li class="max-w-[75%] border-(--ink-15)">
@@ -114,9 +129,24 @@ Astro.response.headers.set(
                   class="block no-underline transition-opacity hover:opacity-60"
                 >
                   {reply.body && (
-                    <p class="m-0 whitespace-pre-wrap text-left font-serif text-[15px] leading-[1.8] text-(--ink)">
-                      {reply.body}
-                    </p>
+                    <p
+                      class="m-0 whitespace-pre-wrap text-left font-serif text-[15px] leading-[1.8] text-(--ink)"
+                      set:text={reply.body}
+                    />
+                  )}
+                  {reply.images && reply.images.length > 0 && (
+                    <ul class="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">
+                      {reply.images.map((img) => (
+                        <li class="m-0 p-0">
+                          <img
+                            src={`${img.url}?w=96&h=96&fit=crop`}
+                            alt=""
+                            loading="lazy"
+                            class="block h-6 w-6 bg-(--paper-2) object-cover"
+                          />
+                        </li>
+                      ))}
+                    </ul>
                   )}
                   <p class="mt-3 k-label-mini">
                     {formatPortfolioTimestamp(reply.publishedAt)}

@@ -27,18 +27,20 @@ const Inner = as;
     <a href={href} class={`block no-underline ${className}`}>
       <Inner class="m-0 border-l border-(--ink-30) pl-6 transition-colors hover:border-(--ink-50)">
         <p class="mb-2 k-label-mini">{label}</p>
-        <p class="m-0 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink-70)">
-          {body}
-        </p>
+        <p
+          class="m-0 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink-70)"
+          set:text={body}
+        />
       </Inner>
     </a>
   ) : (
     <div class={className}>
       <Inner class="m-0 border-l border-(--ink-30) pl-6 transition-colors hover:border-(--ink-50)">
         <p class="mb-2 k-label-mini">{label}</p>
-        <p class="m-0 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink-70)">
-          {body}
-        </p>
+        <p
+          class="m-0 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink-70)"
+          set:text={body}
+        />
       </Inner>
     </div>
   )
