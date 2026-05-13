@@ -1,0 +1,38 @@
+---
+import Base from "@/layouts/Base.astro";
+import NavState from "@/components/NavState.tsx";
+import PortfolioNav from "@/components/PortfolioNav.tsx";
+import WordmarkLink from "@/components/WordmarkLink.tsx";
+
+// (public) ルート全体の chrome を載せた layout。Base.astro (HTML shell +
+// .k-shell + FontPlus) を内包し、上に PortfolioNav と KO KAIJI pin、
+// pathname-aware の NavState を Astro Island として配置する。
+//
+// 旧 app/(public)/layout.tsx の Astro 移植。Next.js 版は「persistent
+// chrome (route group layout)」だったが、Astro phase 3 では
+// <ClientRouter /> 未導入のため毎回 full page nav で chrome は再 mount
+// される。phase 5 で <ClientRouter /> を入れて transition:persist を付与
+// すれば、旧 Next.js 版同等の persist 効果が得られる。
+//
+// Hydration directives:
+//  - PortfolioNav, WordmarkLink → client:only="react"
+//    React Island が JSX を SSR 出力すると、現状の Astro 6 +
+//    @astrojs/cloudflare adapter ではレスポンスが空 body で返ってくる
+//    (要因は react-dom server entry の vite-ssr 経路と推察。エラーは
+//    ログに出ない静かな失敗)。chrome は SEO 要件もないため client-only
+//    で問題なし。phase 5 (<ClientRouter />) 追加時に再評価。
+//  - NavState → client:load
+//    return null の Island は SSR を通過するので client:load OK。
+---
+
+<Base title={Astro.props.title} description={Astro.props.description}>
+  <PortfolioNav client:only="react" />
+  <WordmarkLink
+    client:only="react"
+    className="k-wordmark-pin fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light) no-underline"
+  >
+    KO KAIJI
+  </WordmarkLink>
+  <slot />
+  <NavState client:load />
+</Base>

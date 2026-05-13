@@ -1,17 +1,291 @@
 ---
+import Public from "@/layouts/Public.astro";
+import GalleryParallax from "@/components/GalleryParallax.tsx";
+import ScrollMemory from "@/components/ScrollMemory.tsx";
+import ScrollReveal from "@/components/ScrollReveal.tsx";
+import ScrollWordmark from "@/components/ScrollWordmark.tsx";
+import WordmarkLink from "@/components/WordmarkLink.tsx";
+import { composeGalleryItems, type GalleryQuote } from "@/lib/gallery-compose";
+import { generateGalleryLayout, type LayoutItem } from "@/lib/gallery-layout";
+import { listRootTweets, loadGalleryDays } from "@/lib/microcms";
+import type { Day } from "@/types/microcms";
 
+// 旧 app/(public)/page.tsx の Astro 移植。
+// 移植ポイント:
+//  - Next.js の `revalidate = 3600` (ISR) は Cache-Control に置換。
+//  - <TransitionLink> / <Link> はすべて素の <a> に。phase 5 で
+//    <ClientRouter /> を入れれば soft nav + View Transitions が <a> に
+//    自動適用される。
+//  - WordmarkLink (hero 内) は React Island として client:load。
+//  - ScrollReveal / ScrollWordmark / GalleryParallax / ScrollMemory は
+//    page bottom にまとめて mount (旧構造と同じ)。
+//  - React の `style={{...} as React.CSSProperties}` は Astro でも object
+//    形式で渡せるが、レイアウト数値は明示的に px 文字列にする (Astro は
+//    React のような自動 px 付与をしないため)。
+
+export const prerender = false;
+
+let days: Day[] = [];
+let tweets: GalleryQuote[] = [];
+
+const [daysResult, tweetsResult] = await Promise.allSettled([
+  loadGalleryDays(),
+  listRootTweets({ limit: 10, orders: "-publishedAt" }),
+]);
+if (daysResult.status === "fulfilled") {
+  days = daysResult.value;
+} else {
+  console.error("[home] loadGalleryDays failed", daysResult.reason);
+}
+if (tweetsResult.status === "fulfilled") {
+  tweets = tweetsResult.value.contents
+    .filter((t): t is typeof t & { body: string } =>
+      Boolean(t.body && t.body.trim().length > 0),
+    )
+    .slice(0, 10)
+    .map((t) => ({ id: t.id, text: t.body }));
+} else {
+  console.error("[home] listRootTweets failed", tweetsResult.reason);
+}
+
+const items = composeGalleryItems(days, tweets);
+const layoutItems: LayoutItem[] = items.map((it) =>
+  it.kind === "photo"
+    ? {
+        kind: "photo",
+        image: {
+          width: it.day.image.width ?? 0,
+          height: it.day.image.height ?? 0,
+        },
+      }
+    : { kind: "quote", chars: it.text.length },
+);
+const { slots, totalHeight } = generateGalleryLayout(layoutItems);
+
+const EXPLORE = [
+  "https://picsum.photos/seed/k-e1/420/520",
+  "https://picsum.photos/seed/k-e2/420/520",
+  "https://picsum.photos/seed/k-e3/420/520",
+  "https://picsum.photos/seed/k-e4/420/520",
+];
+
+const year = new Date().getFullYear();
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, s-maxage=3600, stale-while-revalidate=86400",
+);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Public>
+  {/* Full-viewport hero — wordmark centered, scroll cue at the bottom */}
+  <section class="relative flex h-screen min-h-[560px] items-center justify-center">
+    <h1 class="m-0 text-center font-normal uppercase flex flex-col items-center gap-8">
+      <span class="text-[clamp(24px,2.4vw,32px)] tracking-[0.55em] indent-[0.55em] font-serif [writing-mode:vertical-rl] [font-feature-settings:initial]">
+        康凱爾
+      </span>
+      <WordmarkLink
+        client:only="react"
+        className="k-wordmark tracking-[0.16em] text-[12px] no-underline text-(--ink)"
+      >
+        KO KAIJI
+      </WordmarkLink>
+    </h1>
+    <div
+      class="k-scroll-cue pointer-events-none absolute bottom-14 left-1/2 flex -translate-x-1/2 flex-col items-center gap-4 text-(--ink-50)"
+      aria-hidden="true"
+    >
+      <span class="text-[11px] tracking-[0.32em] lowercase">scroll</span>
+      <span class="block h-11 w-px bg-current animate-scroll-cue"></span>
+    </div>
+  </section>
+
+  {/* Intro — narrow column, sits to the left, sans body */}
+  <section class="ml-col-2 mt-10 w-col-20 min-w-0 min-[880px]:w-col-6 min-[880px]:min-w-[260px] min-[880px]:mt-10">
+    <p class="m-0 text-[16px] leading-[1.8] font-serif tracking-wider">
+      台湾研究者。<br />
+      日本名は出田康一郎。<br />
+      専門は台湾思想・台湾文化論。<br />
+      1981年東京生まれ。<br />
+      東京芸術大学音楽学部楽理科卒業。<br />
+      國立台灣師範大學台灣語文學系修了。<br />
+      2011年から台湾在住。<br />
+    </p>
+  </section>
+
+  {/* Gallery — microCMS /days と tweet 引用が混ざったスクロール面 */}
+  {
+    items.length > 0 && (
+      <section
+        id="portfolio"
+        class="relative mt-16 w-full min-[880px]:mt-30"
+        style={`height: ${totalHeight}px;`}
+      >
+        {items.map((item, i) => {
+          const slot = slots[i];
+          if (!slot) return null;
+          if (item.kind === "photo") {
+            return (
+              <figure
+                data-reveal
+                class="k-pos absolute m-0 -translate-x-1/2 bg-(--paper-2)"
+                style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: ${slot.top}px; width: ${slot.w}px; height: ${slot.h}px;`}
+              >
+                <img
+                  src={`${item.day.image.url}?w=400`}
+                  alt={item.day.date ?? ""}
+                  loading="lazy"
+                  class="block h-full w-full object-cover"
+                />
+              </figure>
+            );
+          }
+          const isVertical = "vertical" in slot && slot.vertical;
+          return (
+            <a
+              href={`/tweets/${item.id}`}
+              class="k-quote-wrap k-pos block no-underline"
+              style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: ${slot.top}px; width: ${slot.w}px; height: ${slot.h}px;`}
+            >
+              <blockquote
+                data-reveal
+                class:list={[
+                  "k-quote m-0 font-serif text-[16px] leading-[1.85] text-(--ink-70)",
+                  isVertical && "k-quote-v",
+                ]}
+              >
+                {item.text}
+              </blockquote>
+            </a>
+          );
+        })}
+      </section>
+    )
+  }
+
+  {/* Inline CTA — short paragraph, narrow left column */}
+  <section
+    id="about"
+    data-reveal
+    class="ml-col-2 mt-35 w-col-20 min-[880px]:mt-55 min-[880px]:w-col-8"
+  >
+    <p class="mb-4 text-[13px] leading-[1.7]">
+      If a project is brewing on your end and you think the way I see might
+      suit it, send a note via the {" "}
+      <a
+        href="#contact"
+        class="border-b border-current pb-px transition-opacity hover:opacity-60"
+      >
+        contact page
+      </a>
+      .
+    </p>
+    <p class="text-[13px] leading-[1.7]">
+      For something more wandering, the long {" "}
+      <a
+        href="#portfolio"
+        class="border-b border-current pb-px transition-opacity hover:opacity-60"
+      >
+        portfolio
+      </a>{" "}
+      is upstairs.
+    </p>
+  </section>
+
+  {/* (explore) — small parenthetical label + 4 tiny teaser cards */}
+  <section
+    data-reveal
+    class="mt-35 flex flex-col items-end gap-3.5 px-col-2 min-[880px]:mt-55"
+  >
+    <p class="text-[12px] tracking-[0.04em] text-(--ink-50)">(explore)</p>
+    <div class="flex gap-2">
+      {
+        EXPLORE.map((src, i) => (
+          <a
+            href="#portfolio"
+            class="block w-[78px] flex-none transition-opacity hover:opacity-60"
+          >
+            <img
+              src={src}
+              alt={`Project ${i + 1}`}
+              loading="lazy"
+              class="block aspect-[4/5] w-full object-cover bg-(--paper-2)"
+            />
+          </a>
+        ))
+      }
+    </div>
+  </section>
+
+  {/* Footer — 3-col link row + 3-col credits row */}
+  <footer
+    id="contact"
+    data-reveal
+    class="mt-25 px-col-2 pb-15 text-[12px] leading-[1.7] min-[880px]:mt-40"
+  >
+    <div class="mb-15 grid grid-cols-1 gap-9 min-[880px]:grid-cols-[3fr_7fr_7fr] min-[880px]:gap-x-[calc(1/22*100%)] min-[880px]:gap-y-0">
+      <div>
+        <p class="mb-2.5 italic text-(--ink-50)">(menu)</p>
+        <ul>
+          <li class="mb-0.5 lowercase"><a href="#portfolio">portfolio</a></li>
+          <li class="mb-0.5 lowercase"><a href="#portfolio">information</a></li>
+          <li class="mb-0.5 lowercase"><a href="#about">about</a></li>
+          <li class="mb-0.5 lowercase"><a href="#contact">contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="mb-2.5 italic text-(--ink-50)">(subscribe)</p>
+        <p class="mb-1.5">
+          Not a generic letter. A short note four times a year on what I am
+          quietly looking at. {" "}
+          <a href="#" class="border-b border-current pb-px">Join here</a>.
+        </p>
+      </div>
+      <div>
+        <p class="mb-2.5 italic text-(--ink-50)">(contact me)</p>
+        <p class="mb-1.5">
+          To enquire about commissions, prints, or a slow conversation about
+          borders. {" "}
+          <a
+            href="mailto:cubicberry@gmail.com"
+            class="border-b border-current pb-px"
+          >
+            cubicberry@gmail.com
+          </a>
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 items-end gap-4.5 border-t border-(--ink-15) pt-7 text-[11px] text-(--ink-70) min-[880px]:grid-cols-3 min-[880px]:gap-0">
+      <div class="text-left">
+        <p class="mb-1 text-(--ink-50) italic">(follow)</p>
+        <p class="mb-1">
+          <a href="#" class="border-b border-current pb-px">Instagram</a>
+        </p>
+        <p class="mb-1">
+          <a
+            href="https://github.com/cubicberry"
+            class="border-b border-current pb-px"
+          >
+            GitHub
+          </a>
+        </p>
+      </div>
+      <div class="text-left min-[880px]:text-center">
+        <p class="mb-1">Designed in Taipei.</p>
+        <p class="mb-1"><em>© {year} Ko Kaiji.</em></p>
+      </div>
+      <div class="text-left min-[880px]:text-right">
+        <p class="mb-1 text-(--ink-50) italic">(legal stuff)</p>
+        <p class="mb-1">
+          <a href="#" class="border-b border-current pb-px">Privacy policy</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <ScrollReveal client:load />
+  <ScrollWordmark client:load />
+  <GalleryParallax client:load />
+  <ScrollMemory client:load />
+</Public>

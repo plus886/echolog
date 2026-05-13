@@ -1,5 +1,5 @@
 ---
-import Base from "@/layouts/Base.astro";
+import Public from "@/layouts/Public.astro";
 import QuoteImages from "@/components/QuoteImages.tsx";
 import ReferenceCard from "@/components/ReferenceCard.astro";
 import { formatPortfolioTimestamp } from "@/lib/format";
@@ -51,7 +51,7 @@ Astro.response.headers.set(
 );
 ---
 
-<Base title="Quote" description={tweet.body?.slice(0, 120)}>
+<Public title="Quote" description={tweet.body?.slice(0, 120)}>
   <article class="mx-auto mt-40 mb-24 w-full max-w-[844px] px-6 min-[880px]:px-10">
     {
       tweet.parent && tweet.parent.body && (
@@ -131,4 +131,4 @@ Astro.response.headers.set(
       </a>
     </p>
   </article>
-</Base>
+</Public>
