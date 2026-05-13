@@ -11,3 +11,14 @@ declare namespace App {
     };
   }
 }
+
+// Public layout で SmoothScroll Island が起動した Lenis インスタンスを
+// 他の Island (WordmarkLink / QuoteImages / ScrollMemory) から触れるよう、
+// window に露出させている。reduced-motion 環境では undefined のまま。
+declare global {
+  interface Window {
+    __lenis?: import("lenis").default;
+  }
+}
+
+export {};

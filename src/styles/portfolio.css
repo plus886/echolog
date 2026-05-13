@@ -40,6 +40,28 @@
   animation-timing-function: cubic-bezier(0.32, 0.72, 0.24, 1);
 }
 
+/* ─── Lenis smooth-scroll
+   SmoothScroll Island (lenis) が <html> に `.lenis-smooth` / `.lenis-stopped`
+   等を付与する。下記は Lenis 公式 README の推奨スタイル:
+   - smooth 駆動中はネイティブの scroll-behavior を完全に殺す
+   - stopped 状態 (QuoteImages の lightbox 中など) は overflow hidden
+   - `data-lenis-prevent` の付いた子要素は overscroll を伝搬させない
+   reduced-motion 環境では SmoothScroll が init 自体を skip するので
+   これらのクラスは付かない。 */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
 /* 和文 mincho ベースラインに揃った半角数字専用 virtual font。 */
 @font-face {
   font-family: "_MinchoDigits";

@@ -27,6 +27,7 @@
     "@types/twitter-text": "^3.1.10",
     "astro": "^6.3.1",
     "jose": "^6.2.3",
+    "lenis": "^1.3.23",
     "microcms-js-sdk": "^3.4.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

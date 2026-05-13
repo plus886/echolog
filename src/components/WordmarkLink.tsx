@@ -41,7 +41,14 @@ export function WordmarkLink({
     }
     if (window.location.pathname === "/") {
       e.preventDefault();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // Lenis が動いている時は Lenis に scrollTo を任せて慣性で戻す。
+      // reduced-motion / Lenis 未マウントの環境では native smooth scroll
+      // にフォールバック。
+      if (window.__lenis) {
+        window.__lenis.scrollTo(0);
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   };
 

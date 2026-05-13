@@ -34,6 +34,10 @@ export function ScrollMemory() {
     if (y > window.innerHeight * 0.5) {
       shell.classList.add("is-scrolled");
     }
+    // ここは layout effect なので必ず Lenis 起動より前に走る。ネイティブ
+    // window.scrollTo で位置を変えると、後で起動する Lenis がコンストラクタ
+    // 内で window.pageYOffset を初期値として取り込むので Lenis 側の内部状態
+    // も復元後の位置になり、再起時に "0 からの慣性復元" 等が起きない。
     window.scrollTo(0, y);
     setTimeout(() => {
       shell.classList.remove("no-shell-transitions");

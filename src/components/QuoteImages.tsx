@@ -101,11 +101,26 @@ export function QuoteImages({
       if (e.key === "Escape") close();
     };
     document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    // Lenis が走っている時は Lenis に停止指示。`.lenis-stopped` が <html>
+    // に付き、portfolio.css の overflow: clip で背景スクロールが止まる。
+    // Lenis 未マウント (reduced-motion) 時は従来通り body の overflow で
+    // ロック。Lenis と body.style.overflow を併用すると Lenis 内部の
+    // wheel handling と競合するので、必ずどちらか一方だけにする。
+    const lenis = window.__lenis;
+    let prevOverflow = "";
+    if (lenis) {
+      lenis.stop();
+    } else {
+      prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      if (lenis) {
+        lenis.start();
+      } else {
+        document.body.style.overflow = prevOverflow;
+      }
     };
   }, [openIdx, close]);
 

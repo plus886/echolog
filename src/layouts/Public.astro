@@ -2,6 +2,7 @@
 import Base from "@/layouts/Base.astro";
 import NavState from "@/components/NavState.tsx";
 import PortfolioNav from "@/components/PortfolioNav.tsx";
+import SmoothScroll from "@/components/SmoothScroll.tsx";
 import WordmarkLink from "@/components/WordmarkLink.tsx";
 
 // (public) ルート全体の chrome を載せた layout。Base.astro (HTML shell +
@@ -32,5 +33,6 @@ const props = Astro.props;
     className="k-wordmark-pin fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light) no-underline"
   />
   <slot />
+  <SmoothScroll client:only="react" />
   <NavState client:load />
 </Base>
