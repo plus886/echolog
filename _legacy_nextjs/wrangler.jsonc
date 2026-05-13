@@ -1,0 +1,53 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "echolog",
+  "account_id": "6e093e6c55fbc7bf43b32686f7912b93",
+  "compatibility_date": "2026-05-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "echolog",
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "echolog-opennext-cache",
+    },
+    {
+      "bucket_name": "echolog-opennext-cache",
+      "binding": "echolog_opennext_cache",
+    },
+  ],
+  "images": {
+    "binding": "IMAGES",
+  },
+  "vars": {
+    "NEXT_PUBLIC_SITE_URL": "https://echolog.cubicberry.workers.dev",
+  },
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+    },
+  },
+  "d1_databases": [
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "echolog-tag-cache",
+      "database_id": "716c909d-c317-472d-8752-09804cae97cf",
+      "migrations_dir": "migrations",
+    },
+    {
+      "binding": "echolog_tag_cache",
+      "database_name": "echolog-tag-cache",
+      "database_id": "716c909d-c317-472d-8752-09804cae97cf",
+    },
+  ],
+}
