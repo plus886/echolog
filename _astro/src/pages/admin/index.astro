@@ -1,0 +1,96 @@
+---
+import Admin from "@/layouts/Admin.astro";
+import AdminTweetRow from "@/components/admin/AdminTweetRow.tsx";
+import ComposeForm, {
+  type ComposeMode,
+} from "@/components/admin/ComposeForm.tsx";
+import {
+  getAdminTweet,
+  listAdminTweets,
+  listMyRetweetTargetIds,
+} from "@/lib/microcms-management";
+import type { TweetReference } from "@/types/microcms";
+
+// 旧 app/(admin)/admin/page.tsx (compose + Recent) の Astro 移植。
+// searchParams (mode=reply|quote, target=<id>) で reply/quote 起動状態を
+// 受ける挙動も維持。
+
+export const prerender = false;
+
+const mode = Astro.url.searchParams.get("mode");
+const target = Astro.url.searchParams.get("target");
+
+async function resolveMode(): Promise<ComposeMode> {
+  if (!target || (mode !== "reply" && mode !== "quote")) {
+    return { kind: "new" };
+  }
+  try {
+    const tweet = await getAdminTweet(target);
+    const ref: TweetReference = {
+      id: tweet.id,
+      createdAt: tweet.createdAt,
+      updatedAt: tweet.updatedAt,
+      publishedAt: tweet.publishedAt ?? tweet.createdAt,
+      revisedAt: tweet.revisedAt ?? tweet.updatedAt,
+      body: tweet.body,
+      images: tweet.images,
+      retweetType: tweet.retweetType,
+    };
+    return mode === "reply"
+      ? { kind: "reply", target: ref }
+      : { kind: "quote", target: ref };
+  } catch {
+    return { kind: "new" };
+  }
+}
+
+const [composeMode, listResponse, retweetedTargetIdsSet] = await Promise.all([
+  resolveMode(),
+  listAdminTweets({ limit: 30, orders: "-publishedAt" }),
+  listMyRetweetTargetIds(),
+]);
+
+const tweets = listResponse.contents;
+// Set → string[] (Astro Island の prop 経路は JSON serialize なので Set は
+// 渡せない。AdminTweetRow 側で Array.includes 判定)
+const retweetedTargetIds = Array.from(retweetedTargetIdsSet);
+
+const heading =
+  composeMode.kind === "new"
+    ? "Compose"
+    : composeMode.kind === "reply"
+      ? "Self-reply"
+      : "Quote retweet";
+---
+
+<Admin title="Admin">
+  <main class="mt-6 grid grid-cols-1 gap-x-10 gap-y-12 min-[880px]:grid-cols-[1fr_320px]">
+    <section>
+      <h1 class="mb-6 k-label-mini">{heading}</h1>
+      <ComposeForm mode={composeMode} client:only="react" />
+    </section>
+
+    <aside>
+      <h2 class="mb-6 k-label-mini">Recent</h2>
+      {
+        tweets.length === 0 ? (
+          <p class="font-serif text-[15px] leading-[1.8] text-(--ink-70) italic">
+            まだ投稿がありません。
+          </p>
+        ) : (
+          <ol class="m-0 flex list-none flex-col p-0">
+            {tweets.map((tweet) => (
+              <li class="border-t border-(--ink-15) first:border-t-0">
+                <AdminTweetRow
+                  tweet={tweet}
+                  retweetedTargetIds={retweetedTargetIds}
+                  client:only="react"
+                />
+              </li>
+            ))}
+          </ol>
+        )
+      }
+    </aside>
+  </main>
+</Admin>

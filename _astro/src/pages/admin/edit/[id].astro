@@ -1,0 +1,43 @@
+---
+import Admin from "@/layouts/Admin.astro";
+import EditForm from "@/components/admin/EditForm.tsx";
+import { getAdminTweet } from "@/lib/microcms-management";
+
+// 旧 app/(admin)/admin/edit/[id]/page.tsx の Astro 移植。
+
+export const prerender = false;
+
+const { id } = Astro.params;
+if (!id) return new Response(null, { status: 404 });
+
+let tweet;
+try {
+  tweet = await getAdminTweet(id);
+} catch {
+  return new Response(null, { status: 404 });
+}
+
+const isDraft = !tweet.publishedAt;
+---
+
+<Admin title="Edit">
+  <main class="mx-auto mt-6 w-full max-w-[720px]">
+    <header class="mb-8 flex items-baseline justify-between">
+      <h1 class="k-label-mini">Edit</h1>
+      {
+        isDraft && (
+          <span class="border border-(--ink-30) px-2 py-0.5 text-[11px] uppercase tracking-[0.1em] italic text-(--ink-70)">
+            draft
+          </span>
+        )
+      }
+    </header>
+
+    <EditForm
+      id={tweet.id}
+      defaultBody={tweet.body ?? ""}
+      isDraft={isDraft}
+      client:only="react"
+    />
+  </main>
+</Admin>
