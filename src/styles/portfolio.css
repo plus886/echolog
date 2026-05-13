@@ -44,14 +44,9 @@
 @font-face {
   font-family: "_MinchoDigits";
   src:
-    local("YuMincho"),
-    local("Yu Mincho"),
-    local("YuMincho Medium"),
-    local("Hiragino Mincho ProN"),
-    local("HiraMinProN-W3"),
-    local("MS PMincho"),
-    local("MS Mincho"),
-    local("Times New Roman");
+    local("YuMincho"), local("Yu Mincho"), local("YuMincho Medium"),
+    local("Hiragino Mincho ProN"), local("HiraMinProN-W3"), local("MS PMincho"),
+    local("MS Mincho"), local("Times New Roman");
   unicode-range: U+0030-0039;
   font-display: swap;
 }
@@ -77,10 +72,9 @@
      にだけ反応する virtual font なので、数字だけ system mincho の和文
      ベースラインに合わせた半角数字に差し変わる。 */
   --serif:
-    "_MinchoDigits",
-    "FOT-筑紫Cオールド明朝 Pr6N R", var(--k-font-serif), ui-serif,
-    "Iowan Old Style", "Times New Roman", "YuMincho", "Hiragino Mincho ProN",
-    serif;
+    "_MinchoDigits", "FOT-筑紫Cオールド明朝 Pr6N R", var(--k-font-serif),
+    ui-serif, "Iowan Old Style", "Times New Roman", "YuMincho",
+    "Hiragino Mincho ProN", serif;
   --sans:
     "GillSansMTPro-Book", var(--k-font-sans), "Helvetica Neue", "HelveticaNeue",
     Helvetica, Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
@@ -101,19 +95,45 @@
 }
 
 /* ─── 24-column grid helpers */
-.k-shell .col-1 { width: calc(1 / 24 * 100%); }
-.k-shell .col-2 { width: calc(2 / 24 * 100%); }
-.k-shell .col-3 { width: calc(3 / 24 * 100%); }
-.k-shell .col-4 { width: calc(4 / 24 * 100%); }
-.k-shell .col-5 { width: calc(5 / 24 * 100%); }
-.k-shell .col-6 { width: calc(6 / 24 * 100%); }
-.k-shell .col-8 { width: calc(8 / 24 * 100%); }
-.k-shell .col-20 { width: calc(20 / 24 * 100%); }
-.k-shell .ml-col-1 { margin-left: calc(1 / 24 * 100%); }
-.k-shell .ml-col-2 { margin-left: calc(2 / 24 * 100%); }
-.k-shell .px-col-1 { padding-inline: calc(1 / 24 * 100%); }
-.k-shell .px-col-2 { padding-inline: calc(2 / 24 * 100%); }
-.k-shell .right-col-2 { right: calc(2 / 24 * 100%); }
+.k-shell .col-1 {
+  width: calc(1 / 24 * 100%);
+}
+.k-shell .col-2 {
+  width: calc(2 / 24 * 100%);
+}
+.k-shell .col-3 {
+  width: calc(3 / 24 * 100%);
+}
+.k-shell .col-4 {
+  width: calc(4 / 24 * 100%);
+}
+.k-shell .col-5 {
+  width: calc(5 / 24 * 100%);
+}
+.k-shell .col-6 {
+  width: calc(6 / 24 * 100%);
+}
+.k-shell .col-8 {
+  width: calc(8 / 24 * 100%);
+}
+.k-shell .col-20 {
+  width: calc(20 / 24 * 100%);
+}
+.k-shell .ml-col-1 {
+  margin-left: calc(1 / 24 * 100%);
+}
+.k-shell .ml-col-2 {
+  margin-left: calc(2 / 24 * 100%);
+}
+.k-shell .px-col-1 {
+  padding-inline: calc(1 / 24 * 100%);
+}
+.k-shell .px-col-2 {
+  padding-inline: calc(2 / 24 * 100%);
+}
+.k-shell .right-col-2 {
+  right: calc(2 / 24 * 100%);
+}
 
 /* ─── Mini label */
 .k-shell .k-label-mini {
@@ -129,8 +149,15 @@
 
 /* ─── Scroll-cue keyframes + utility */
 @keyframes k-scroll-cue-pulse {
-  0%, 100% { transform: scaleY(0.3); opacity: 0.3; }
-  50% { transform: scaleY(1); opacity: 0.9; }
+  0%,
+  100% {
+    transform: scaleY(0.3);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 0.9;
+  }
 }
 .k-shell .animate-scroll-cue {
   animation: k-scroll-cue-pulse 2s ease-in-out infinite;
@@ -157,19 +184,35 @@
 }
 
 /* ─── Wordmark pin */
-.k-shell .k-wordmark-pin { visibility: hidden; }
-.k-shell.is-scrolled .k-wordmark-pin { visibility: visible; }
-.k-shell.is-scrolled .k-wordmark { visibility: hidden; }
+.k-shell .k-wordmark-pin {
+  visibility: hidden;
+}
+.k-shell.is-scrolled .k-wordmark-pin {
+  visibility: visible;
+}
+.k-shell.is-scrolled .k-wordmark {
+  visibility: hidden;
+}
 
 /* ─── Nav hover ripple */
-.k-shell .k-nav-text { display: inline-block; line-height: 1.1; }
-.k-shell .k-nav-char { display: inline-block; }
+.k-shell .k-nav-text {
+  display: inline-block;
+  line-height: 1.1;
+}
+.k-shell .k-nav-char {
+  display: inline-block;
+}
 .k-shell .k-nav-char.is-rippling {
   animation: k-ripple-dip 700ms ease-out var(--ripple-delay, 0ms) both;
 }
 @keyframes k-ripple-dip {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
 }
 
 /* Accessible label kept in DOM but hidden from layout */
@@ -211,8 +254,14 @@
   mask-size: 60% 60%;
 }
 @keyframes k-gallery-mask {
-  from { -webkit-mask-size: 60% 60%; mask-size: 60% 60%; }
-  to { -webkit-mask-size: 300% 300%; mask-size: 300% 300%; }
+  from {
+    -webkit-mask-size: 60% 60%;
+    mask-size: 60% 60%;
+  }
+  to {
+    -webkit-mask-size: 300% 300%;
+    mask-size: 300% 300%;
+  }
 }
 .k-shell figure[data-reveal].is-revealed,
 .k-shell .k-quote[data-reveal].is-revealed {

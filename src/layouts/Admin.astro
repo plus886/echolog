@@ -17,11 +17,15 @@ const { title } = Astro.props;
 const user = Astro.locals.user;
 ---
 
-{/* noindex: 検索結果に admin route が出ないよう保険 (robots.txt の Disallow に
-    加えて meta も併用) */}
+{
+  /* noindex: 検索結果に admin route が出ないよう保険 (robots.txt の Disallow に
+    加えて meta も併用) */
+}
 <Base title={title ?? "Admin"} noindex>
   <header class="px-col-1 pt-9 pb-6">
-    <div class="flex items-baseline justify-between gap-6 text-[12px] uppercase tracking-[0.1em]">
+    <div
+      class="flex items-baseline justify-between gap-6 text-[12px] uppercase tracking-[0.1em]"
+    >
       <nav class="flex flex-wrap items-baseline gap-x-8 gap-y-2">
         <a
           href="/admin"
@@ -48,7 +52,9 @@ const user = Astro.locals.user;
           site
         </a>
       </nav>
-      <div class="flex items-baseline gap-3 text-[11px] normal-case tracking-normal text-(--ink-50)">
+      <div
+        class="flex items-baseline gap-3 text-[11px] normal-case tracking-normal text-(--ink-50)"
+      >
         {user?.email && <span>{user.email}</span>}
         {
           user?.bypassed && (

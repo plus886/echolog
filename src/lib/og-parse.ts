@@ -58,8 +58,7 @@ export function parseOgp(html: string, baseUrl: string): OgpData {
   return {
     url: meta["og:url"] ?? baseUrl,
     title: meta["og:title"] ?? meta["twitter:title"] ?? fallbackTitle,
-    description:
-      meta["og:description"] ?? meta["twitter:description"] ?? null,
+    description: meta["og:description"] ?? meta["twitter:description"] ?? null,
     image,
     siteName: meta["og:site_name"] ?? null,
   };

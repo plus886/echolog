@@ -57,7 +57,7 @@ const FONTPLUS_SRC =
   "https://webfont.fontplus.jp/accessor/script/fontplus.js?3Tt6wldHrYg%3D&box=TZoH12Fyg3w%3D&aa=1&ab=2";
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
@@ -91,7 +91,9 @@ const FONTPLUS_SRC =
 
     <script src={FONTPLUS_SRC} is:inline></script>
   </head>
-  <body class="k-shell relative min-h-screen overflow-x-hidden text-[15px] leading-[1.45] antialiased">
+  <body
+    class="k-shell relative min-h-screen overflow-x-hidden text-[15px] leading-[1.45] antialiased"
+  >
     <slot />
   </body>
 </html>

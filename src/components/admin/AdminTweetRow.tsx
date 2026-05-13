@@ -23,10 +23,7 @@ type Props = {
   retweetedTargetIds?: string[];
 };
 
-export function AdminTweetRow({
-  tweet,
-  retweetedTargetIds = [],
-}: Props) {
+export function AdminTweetRow({ tweet, retweetedTargetIds = [] }: Props) {
   const [isRetweeting, startRetweet] = useTransition();
   const [isDeleting, startDelete] = useTransition();
   const isDraft = !tweet.publishedAt;
@@ -73,9 +70,9 @@ export function AdminTweetRow({
         {isRetweet ? (
           <span className="k-label-mini not-italic">↻ self retweet</span>
         ) : (
-          tweet.body ?? (
+          (tweet.body ?? (
             <span className="italic text-(--ink-50)">(本文なし)</span>
-          )
+          ))
         )}
       </p>
 

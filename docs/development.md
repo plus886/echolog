@@ -16,16 +16,16 @@ cp .env.example .env.local
 
 `.env.local` を実値で埋める。
 
-| 変数 | 用途 | Phase |
-|---|---|---|
-| `MICROCMS_SERVICE_DOMAIN` | `https://<x>.microcms.io` の `<x>` 部分 | 1 |
-| `MICROCMS_API_KEY` | コンテンツ取得用 API キー | 1 |
-| `MICROCMS_WEBHOOK_SECRET` | microCMS Webhook で設定するシークレット（自分で生成） | 1 |
-| `MICROCMS_MANAGEMENT_API_KEY` | 投稿/編集/削除用。Service Key またはコンテンツ書き込み権限のキー | 2 |
-| `CF_ACCESS_TEAM_DOMAIN` | 例 `yourteam.cloudflareaccess.com`（本番のみ） | 2 |
-| `CF_ACCESS_AUD` | Access Application の AUD タグ（本番のみ） | 2 |
-| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | 1 |
-| `BYPASS_AUTH` | `true`（ローカル開発時のみ） | 2 |
+| 変数                          | 用途                                                             | Phase |
+| ----------------------------- | ---------------------------------------------------------------- | ----- |
+| `MICROCMS_SERVICE_DOMAIN`     | `https://<x>.microcms.io` の `<x>` 部分                          | 1     |
+| `MICROCMS_API_KEY`            | コンテンツ取得用 API キー                                        | 1     |
+| `MICROCMS_WEBHOOK_SECRET`     | microCMS Webhook で設定するシークレット（自分で生成）            | 1     |
+| `MICROCMS_MANAGEMENT_API_KEY` | 投稿/編集/削除用。Service Key またはコンテンツ書き込み権限のキー | 2     |
+| `CF_ACCESS_TEAM_DOMAIN`       | 例 `yourteam.cloudflareaccess.com`（本番のみ）                   | 2     |
+| `CF_ACCESS_AUD`               | Access Application の AUD タグ（本番のみ）                       | 2     |
+| `NEXT_PUBLIC_SITE_URL`        | `http://localhost:3000`                                          | 1     |
+| `BYPASS_AUTH`                 | `true`（ローカル開発時のみ）                                     | 2     |
 
 ## 通常開発（推奨）
 
@@ -135,24 +135,24 @@ Application Audience (AUD) Tag を `CF_ACCESS_AUD` に、team domain を
 
 推奨ルール例:
 
-| Match | Rate | Action |
-|---|---|---|
-| `http.request.uri.path matches "^/api/(tweets\|uploads\|og-preview)"` | 30 req / 10s / IP | Block (60s) |
-| `http.request.uri.path eq "/api/revalidate"` | 10 req / 60s / IP | Block (300s) |
-| 全体 | 200 req / 10s / IP | Block (60s) |
+| Match                                                                 | Rate               | Action       |
+| --------------------------------------------------------------------- | ------------------ | ------------ |
+| `http.request.uri.path matches "^/api/(tweets\|uploads\|og-preview)"` | 30 req / 10s / IP  | Block (60s)  |
+| `http.request.uri.path eq "/api/revalidate"`                          | 10 req / 60s / IP  | Block (300s) |
+| 全体                                                                  | 200 req / 10s / IP | Block (60s)  |
 
 `*.workers.dev` で運用する場合、Cloudflare WAF は使えないので、
 カスタムドメイン化したタイミングで設定する。
 
 ## 公開ビューのキャッシュ
 
-| パス | キャッシュ | 再検証 |
-|---|---|---|
-| `/` | ISR (revalidate=3600) | webhook で /api/revalidate → revalidatePath('/') |
-| `/feed` | ISR (revalidate=3600) | 同上 |
-| `/tweets/[id]` | ISR (revalidate=3600) | 同上、対象 ID 単独でも revalidate |
-| `/admin/*` | force-dynamic | キャッシュなし |
-| `/api/og-preview` | レスポンス内 fetch を 24h キャッシュ | 同 URL 再アクセス時は高速 |
+| パス              | キャッシュ                           | 再検証                                           |
+| ----------------- | ------------------------------------ | ------------------------------------------------ |
+| `/`               | ISR (revalidate=3600)                | webhook で /api/revalidate → revalidatePath('/') |
+| `/feed`           | ISR (revalidate=3600)                | 同上                                             |
+| `/tweets/[id]`    | ISR (revalidate=3600)                | 同上、対象 ID 単独でも revalidate                |
+| `/admin/*`        | force-dynamic                        | キャッシュなし                                   |
+| `/api/og-preview` | レスポンス内 fetch を 24h キャッシュ | 同 URL 再アクセス時は高速                        |
 
 OpenNext for Cloudflare の R2 + D1 構成で、`revalidatePath` / `revalidateTag` が
 正しく反映される。詳細は `open-next.config.ts` を参照。

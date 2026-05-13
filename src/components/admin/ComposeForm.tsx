@@ -1,10 +1,5 @@
 import { actions } from "astro:actions";
-import {
-  type FormEvent,
-  useMemo,
-  useState,
-  useTransition,
-} from "react";
+import { type FormEvent, useMemo, useState, useTransition } from "react";
 
 import { CharCounter } from "@/components/admin/CharCounter";
 import { ImageUploader } from "@/components/admin/ImageUploader";
@@ -38,8 +33,7 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
 
   const status = evaluateTweetText(body);
   const previewUrl = useMemo(() => extractFirstUrl(body), [body]);
-  const submitDisabled =
-    !status.isValid || isPublishing || isDraftPending;
+  const submitDisabled = !status.isValid || isPublishing || isDraftPending;
   const noContent = !body.trim() && images.length === 0;
 
   const collectFormData = () => {

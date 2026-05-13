@@ -34,7 +34,10 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: "missing-file" }, { status: 400 });
   }
   if (!ALLOWED_MIME.has(file.type)) {
-    return json({ error: "unsupported-mime", mime: file.type }, { status: 400 });
+    return json(
+      { error: "unsupported-mime", mime: file.type },
+      { status: 400 },
+    );
   }
   if (file.size > MAX_FILE_BYTES) {
     return json(

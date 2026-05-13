@@ -19,9 +19,9 @@ export function ScrollMemory() {
     const shell = document.querySelector<HTMLElement>(".k-shell");
     if (!shell) return;
 
-    const nav = performance.getEntriesByType(
-      "navigation",
-    )[0] as PerformanceNavigationTiming | undefined;
+    const nav = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
     const isReload = nav?.type === "reload";
     if (isReload) return;
 

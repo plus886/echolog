@@ -47,10 +47,7 @@ export const GET: APIRoute = async ({ url }) => {
     }
     const contentType = res.headers.get("content-type") ?? "";
     if (!contentType.toLowerCase().includes("html")) {
-      return json(
-        { error: "non-html-response", contentType },
-        { status: 415 },
-      );
+      return json({ error: "non-html-response", contentType }, { status: 415 });
     }
 
     const buffer = await readLimited(res, MAX_BYTES);

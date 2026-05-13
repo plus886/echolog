@@ -1,0 +1,26 @@
+# 依存・ビルド成果物
+node_modules/
+dist/
+.astro/
+.wrangler/
+
+# Wrangler から自動生成される d.ts
+worker-configuration.d.ts
+
+# パッケージマネージャの lock
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# 退役した Next.js コード (現プロジェクトの整形対象外)
+_legacy_nextjs/
+
+# 静的アセット (binary は Prettier が触らないが念のため)
+public/
+
+# ログ
+*.log
+
+# 環境設定 (誤ってフォーマットしないように除外)
+.env*
+.dev.vars*

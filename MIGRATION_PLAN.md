@@ -57,29 +57,29 @@ ls -la src/middleware.ts 2>/dev/null || ls -la middleware.ts 2>/dev/null
 #### 表A: ページ・ルート
 
 ```markdown
-| 旧パス | 種類 | 認証 | データ取得 | 主要React依存 | 新パス (Astro) |
-|---|---|---|---|---|---|
-| app/page.tsx | 公開トップ | 不要 | D1: posts list | - | src/pages/index.astro |
-| app/posts/[slug]/page.tsx | 公開・動的 | 不要 | D1: post detail | MDXコンポーネント | src/pages/posts/[slug].astro |
-| app/admin/page.tsx | 管理ダッシュボード | 必須 | D1: drafts | TipTap, 自作Form | src/pages/admin/index.astro |
-| app/admin/posts/new/page.tsx | 新規投稿 | 必須 | - | TipTap, R2アップロード | src/pages/admin/posts/new.astro |
-| app/api/posts/route.ts | API | - | D1: write | - | src/pages/api/posts.ts |
-| app/api/auth/[...all]/route.ts | Better Auth | - | KV: session | - | src/pages/api/auth/[...all].ts |
-| app/api/upload/route.ts | R2 直アップ | 必須 | R2: PUT | - | src/pages/api/upload.ts |
+| 旧パス                         | 種類               | 認証 | データ取得      | 主要React依存          | 新パス (Astro)                  |
+| ------------------------------ | ------------------ | ---- | --------------- | ---------------------- | ------------------------------- |
+| app/page.tsx                   | 公開トップ         | 不要 | D1: posts list  | -                      | src/pages/index.astro           |
+| app/posts/[slug]/page.tsx      | 公開・動的         | 不要 | D1: post detail | MDXコンポーネント      | src/pages/posts/[slug].astro    |
+| app/admin/page.tsx             | 管理ダッシュボード | 必須 | D1: drafts      | TipTap, 自作Form       | src/pages/admin/index.astro     |
+| app/admin/posts/new/page.tsx   | 新規投稿           | 必須 | -               | TipTap, R2アップロード | src/pages/admin/posts/new.astro |
+| app/api/posts/route.ts         | API                | -    | D1: write       | -                      | src/pages/api/posts.ts          |
+| app/api/auth/[...all]/route.ts | Better Auth        | -    | KV: session     | -                      | src/pages/api/auth/[...all].ts  |
+| app/api/upload/route.ts        | R2 直アップ        | 必須 | R2: PUT         | -                      | src/pages/api/upload.ts         |
 ```
 
 #### 表B: Cloudflare バインディング
 
 ```markdown
-| バインディング名 | 種類 | リソース名/ID | 用途 | 移行先での扱い |
-|---|---|---|---|---|
-| DB | D1 | <db-name> / <UUID> | 投稿・ユーザー | そのまま引き継ぎ |
-| MEDIA | R2 | <bucket-name> | 画像・添付 | そのまま引き継ぎ |
-| SESSIONS | KV | <namespace-id> | セッション | そのまま引き継ぎ |
-| NEXT_INC_CACHE_R2_BUCKET | R2 | <bucket> | **OpenNext専用キャッシュ** | **不要・削除** |
-| NEXT_CACHE_WORKERS_KV | KV | <namespace> | **OpenNext専用キャッシュ** | **不要・削除** |
-| WORKER_SELF_REFERENCE | service | self | **OpenNext専用** | **不要・削除** |
-| IMAGES | images | - | OpenNext画像最適化 | Astro `astro:assets` に置換 |
+| バインディング名         | 種類    | リソース名/ID      | 用途                       | 移行先での扱い              |
+| ------------------------ | ------- | ------------------ | -------------------------- | --------------------------- |
+| DB                       | D1      | <db-name> / <UUID> | 投稿・ユーザー             | そのまま引き継ぎ            |
+| MEDIA                    | R2      | <bucket-name>      | 画像・添付                 | そのまま引き継ぎ            |
+| SESSIONS                 | KV      | <namespace-id>     | セッション                 | そのまま引き継ぎ            |
+| NEXT_INC_CACHE_R2_BUCKET | R2      | <bucket>           | **OpenNext専用キャッシュ** | **不要・削除**              |
+| NEXT_CACHE_WORKERS_KV    | KV      | <namespace>        | **OpenNext専用キャッシュ** | **不要・削除**              |
+| WORKER_SELF_REFERENCE    | service | self               | **OpenNext専用**           | **不要・削除**              |
+| IMAGES                   | images  | -                  | OpenNext画像最適化         | Astro `astro:assets` に置換 |
 ```
 
 > ⚠️ ID/UUIDは**実値をMIGRATION_INVENTORY.mdに書いてもよい**(リポジトリは秘匿前提)。
@@ -88,11 +88,11 @@ ls -la src/middleware.ts 2>/dev/null || ls -la middleware.ts 2>/dev/null
 #### 表C: 環境変数
 
 ```markdown
-| 変数名 | 用途 | スコープ | 値 |
-|---|---|---|---|
-| BETTER_AUTH_SECRET | 認証署名 | server | (.dev.vars / secret) |
-| NEXT_PUBLIC_SITE_URL | サイトURL | client | (vars) → `PUBLIC_SITE_URL` に改名 |
-| ... | | | |
+| 変数名               | 用途      | スコープ | 値                                |
+| -------------------- | --------- | -------- | --------------------------------- |
+| BETTER_AUTH_SECRET   | 認証署名  | server   | (.dev.vars / secret)              |
+| NEXT_PUBLIC_SITE_URL | サイトURL | client   | (vars) → `PUBLIC_SITE_URL` に改名 |
+| ...                  |           |          |                                   |
 ```
 
 > Astro では公開変数の prefix が `NEXT_PUBLIC_` ではなく **`PUBLIC_`**。移行時に全置換が必要。
@@ -114,6 +114,7 @@ cloudflare-env.d.ts            ← Astroで自動生成し直す
 ### ✅ チェックポイント 0
 
 ユーザーに以下を報告:
+
 1. ルーター: App Router 確認済み
 2. デプロイ: OpenNext (`@opennextjs/cloudflare` v<X.Y.Z>) 確認済み
 3. `MIGRATION_INVENTORY.md` の **行数のみ**を報告 (中身全文は出さない)
@@ -152,6 +153,7 @@ npm create cloudflare@latest _astro -- --framework=astro
 ```
 
 プロンプト:
+
 - Rendering: **server (SSR)**
 - TypeScript: **Yes (strict 推奨)**
 - Git: **No** (親リポジトリで管理するため)
@@ -187,7 +189,7 @@ npm install @tiptap/core @tiptap/starter-kit @tiptap/react
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "binding": "ASSETS",
-    "directory": "./dist"
+    "directory": "./dist",
   },
   "observability": { "enabled": true },
 
@@ -195,21 +197,21 @@ npm install @tiptap/core @tiptap/starter-kit @tiptap/react
     {
       "binding": "DB",
       "database_name": "<旧DB名>",
-      "database_id": "<旧UUID>"
-    }
+      "database_id": "<旧UUID>",
+    },
   ],
   "r2_buckets": [
     {
       "binding": "MEDIA",
-      "bucket_name": "<旧バケット名>"
-    }
+      "bucket_name": "<旧バケット名>",
+    },
   ],
   "kv_namespaces": [
     {
       "binding": "SESSIONS",
-      "id": "<旧KV ID>"
-    }
-  ]
+      "id": "<旧KV ID>",
+    },
+  ],
 }
 ```
 
@@ -228,15 +230,15 @@ npx wrangler types --env-interface CloudflareEnv worker-configuration.d.ts
 ### 1-6. astro.config.mjs
 
 ```js
-import { defineConfig } from 'astro/config';
-import cloudflare from '@astrojs/cloudflare';
-import react from '@astrojs/react';
-import tailwind from '@astrojs/tailwind';
+import { defineConfig } from "astro/config";
+import cloudflare from "@astrojs/cloudflare";
+import react from "@astrojs/react";
+import tailwind from "@astrojs/tailwind";
 
 export default defineConfig({
-  output: 'server',
+  output: "server",
   adapter: cloudflare({
-    imageService: 'cloudflare',  // CloudflareのImage Resizingを使う場合
+    imageService: "cloudflare", // CloudflareのImage Resizingを使う場合
   }),
   integrations: [react(), tailwind()],
 });
@@ -268,20 +270,22 @@ npm run dev   # Astro デフォルトページが localhost:4321 で開く
 ### 2-3. DB クライアントを Astro 流に書き換え
 
 **旧コード (OpenNext)**:
+
 ```ts
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { drizzle } from 'drizzle-orm/d1';
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { drizzle } from "drizzle-orm/d1";
 export function getDb() {
   return drizzle(getCloudflareContext().env.DB);
 }
 ```
 
 **新コード (Astro)**:
+
 ```ts
 // _astro/src/lib/db.ts
-import { drizzle } from 'drizzle-orm/d1';
-import type { APIContext } from 'astro';
-import * as schema from './schema';
+import { drizzle } from "drizzle-orm/d1";
+import type { APIContext } from "astro";
+import * as schema from "./schema";
 
 export function getDb(context: APIContext | { locals: App.Locals }) {
   return drizzle(context.locals.runtime.env.DB, { schema });
@@ -292,11 +296,12 @@ export function getDb(context: APIContext | { locals: App.Locals }) {
 > **必ず page / endpoint の `Astro` または `context` 経由で渡す**こと。
 
 `_astro/src/env.d.ts` に型補強:
+
 ```ts
 /// <reference types="astro/client" />
 /// <reference path="../worker-configuration.d.ts" />
 
-type Runtime = import('@astrojs/cloudflare').Runtime<Env>;
+type Runtime = import("@astrojs/cloudflare").Runtime<Env>;
 declare namespace App {
   interface Locals extends Runtime {
     user?: { id: string; email: string };
@@ -309,15 +314,17 @@ declare namespace App {
 旧 `src/lib/auth.ts` をコピーし、**handler のエクスポートだけ書き換え**:
 
 旧 `app/api/auth/[...all]/route.ts`:
+
 ```ts
-import { auth } from '@/lib/auth';
+import { auth } from "@/lib/auth";
 export const { GET, POST } = auth.handler;
 ```
 
 新 `_astro/src/pages/api/auth/[...all].ts`:
+
 ```ts
-import type { APIRoute } from 'astro';
-import { auth } from '../../../lib/auth';
+import type { APIRoute } from "astro";
+import { auth } from "../../../lib/auth";
 
 export const ALL: APIRoute = async ({ request }) => {
   return auth.handler(request);
@@ -335,14 +342,16 @@ export const prerender = false;
 
 ```ts
 // _astro/src/middleware.ts
-import { defineMiddleware } from 'astro:middleware';
-import { auth } from './lib/auth';
+import { defineMiddleware } from "astro:middleware";
+import { auth } from "./lib/auth";
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  if (context.url.pathname.startsWith('/admin')) {
-    const session = await auth.api.getSession({ headers: context.request.headers });
+  if (context.url.pathname.startsWith("/admin")) {
+    const session = await auth.api.getSession({
+      headers: context.request.headers,
+    });
     if (!session) {
-      return context.redirect('/login');
+      return context.redirect("/login");
     }
     context.locals.user = session.user;
   }
@@ -382,14 +391,21 @@ npx wrangler d1 execute <db-name> --command "SELECT name FROM sqlite_master WHER
 #### サーバーコンポーネント (公開ページ)
 
 **旧**:
+
 ```tsx
 // app/posts/[slug]/page.tsx
-import { getDb } from '@/lib/db';
+import { getDb } from "@/lib/db";
 
-export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function PostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
   const db = getDb();
-  const post = await db.query.posts.findFirst({ where: (p, { eq }) => eq(p.slug, slug) });
+  const post = await db.query.posts.findFirst({
+    where: (p, { eq }) => eq(p.slug, slug),
+  });
   if (!post) notFound();
   return (
     <article>
@@ -401,23 +417,25 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 ```
 
 **新**:
+
 ```astro
 ---
 // _astro/src/pages/posts/[slug].astro
-import Layout from '../../layouts/Base.astro';
-import { getDb } from '../../lib/db';
-import { eq } from 'drizzle-orm';
-import { posts } from '../../lib/schema';
+import Layout from "../../layouts/Base.astro";
+import { getDb } from "../../lib/db";
+import { eq } from "drizzle-orm";
+import { posts } from "../../lib/schema";
 
 export const prerender = false;
 
 const { slug } = Astro.params;
-if (!slug) return Astro.redirect('/404');
+if (!slug) return Astro.redirect("/404");
 
 const db = getDb(Astro);
 const post = await db.query.posts.findFirst({ where: eq(posts.slug, slug) });
-if (!post) return Astro.redirect('/404');
+if (!post) return Astro.redirect("/404");
 ---
+
 <Layout title={post.title}>
   <article>
     <h1>{post.title}</h1>
@@ -429,6 +447,7 @@ if (!post) return Astro.redirect('/404');
 #### Server Action → Astro Actions
 
 **旧**:
+
 ```ts
 // app/admin/posts/new/actions.ts
 'use server';
@@ -443,23 +462,27 @@ export async function createPost(formData: FormData) {
 ```
 
 **新**:
+
 ```ts
 // _astro/src/actions/index.ts
-import { defineAction } from 'astro:actions';
-import { z } from 'astro:schema';
-import { getDb } from '../lib/db';
-import { posts } from '../lib/schema';
+import { defineAction } from "astro:actions";
+import { z } from "astro:schema";
+import { getDb } from "../lib/db";
+import { posts } from "../lib/schema";
 
 export const server = {
   createPost: defineAction({
-    accept: 'form',
+    accept: "form",
     input: z.object({
       title: z.string().min(1),
       body: z.string(),
     }),
     handler: async ({ title, body }, context) => {
       const db = getDb(context);
-      const [post] = await db.insert(posts).values({ title, body, slug: slugify(title) }).returning();
+      const [post] = await db
+        .insert(posts)
+        .values({ title, body, slug: slugify(title) })
+        .returning();
       return { postId: post.id };
     },
   }),
@@ -467,15 +490,17 @@ export const server = {
 ```
 
 呼び出し側 (Astro ページ):
+
 ```astro
 ---
-import { actions } from 'astro:actions';
+import { actions } from "astro:actions";
 const result = Astro.getActionResult(actions.createPost);
-if (result && !result.error) return Astro.redirect('/admin');
+if (result && !result.error) return Astro.redirect("/admin");
 ---
+
 <form method="POST" action={actions.createPost}>
   <input name="title" />
-  <textarea name="body" />
+  <textarea name="body"></textarea>
   <button>投稿</button>
 </form>
 ```
@@ -483,6 +508,7 @@ if (result && !result.error) return Astro.redirect('/admin');
 #### API ルート
 
 **旧**:
+
 ```ts
 // app/api/posts/route.ts
 export async function GET() {
@@ -493,10 +519,11 @@ export async function GET() {
 ```
 
 **新**:
+
 ```ts
 // _astro/src/pages/api/posts.ts
-import type { APIRoute } from 'astro';
-import { getDb } from '../../lib/db';
+import type { APIRoute } from "astro";
+import { getDb } from "../../lib/db";
 
 export const prerender = false;
 
@@ -504,26 +531,26 @@ export const GET: APIRoute = async (context) => {
   const db = getDb(context);
   const list = await db.query.posts.findMany();
   return new Response(JSON.stringify(list), {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
 };
 ```
 
 ### 3-2. Next.js 固有 API の置換早見
 
-| Next.js | Astro |
-|---|---|
-| `import Link from 'next/link'` | `<a href="...">` |
-| `<Image>` from `next/image` | `import { Image } from 'astro:assets'` |
-| `useRouter()` | `Astro.url` (サーバー) / `window.location` (クライアント) |
-| `useSearchParams()` | `Astro.url.searchParams` |
-| `cookies()` from `next/headers` | `Astro.cookies` |
-| `headers()` from `next/headers` | `Astro.request.headers` |
-| `redirect()` | `Astro.redirect()` |
-| `notFound()` | `Astro.redirect('/404')` or `return new Response(null, { status: 404 })` |
-| `generateMetadata` | Layout の `<head>` に直接 |
-| `revalidatePath` | (不要・SSRなので即反映) |
-| `'use client'` | `client:load` などのディレクティブ |
+| Next.js                         | Astro                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------ |
+| `import Link from 'next/link'`  | `<a href="...">`                                                         |
+| `<Image>` from `next/image`     | `import { Image } from 'astro:assets'`                                   |
+| `useRouter()`                   | `Astro.url` (サーバー) / `window.location` (クライアント)                |
+| `useSearchParams()`             | `Astro.url.searchParams`                                                 |
+| `cookies()` from `next/headers` | `Astro.cookies`                                                          |
+| `headers()` from `next/headers` | `Astro.request.headers`                                                  |
+| `redirect()`                    | `Astro.redirect()`                                                       |
+| `notFound()`                    | `Astro.redirect('/404')` or `return new Response(null, { status: 404 })` |
+| `generateMetadata`              | Layout の `<head>` に直接                                                |
+| `revalidatePath`                | (不要・SSRなので即反映)                                                  |
+| `'use client'`                  | `client:load` などのディレクティブ                                       |
 
 ### 3-3. クライアント側JSが必要な場合
 
@@ -537,9 +564,10 @@ export const GET: APIRoute = async (context) => {
 
 ```astro
 ---
-import Editor from '../components/Editor.tsx';
+import Editor from "../components/Editor.tsx";
 ---
-<Editor client:load initialValue={post?.body ?? ''} />
+
+<Editor client:load initialValue={post?.body ?? ""} />
 ```
 
 ### ✅ 各ページ移植後のチェック
@@ -555,23 +583,31 @@ import Editor from '../components/Editor.tsx';
 ## フェーズ 4: スタイル・アセット・SEO
 
 ### 4-1. Tailwind
+
 - 旧 `tailwind.config.{js,ts}` を新側にコピー
 - `content` パスを `['./src/**/*.{astro,html,js,jsx,ts,tsx,md,mdx}']` に修正
 - グローバルCSSは `_astro/src/styles/global.css` に集約
 
 ### 4-2. フォント
+
 - `next/font` を使っていた場合は `@fontsource/<name>` パッケージ or `<link>` 直書きへ
 - セルフホスト派なら `public/fonts/` に置いて `@font-face`
 
 ### 4-3. メタタグ
+
 旧 `generateMetadata` を **Layout 内で `<head>` に直書き**:
 
 ```astro
 ---
 // _astro/src/layouts/Base.astro
-interface Props { title: string; description?: string; ogImage?: string; }
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+}
 const { title, description, ogImage } = Astro.props;
 ---
+
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
@@ -585,6 +621,7 @@ const { title, description, ogImage } = Astro.props;
 ```
 
 ### 4-4. 画像
+
 - 旧 `<Image>` を `import { Image } from 'astro:assets'` に置換
 - R2 にある画像は外部URLとして渡すか、Cloudflare Image Resizing バインディング経由で最適化
 
@@ -596,8 +633,9 @@ const { title, description, ogImage } = Astro.props;
 
 ```astro
 ---
-import { ClientRouter } from 'astro:transitions';
+import { ClientRouter } from "astro:transitions";
 ---
+
 <head>
   <ClientRouter />
 </head>
@@ -619,7 +657,7 @@ npx wrangler dev   # workerd runtime で確認
 
 ここで全主要ページを目視確認。
 
-### 6-2. *.workers.dev でプレビューデプロイ
+### 6-2. \*.workers.dev でプレビューデプロイ
 
 `wrangler.jsonc` の `name` を **一時的に別名** (例: `my-blog-astro-preview`) に変更:
 
@@ -666,6 +704,7 @@ npx wrangler deploy
 ### 6-5. アーカイブと掃除
 
 1週間運用して問題なければ:
+
 - `_legacy_nextjs/` を削除 → `git rm -r _legacy_nextjs && git commit -m "chore: remove legacy nextjs"`
 - 不要パッケージを `package.json` から削除: `next`, `@opennextjs/cloudflare`, `react-dom` (React Island使ってなければ)
 - `npm prune` でnode_modules整理
@@ -674,18 +713,18 @@ npx wrangler deploy
 
 ## 🚨 ハマりやすい地雷リスト
 
-| # | 症状 | 原因 | 対処 |
-|---|---|---|---|
-| 1 | `process.env.X` が undefined | Cloudflare Workers では `process.env` なし | `context.locals.runtime.env.X` か `import.meta.env.X` (公開変数のみ) |
-| 2 | `NEXT_PUBLIC_*` 変数が読めない | Astro のクライアント公開 prefix は `PUBLIC_` | 全置換 |
-| 3 | `/api/*` がプリレンダされて 405 | Astro のデフォルト動作 | 各 endpoint に `export const prerender = false` |
-| 4 | `getCloudflareContext()` グローバル呼出が動かない | OpenNext 固有 API | `Astro.locals.runtime.env` に書き換え |
-| 5 | 画像が壊れる | `next/image` の loader 設定が消えた | `astro:assets` + 必要なら Cloudflare Images バインディング再設定 |
-| 6 | フォーム送信で CSRF エラー | Astro Actions は Origin チェックあり | `astro.config.mjs` で `security.checkOrigin` を確認 |
-| 7 | `params` が Promise でない | App Router の async params の名残 | `await Astro.params` は不要、同期で取れる |
-| 8 | ローカルでバインディングが見つからない | `wrangler dev` ではなく `astro dev` を使うと型は通るがバインディング未注入のことがある | `astro dev` でも Cloudflare adapter のおかげで使えるが、本番相当の挙動を見たい時は `wrangler dev` で `dist/` を見る |
-| 9 | デプロイ後 500 | `dist/_worker.js/index.js` が見つからない | `npm run build` を deploy 前に必ず実行。CI なら build ステップを分離 |
-| 10 | KV セッションが切れる | OpenNext と Astro で KV キー prefix が違う | 既存セッションは無効になる前提。再ログイン必須を周知 |
+| #   | 症状                                              | 原因                                                                                   | 対処                                                                                                                |
+| --- | ------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 1   | `process.env.X` が undefined                      | Cloudflare Workers では `process.env` なし                                             | `context.locals.runtime.env.X` か `import.meta.env.X` (公開変数のみ)                                                |
+| 2   | `NEXT_PUBLIC_*` 変数が読めない                    | Astro のクライアント公開 prefix は `PUBLIC_`                                           | 全置換                                                                                                              |
+| 3   | `/api/*` がプリレンダされて 405                   | Astro のデフォルト動作                                                                 | 各 endpoint に `export const prerender = false`                                                                     |
+| 4   | `getCloudflareContext()` グローバル呼出が動かない | OpenNext 固有 API                                                                      | `Astro.locals.runtime.env` に書き換え                                                                               |
+| 5   | 画像が壊れる                                      | `next/image` の loader 設定が消えた                                                    | `astro:assets` + 必要なら Cloudflare Images バインディング再設定                                                    |
+| 6   | フォーム送信で CSRF エラー                        | Astro Actions は Origin チェックあり                                                   | `astro.config.mjs` で `security.checkOrigin` を確認                                                                 |
+| 7   | `params` が Promise でない                        | App Router の async params の名残                                                      | `await Astro.params` は不要、同期で取れる                                                                           |
+| 8   | ローカルでバインディングが見つからない            | `wrangler dev` ではなく `astro dev` を使うと型は通るがバインディング未注入のことがある | `astro dev` でも Cloudflare adapter のおかげで使えるが、本番相当の挙動を見たい時は `wrangler dev` で `dist/` を見る |
+| 9   | デプロイ後 500                                    | `dist/_worker.js/index.js` が見つからない                                              | `npm run build` を deploy 前に必ず実行。CI なら build ステップを分離                                                |
+| 10  | KV セッションが切れる                             | OpenNext と Astro で KV キー prefix が違う                                             | 既存セッションは無効になる前提。再ログイン必須を周知                                                                |
 
 ---
 

@@ -1,35 +1,32 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "echolog",
-	"main": "@astrojs/cloudflare/entrypoints/server",
-	"compatibility_date": "2026-05-13",
-	"compatibility_flags": [
-		"nodejs_compat",
-		"global_fetch_strictly_public"
-	],
-	"assets": {
-		"directory": "./dist",
-		"binding": "ASSETS"
-	},
-	"observability": {
-		"enabled": true
-	},
-	"vars": {
-		// 旧 NEXT_PUBLIC_SITE_URL の Astro 流改名。client + server 両方で
-		// 参照される唯一の "公開" 変数 (`PUBLIC_` prefix で client にも露出)。
-		// その他 (microCMS / Cloudflare Access 等) は secrets で投入する
-		// (本 README とコメント末尾の手順を参照)。
-		"PUBLIC_SITE_URL": "https://echolog.cubicberry.workers.dev"
-	}
-	// Bindings:
-	//   このアプリ (echolog) は D1 / R2 / KV にアプリデータを持たない。
-	//   コンテンツは microCMS (2 ワークスペース) にあり、認証は Cloudflare
-	//   Access のエッジ JWT のみ。OpenNext 用の R2 incremental cache /
-	//   D1 tag cache / WORKER_SELF_REFERENCE は Astro SSR では不要。
-	//   詳細は MIGRATION_INVENTORY.md 表B を参照。
-	//
-	// Environment variables (vars / secret):
-	//   - 公開系: PUBLIC_SITE_URL (旧 NEXT_PUBLIC_SITE_URL を Astro 流に改名)
-	//   - 秘匿系: MICROCMS_API_KEY 等 → secret (wrangler secret put)
-	//   フェーズ 2 以降で .dev.vars + wrangler vars に移植する。
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "echolog",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-05-13",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+  },
+  "observability": {
+    "enabled": true,
+  },
+  "vars": {
+    // 旧 NEXT_PUBLIC_SITE_URL の Astro 流改名。client + server 両方で
+    // 参照される唯一の "公開" 変数 (`PUBLIC_` prefix で client にも露出)。
+    // その他 (microCMS / Cloudflare Access 等) は secrets で投入する
+    // (本 README とコメント末尾の手順を参照)。
+    "PUBLIC_SITE_URL": "https://echolog.cubicberry.workers.dev",
+  },
+  // Bindings:
+  //   このアプリ (echolog) は D1 / R2 / KV にアプリデータを持たない。
+  //   コンテンツは microCMS (2 ワークスペース) にあり、認証は Cloudflare
+  //   Access のエッジ JWT のみ。OpenNext 用の R2 incremental cache /
+  //   D1 tag cache / WORKER_SELF_REFERENCE は Astro SSR では不要。
+  //   詳細は MIGRATION_INVENTORY.md 表B を参照。
+  //
+  // Environment variables (vars / secret):
+  //   - 公開系: PUBLIC_SITE_URL (旧 NEXT_PUBLIC_SITE_URL を Astro 流に改名)
+  //   - 秘匿系: MICROCMS_API_KEY 等 → secret (wrangler secret put)
+  //   フェーズ 2 以降で .dev.vars + wrangler vars に移植する。
 }

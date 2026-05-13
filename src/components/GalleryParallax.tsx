@@ -13,16 +13,13 @@ export function GalleryParallax() {
 
     const apply = () => {
       const vh = window.innerHeight;
-      const wraps =
-        document.querySelectorAll<HTMLElement>(".k-quote-wrap");
+      const wraps = document.querySelectorAll<HTMLElement>(".k-quote-wrap");
       wraps.forEach((el) => {
         const rect = el.getBoundingClientRect();
         const eh = rect.height;
         const range = vh + eh;
         const progress =
-          range > 0
-            ? Math.max(0, Math.min(1, (vh - rect.top) / range))
-            : 0;
+          range > 0 ? Math.max(0, Math.min(1, (vh - rect.top) / range)) : 0;
         const offset = progress * MAX_OFFSET;
         el.style.setProperty("--k-parallax-y", offset.toFixed(2));
       });

@@ -5,10 +5,10 @@ phase 6-2 以降の preview / 本番デプロイに進む前に、`_astro/` の 
 
 2 つの実行モードを使い分ける:
 
-| モード | 用途 | コマンド | URL | admin | HMR |
-|---|---|---|---|---|---|
-| **A. Astro dev** | 日常の開発/UI 調整 | `npm run dev` | http://localhost:4321 | ✅ bypass 可 | ✅ |
-| **B. Wrangler dev** | 本番ランタイム検証 | `npm run build && npx wrangler dev` | http://localhost:8787 | ❌ 401 (期待動作) | ❌ |
+| モード              | 用途               | コマンド                            | URL                   | admin             | HMR |
+| ------------------- | ------------------ | ----------------------------------- | --------------------- | ----------------- | --- |
+| **A. Astro dev**    | 日常の開発/UI 調整 | `npm run dev`                       | http://localhost:4321 | ✅ bypass 可      | ✅  |
+| **B. Wrangler dev** | 本番ランタイム検証 | `npm run build && npx wrangler dev` | http://localhost:8787 | ❌ 401 (期待動作) | ❌  |
 
 両方を最低 1 回ずつ通すこと。A だけだと "本番ビルドでだけ落ちる" 系のバグ
 (named export 不一致や adapter binding 要求) を取り逃す。B だけだと
@@ -44,6 +44,7 @@ sed -n 's/^\([A-Z_][A-Z0-9_]*\)=.*/\1=***/p' .dev.vars | sort
 ```
 
 期待される key:
+
 - `BYPASS_AUTH`
 - `CF_ACCESS_AUD`
 - `CF_ACCESS_TEAM_DOMAIN`
@@ -73,15 +74,15 @@ npm run dev
 
 ### ブラウザで目視確認するページ
 
-| URL | 期待 |
-|---|---|
-| `/` | ホーム gallery 表示。hero に縦書き「康凱爾」+「KO KAIJI」。スクロールで gallery の写真と quote が fade-in、`.is-scrolled` 切替で nav が下りてくる |
-| `/tweets/<実 id>` | tweet 詳細。本文、reply chain、画像サムネ (96×96)。サムネクリックで View Transitions 拡大、ESC で morph で縮小 |
-| `/admin` | compose form + Recent。`BYPASS_AUTH=true` のため middleware が通過し、ヘッダに `local-dev@echolog.local` + `bypass` chip |
-| `/admin/drafts` | 下書き一覧 |
-| `/admin/edit/<id>` | 編集フォーム |
-| `/robots.txt` | プレーンテキスト、`Disallow: /admin /api/`、`Sitemap: ...` |
-| `/sitemap.xml` | XML、tweet 一覧含む |
+| URL                | 期待                                                                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                | ホーム gallery 表示。hero に縦書き「康凱爾」+「KO KAIJI」。スクロールで gallery の写真と quote が fade-in、`.is-scrolled` 切替で nav が下りてくる |
+| `/tweets/<実 id>`  | tweet 詳細。本文、reply chain、画像サムネ (96×96)。サムネクリックで View Transitions 拡大、ESC で morph で縮小                                    |
+| `/admin`           | compose form + Recent。`BYPASS_AUTH=true` のため middleware が通過し、ヘッダに `local-dev@echolog.local` + `bypass` chip                          |
+| `/admin/drafts`    | 下書き一覧                                                                                                                                        |
+| `/admin/edit/<id>` | 編集フォーム                                                                                                                                      |
+| `/robots.txt`      | プレーンテキスト、`Disallow: /admin /api/`、`Sitemap: ...`                                                                                        |
+| `/sitemap.xml`     | XML、tweet 一覧含む                                                                                                                               |
 
 ### curl による smoke test
 
@@ -148,6 +149,7 @@ npx wrangler dev        # dist/ の build 出力を Cloudflare ランタイム�
 ```
 
 エラーが出る場合の代表例:
+
 - `"default" is not exported by "src/components/Foo.tsx"` — 該当ファイルに
   `export default Foo;` 行が無い。phase 6-1 で全 component に追加済み
   なので、新規 React Island を作ったときだけ気をつける
@@ -221,15 +223,15 @@ npm run dev               # http://localhost:4321
 
 ## 5. トラブルシュート
 
-| 症状 | 原因 | 対処 |
-|---|---|---|
-| `/` が空 body の HTTP 200 | React Island が SSR で死んだ | 該当 Island を `client:only="react"` に切替 (`client:load` から) |
-| FontPlus が読まれない | network エラー or CSP | FontPlus URL を `<script is:inline>` で読んでいるか確認。fallback に Cormorant Garamond が当たれば OK |
-| 「KO KAIJI」が「KOKAIJI」 | NBSP regression | `_astro/src/components/nav-ripple.tsx` の `ch === " " ? " " : ch` の 2 つ目が NBSP (U+00A0) であること。`xxd` で `c2 a0` が見えるはず |
-| `/api/og-preview` が 502 | 外部 URL に 5 秒以内に到達できない | timeout / DNS の問題。違う URL で試す |
-| `/admin` が `wrangler dev` で 401 | 本番ランタイムでの想定動作 | モード A で確認、または本物の JWT を渡す |
-| build error: `"default" is not exported` | 新規 .tsx に `export default` が無い | ファイル末尾に `export default ComponentName;` を追加 |
-| Astro が `IMAGES`/`SESSION` 警告を出す | adapter のデフォルト機能 | IMAGES は `imageService: "passthrough"` で OFF 済。SESSION は phase 6 後半で対応 |
+| 症状                                     | 原因                                 | 対処                                                                                                                                  |
+| ---------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `/` が空 body の HTTP 200                | React Island が SSR で死んだ         | 該当 Island を `client:only="react"` に切替 (`client:load` から)                                                                      |
+| FontPlus が読まれない                    | network エラー or CSP                | FontPlus URL を `<script is:inline>` で読んでいるか確認。fallback に Cormorant Garamond が当たれば OK                                 |
+| 「KO KAIJI」が「KOKAIJI」                | NBSP regression                      | `_astro/src/components/nav-ripple.tsx` の `ch === " " ? " " : ch` の 2 つ目が NBSP (U+00A0) であること。`xxd` で `c2 a0` が見えるはず |
+| `/api/og-preview` が 502                 | 外部 URL に 5 秒以内に到達できない   | timeout / DNS の問題。違う URL で試す                                                                                                 |
+| `/admin` が `wrangler dev` で 401        | 本番ランタイムでの想定動作           | モード A で確認、または本物の JWT を渡す                                                                                              |
+| build error: `"default" is not exported` | 新規 .tsx に `export default` が無い | ファイル末尾に `export default ComponentName;` を追加                                                                                 |
+| Astro が `IMAGES`/`SESSION` 警告を出す   | adapter のデフォルト機能             | IMAGES は `imageService: "passthrough"` で OFF 済。SESSION は phase 6 後半で対応                                                      |
 
 ---
 

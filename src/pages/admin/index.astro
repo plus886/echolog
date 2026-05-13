@@ -64,7 +64,9 @@ const heading =
 ---
 
 <Admin title="Admin">
-  <main class="mt-6 grid grid-cols-1 gap-x-10 gap-y-12 min-[880px]:grid-cols-[1fr_320px]">
+  <main
+    class="mt-6 grid grid-cols-1 gap-x-10 gap-y-12 min-[880px]:grid-cols-[1fr_320px]"
+  >
     <section>
       <h1 class="mb-6 k-label-mini">{heading}</h1>
       <ComposeForm mode={composeMode} client:only="react" />

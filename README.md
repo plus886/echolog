@@ -4,19 +4,19 @@
 
 ## スタック
 
-| レイヤー | 採用 |
-|---|---|
-| フレームワーク | Next.js 16（App Router）|
-| ランタイム | Cloudflare Workers via OpenNext for Cloudflare |
-| ストレージ（コンテンツ）| microCMS |
-| 認証 | Cloudflare Access (Zero Trust) + アプリ側 JWT 検証 |
-| ISR キャッシュ | Cloudflare R2（OpenNext incremental cache）|
-| タグキャッシュ | Cloudflare D1（OpenNext tag cache）|
-| 画像配信 | microCMS の画像 API（imgix）|
-| スタイル | Tailwind CSS v4 |
-| 文字数カウント | twitter-text（CJK 2倍カウント）|
-| OGP 解析 | 自前パーサ（`lib/og-parse.ts`）|
-| デプロイ CLI | Wrangler |
+| レイヤー                 | 採用                                               |
+| ------------------------ | -------------------------------------------------- |
+| フレームワーク           | Next.js 16（App Router）                           |
+| ランタイム               | Cloudflare Workers via OpenNext for Cloudflare     |
+| ストレージ（コンテンツ） | microCMS                                           |
+| 認証                     | Cloudflare Access (Zero Trust) + アプリ側 JWT 検証 |
+| ISR キャッシュ           | Cloudflare R2（OpenNext incremental cache）        |
+| タグキャッシュ           | Cloudflare D1（OpenNext tag cache）                |
+| 画像配信                 | microCMS の画像 API（imgix）                       |
+| スタイル                 | Tailwind CSS v4                                    |
+| 文字数カウント           | twitter-text（CJK 2倍カウント）                    |
+| OGP 解析                 | 自前パーサ（`lib/og-parse.ts`）                    |
+| デプロイ CLI             | Wrangler                                           |
 
 ## 機能
 
