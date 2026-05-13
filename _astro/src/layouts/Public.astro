@@ -36,10 +36,9 @@ const props = Astro.props;
   <WordmarkLink
     client:only="react"
     transition:persist
+    label="KO KAIJI"
     className="k-wordmark-pin fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light) no-underline"
-  >
-    KO KAIJI
-  </WordmarkLink>
+  />
   <slot />
   <NavState client:load />
 </Base>

@@ -5,26 +5,31 @@ import { onRippleEnter, onRippleFocus, RippleLabel } from "./nav-ripple";
 // Astro Island。旧 app/(public)/wordmark-link.tsx の移植。
 // 旧版は TransitionLink (View Transitions API + next/router で SPA 遷移
 // を crossfade) で wrap していたが、phase 3 段階では <ClientRouter />
-// 未導入なので素の <a> で full page navigation。phase 5 で
-// <ClientRouter /> を入れれば astro:transitions が <a> に soft nav と
-// View Transitions を自動適用する。
+// 未導入で素の <a>、phase 5 で <ClientRouter /> を入れて astro:transitions
+// が <a> に soft nav と View Transitions を自動適用する状態に。
 //
 // 役割:
 //  - 既に / にいる場合: ナビゲーションせず scrollTo top + smooth
-//  - 詳細から / に戻る場合: 通常ナビ (ただし ScrollMemory が古いスクロール
-//    位置を復元しないよう sessionStorage の k-home-scroll-y をクリア)
+//  - 詳細から / に戻る場合: 通常ナビ (ScrollMemory が古いスクロール位置
+//    を復元しないよう sessionStorage の k-home-scroll-y をクリア)
 //  - PortfolioNav と共通の per-character ripple を hover / focus で
+//
+// label prop の理由:
+//   Astro Island の slot 経由で渡される children は React 要素 (内部的に
+//   <StaticHtml dangerouslySetInnerHTML> 相当) で plain string にならない
+//   ため、RippleLabel が `[...children]` で spread した瞬間に
+//   "children is not iterable" で落ちる。文字列のまま受けたい識字情報
+//   は children を使わず明示的に label prop として受ける。
 const SCROLL_KEY = "k-home-scroll-y";
 
 export function WordmarkLink({
+  label,
   className,
-  children,
   style,
   "aria-hidden": ariaHidden,
 }: {
+  label: string;
   className?: string;
-  // ripple のため文字単位で span 包みする都合上、children は string で固定。
-  children: string;
   style?: CSSProperties;
   "aria-hidden"?: boolean | "true" | "false";
 }) {
@@ -50,7 +55,7 @@ export function WordmarkLink({
       onMouseEnter={onRippleEnter}
       onFocus={onRippleFocus}
     >
-      <RippleLabel>{children}</RippleLabel>
+      <RippleLabel>{label}</RippleLabel>
     </a>
   );
 }

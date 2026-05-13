@@ -20,6 +20,18 @@ export default defineConfig({
   }),
   integrations: [react()],
 
+  // Astro Sessions は echolog では未使用 (認証は Cloudflare Access の JWT)。
+  // @astrojs/cloudflare adapter は config.session?.driver が未設定だと
+  // 自動で cloudflare-kv-binding ドライバ + SESSION KV binding を要求する
+  // (build 出力 dist/server/wrangler.json に kv_namespaces が injection
+  // される)。不要な KV namespace を本番に作る/維持するのを避けるため、
+  // in-isolate-memory driver を明示指定して KV 要求をスキップさせる。
+  // Sessions API 自体は動作するが、isolate を跨いで保持されないので
+  // 実質的に使えない (こちらの想定どおり)。
+  session: {
+    driver: 'memory',
+  },
+
   vite: {
     plugins: [tailwindcss()],
   },
