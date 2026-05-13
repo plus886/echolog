@@ -93,34 +93,73 @@ const FONTPLUS_SRC =
 
     <script src={FONTPLUS_SRC} is:inline></script>
 
-    {/* FontPlus は DOMContentLoaded で 1 度だけ DOM をスキャンして
-        要素に inline `font-family: fontplus-<id>` を打ち込むタイプの
-        サードパーティ。<ClientRouter /> で soft nav すると swap 後の
-        新 DOM にはその inline style が無く、FOT 明朝が当たらなくなる。
-        astro:after-swap で再スキャンを叩いて回避する。
-        FontPlus は `window.FONTPLUS.set()` で再適用できる (旧来 API)。
-        万一そのメソッド名が変わっていた場合の保険として、script tag を
-        clone-and-append し直して FontPlus 自体を再起動するフォールバックも
-        用意する。 */}
+    {/* <ClientRouter /> の soft nav 時に必要な後処理 + 前処理:
+
+       1) FontPlus は DOMContentLoaded で 1 度だけ DOM をスキャンして
+          inline `font-family: fontplus-<id>` を打ち込むタイプ。swap 後の
+          新 DOM にはその inline style が無く FOT 明朝が外れるので、
+          window.FONTPLUS.reload(true) で内部スキャナだけ再起動する。
+          (script tag を clone re-inject すると FontPlus 側 access log
+          で PV が二重カウントされるので絶対に避ける。reload(true) は
+          script 再 fetch を伴わない、ライブラリが公開している SPA 用の
+          再適用 API。)
+
+       2) .k-shell (= body) の .is-scrolled が swap で消えるため、tweet ↔
+          home 遷移の度に nav が一瞬 slide-out → slide-in する flicker が
+          発生する。astro:before-swap で次ページの body に
+          .is-scrolled + .no-shell-transitions を事前に焼いて回避する:
+            - 非 home (/admin, /tweets/<id>): 常に .is-scrolled を pre-apply
+              (NavState が後で同等の付与をするが、それまでに paint が走ると
+               flicker)
+            - home (/): 直前まで深く scroll していて ScrollMemory が
+              復元しようとしている場合のみ pre-apply
+          swap 直後に .no-shell-transitions を 100ms 後に剥がして、以降の
+          通常 scroll で nav が普通に slide できる状態に戻す。 */}
     <script is:inline>
+      const SCROLL_KEY = "k-home-scroll-y";
+
+      document.addEventListener("astro:before-swap", (event) => {
+        const newBody = event.newDocument.body;
+        if (!newBody) return;
+        newBody.classList.add("no-shell-transitions");
+
+        const newPath = event.to.pathname;
+        if (newPath !== "/") {
+          // 非 home: nav は常時下りているべき。
+          newBody.classList.add("is-scrolled");
+          return;
+        }
+
+        // home: 直近の scrollY が viewport 半分以上ならば
+        // ScrollMemory が深スクロール位置を復元するので nav も下りている
+        // 想定。それ未満なら top に戻るので nav 非表示で OK。
+        try {
+          const saved = sessionStorage.getItem(SCROLL_KEY);
+          if (saved) {
+            const y = parseInt(saved, 10);
+            if (Number.isFinite(y) && y > window.innerHeight * 0.5) {
+              newBody.classList.add("is-scrolled");
+            }
+          }
+        } catch (_) {
+          // sessionStorage 不可な環境は無視
+        }
+      });
+
       document.addEventListener("astro:after-swap", () => {
         const fp = /** @type {any} */ (window).FONTPLUS;
-        if (fp) {
-          if (typeof fp.set === "function") return fp.set();
-          if (typeof fp.apply === "function") return fp.apply();
-          if (typeof fp.reload === "function") return fp.reload();
+        if (fp && typeof fp.reload === "function") {
+          // 引数 true は内部の force flag (FONTPLUS.start() と同等)。
+          fp.reload(true);
         }
-        const existing = document.querySelector(
-          'script[src*="webfont.fontplus.jp/accessor"]',
-        );
-        if (existing) {
-          const src = existing.getAttribute("src");
-          if (src) {
-            const clone = document.createElement("script");
-            clone.src = src;
-            document.head.appendChild(clone);
-          }
-        }
+
+        // pre-swap で焼いた .no-shell-transitions を、一拍置いて剥がす。
+        // この遅延が無いと is-scrolled の add 直後に transition が
+        // 走り出して結局 slide-in が見える。100ms はリスナー初期化が
+        // 安定する程度の最短。
+        setTimeout(() => {
+          document.body.classList.remove("no-shell-transitions");
+        }, 100);
       });
     </script>
 
