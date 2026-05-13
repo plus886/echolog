@@ -9,12 +9,15 @@ import type { FocusEvent, MouseEvent } from "react";
 // (opacity 1 → 0.2 → 1) を流すと、touched char から両端へ波が伝播する。
 
 // label テキストの 1 文字ずつを .k-nav-char span に包む helper component。
+// 注: .k-nav-char は display: inline-block で、単独のスペース文字を
+// 内側に持つと whitespace collapsing で 0 幅に潰れる ("KO KAIJI" の間が
+// 詰まる)。NBSP (U+00A0) に置換すれば collapse 対象外になり幅が残る。
 export function RippleLabel({ children }: { children: string }) {
   return (
     <span className="k-nav-text">
       {[...children].map((ch, i) => (
         <span key={i} className="k-nav-char">
-          {ch === " " ? " " : ch}
+          {ch === " " ? " " : ch}
         </span>
       ))}
     </span>
