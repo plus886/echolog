@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+/* Self-hosted webfonts (旧 next/font の置き換え。CSS 変数は portfolio.css
+   側で --k-font-sans / --k-font-serif に詰める)。
+   - Inter Tight 400: 本文 sans
+   - Cormorant Garamond 300 italic: 装飾 italic / serif fallback */
+@import "@fontsource/inter-tight/400.css";
+@import "@fontsource/cormorant-garamond/300-italic.css";

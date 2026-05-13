@@ -1,0 +1,45 @@
+---
+// 旧 app/(public)/reference-card.tsx (React Server Component) の Astro 移植。
+// 役割は不変: 左罫線 + ラベル + serif 本文の参照ブロック。
+//
+// 旧 React 版は TransitionLink で wrap してクリック遷移を View Transitions
+// API でアニメさせていた。Astro では <ClientRouter /> (フェーズ 5) を
+// layout に入れれば <a> タグの SPA 遷移化が自動的にかかるため、ここでは
+// 素の <a> で済ませる。
+
+interface Props {
+  label: string;
+  body: string;
+  href?: string;
+  as?: "div" | "blockquote";
+  // Astro convention で `class` をそのまま受け取る (外側 margin など)。
+  class?: string;
+}
+
+const { label, body, href, as = "div", class: className = "" } = Astro.props;
+
+// 動的タグ。Astro は capitalize 識別子のみ HTML element として展開する。
+const Inner = as;
+---
+
+{
+  href ? (
+    <a href={href} class={`block no-underline ${className}`}>
+      <Inner class="m-0 border-l border-(--ink-30) pl-6 transition-colors hover:border-(--ink-50)">
+        <p class="mb-2 k-label-mini">{label}</p>
+        <p class="m-0 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink-70)">
+          {body}
+        </p>
+      </Inner>
+    </a>
+  ) : (
+    <div class={className}>
+      <Inner class="m-0 border-l border-(--ink-30) pl-6 transition-colors hover:border-(--ink-50)">
+        <p class="mb-2 k-label-mini">{label}</p>
+        <p class="m-0 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink-70)">
+          {body}
+        </p>
+      </Inner>
+    </div>
+  )
+}

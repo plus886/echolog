@@ -1,0 +1,42 @@
+---
+import "@/styles/global.css";
+import "@/styles/portfolio.css";
+
+// 旧 app/layout.tsx + app/(public)/layout.tsx を 1 ファイルに統合した
+// Astro 用 Base レイアウト。HTML shell + FontPlus loader + .k-shell の
+// design-token スコープを担当する。
+//
+// フェーズ 3 では tweet 詳細だけを動かすので、PortfolioNav や
+// WordmarkLink pin 等の chrome 要素は持ち込まない (それらは home 移植
+// 時に専用 layout として組み直す)。
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const SITE_NAME = "echolog";
+const { title, description } = Astro.props;
+const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
+
+// FontPlus loader。Next.js では <script src="..." /> をルート layout の
+// <head> に raw で置くのが正解で (FontPlus の DOMContentLoaded スキャナが
+// next/script のラッパで壊れる)、Astro でも同じ理由から is:inline を
+// 付けて optimizer を bypass する。
+const FONTPLUS_SRC =
+  "https://webfont.fontplus.jp/accessor/script/fontplus.js?3Tt6wldHrYg%3D&box=TZoH12Fyg3w%3D&aa=1&ab=2";
+---
+
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{fullTitle}</title>
+    {description && <meta name="description" content={description} />}
+    <script src={FONTPLUS_SRC} is:inline></script>
+  </head>
+  <body class="k-shell relative min-h-screen overflow-x-hidden text-[15px] leading-[1.45] antialiased">
+    <slot />
+  </body>
+</html>
