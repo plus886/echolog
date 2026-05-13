@@ -51,7 +51,11 @@ Astro.response.headers.set(
 );
 ---
 
-<Public title="Quote" description={tweet.body?.slice(0, 120)}>
+<Public
+  title="Quote"
+  description={tweet.body?.slice(0, 120)}
+  ogType="article"
+>
   <article class="mx-auto mt-40 mb-24 w-full max-w-[844px] px-6 min-[880px]:px-10">
     {
       tweet.parent && tweet.parent.body && (

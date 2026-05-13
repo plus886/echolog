@@ -1,23 +1,53 @@
 ---
 import "@/styles/global.css";
 import "@/styles/portfolio.css";
+import { getEnv } from "@/lib/env";
 
 // 旧 app/layout.tsx + app/(public)/layout.tsx を 1 ファイルに統合した
 // Astro 用 Base レイアウト。HTML shell + FontPlus loader + .k-shell の
 // design-token スコープを担当する。
 //
-// フェーズ 3 では tweet 詳細だけを動かすので、PortfolioNav や
-// WordmarkLink pin 等の chrome 要素は持ち込まない (それらは home 移植
-// 時に専用 layout として組み直す)。
+// SEO / OGP の整備 (phase 4):
+//  - title template: `${title} | echolog` (旧 Next.js metadata.title.template
+//    と同等)
+//  - canonical / og:url: PUBLIC_SITE_URL を base に request pathname を
+//    解決した絶対 URL を毎回計算
+//  - default OG image: /og-default.png (旧 layout.tsx と同じ参照)
+//  - Twitter card: summary_large_image
+//  - admin / edit ルートのように検索結果に出したくないページは noindex
+//    prop で <meta name="robots" content="noindex, nofollow"> を出す
+//
+// フェーズ 3 では tweet 詳細だけを動かしたので chrome は持ち込まなかったが、
+// その方針は変えていない。chrome (PortfolioNav, KO KAIJI pin, NavState)
+// は Public.astro 経由で載る。
 
 interface Props {
   title?: string;
   description?: string;
+  ogImage?: string;
+  ogType?: "website" | "article";
+  noindex?: boolean;
 }
 
 const SITE_NAME = "echolog";
-const { title, description } = Astro.props;
+const SITE_DESCRIPTION = "echo + log — 自分の発信が積み重なっていく場所";
+const DEFAULT_OG_IMAGE = "/og-default.png";
+
+const {
+  title,
+  description,
+  ogImage,
+  ogType = "website",
+  noindex = false,
+} = Astro.props;
+
 const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
+const ogTitle = title ?? SITE_NAME;
+const desc = description ?? SITE_DESCRIPTION;
+
+const baseUrl = getEnv().PUBLIC_SITE_URL.replace(/\/$/, "");
+const canonical = new URL(Astro.url.pathname, baseUrl).toString();
+const ogImageUrl = new URL(ogImage ?? DEFAULT_OG_IMAGE, baseUrl).toString();
 
 // FontPlus loader。Next.js では <script src="..." /> をルート layout の
 // <head> に raw で置くのが正解で (FontPlus の DOMContentLoaded スキャナが
@@ -32,8 +62,33 @@ const FONTPLUS_SRC =
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
+    <meta name="application-name" content={SITE_NAME} />
+    <meta name="generator" content={Astro.generator} />
+
     <title>{fullTitle}</title>
-    {description && <meta name="description" content={description} />}
+    <meta name="description" content={desc} />
+    <link rel="canonical" href={canonical} />
+
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    {/* Open Graph */}
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={SITE_NAME} />
+
+    {/* Twitter card */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={desc} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
     <script src={FONTPLUS_SRC} is:inline></script>
   </head>
   <body class="k-shell relative min-h-screen overflow-x-hidden text-[15px] leading-[1.45] antialiased">
