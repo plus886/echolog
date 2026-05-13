@@ -5,20 +5,13 @@ import PortfolioNav from "@/components/PortfolioNav.tsx";
 import WordmarkLink from "@/components/WordmarkLink.tsx";
 
 // (public) ルート全体の chrome を載せた layout。Base.astro (HTML shell +
-// .k-shell + FontPlus + SEO meta + ClientRouter) を内包し、上に
-// PortfolioNav と KO KAIJI pin、pathname-aware の NavState を Astro
-// Island として配置する。
+// .k-shell + FontPlus + SEO meta) を内包し、上に PortfolioNav と
+// KO KAIJI pin、pathname-aware の NavState を Astro Island として配置する。
 //
-// transition:persist 戦略 (phase 5):
-//  - PortfolioNav, WordmarkLink (pin) は遷移をまたいで DOM + React state
-//    を保持。旧 Next.js の "persistent route group layout" 相当を実現し、
-//    chrome の再 mount による flash を防ぐ。
-//  - NavState は pathname を読んで .is-scrolled を制御するため、毎遷移で
-//    再評価が必要。persist せず、astro:after-swap 時に新 mount される
-//    のに任せる。
-//
-// SEO 用 meta props (title / description / ogImage / ogType / noindex)
-// は Base にそのまま pass-through。
+// 注: 旧プランの phase 5 で <ClientRouter /> + transition:persist による
+// SPA-style soft nav を試したが、FontPlus との相性問題 (PV 再カウント、
+// inline style 消失) と nav slide flicker が安定せず撤回。chrome は今や
+// 毎ページの full reload で再 mount される。
 
 interface Props {
   title?: string;
@@ -32,10 +25,9 @@ const props = Astro.props;
 ---
 
 <Base {...props}>
-  <PortfolioNav client:only="react" transition:persist />
+  <PortfolioNav client:only="react" />
   <WordmarkLink
     client:only="react"
-    transition:persist
     label="KO KAIJI"
     className="k-wordmark-pin fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light) no-underline"
   />

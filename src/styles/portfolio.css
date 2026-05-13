@@ -8,15 +8,10 @@
    - Tailwind v4 環境で読み込み、@tailwindcss/vite 経由で処理される。
    ============================================================ */
 
-/* View Transitions API クロスフェード長と easing (page 遷移用)。
-   ClientRouter を入れたフェーズ 5 で本格的に使う。それまでは no-op。 */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 420ms;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Quote 詳細ページの画像 lightbox 用 morph (QuoteImages)。 */
+/* Quote 詳細ページの画像 lightbox 用 morph (QuoteImages)。
+   lightbox は <ClientRouter /> とは独立に document.startViewTransition を
+   呼ぶ単発 morph なので、ページ遷移系の view-transition CSS をすべて剥がした
+   後もこのルールだけは残す。 */
 ::view-transition-group(qimg-0),
 ::view-transition-group(qimg-1),
 ::view-transition-group(qimg-2),

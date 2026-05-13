@@ -97,19 +97,29 @@ export function PortfolioNav() {
         >
           <ul className="flex flex-col gap-7 text-[22px] uppercase tracking-[0.06em]">
             <li>
-              <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
+              <a href="#about" onClick={() => setMenuOpen(false)}>
+                About
+              </a>
             </li>
             <li>
-              <a href="#" onClick={() => setMenuOpen(false)}>Echolog</a>
+              <a href="#" onClick={() => setMenuOpen(false)}>
+                Echolog
+              </a>
             </li>
             <li>
-              <a href="/" onClick={() => setMenuOpen(false)}>Ko Kaiji</a>
+              <a href="/" onClick={() => setMenuOpen(false)}>
+                Ko Kaiji
+              </a>
             </li>
             <li>
-              <a href="#portfolio" onClick={() => setMenuOpen(false)}>Works</a>
+              <a href="#portfolio" onClick={() => setMenuOpen(false)}>
+                Works
+              </a>
             </li>
             <li>
-              <a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a>
+              <a href="#contact" onClick={() => setMenuOpen(false)}>
+                Contact
+              </a>
             </li>
           </ul>
         </div>

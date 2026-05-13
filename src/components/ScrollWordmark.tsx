@@ -15,10 +15,6 @@ import { useEffect } from "react";
 //   降りてこない)。
 //   解決: 初回チェックで wordmark が見つからなければ MutationObserver で
 //   appear を待ち、出現後に listener を attach する。
-//
-// data-navigating フラグは phase 5 の <ClientRouter /> 導入時には未だ
-// astro:before-swap / astro:after-swap への移植をしていない。flag が
-// 立っていなければ onScroll は素通り。
 export function ScrollWordmark() {
   useEffect(() => {
     const shell = document.querySelector<HTMLElement>(".k-shell");
@@ -43,7 +39,6 @@ export function ScrollWordmark() {
       };
 
       const onScroll = () => {
-        if (document.documentElement.dataset.navigating) return;
         apply(window.scrollY >= triggerY);
       };
       const onResize = () => {
