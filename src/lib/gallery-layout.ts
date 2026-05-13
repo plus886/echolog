@@ -1,5 +1,6 @@
 // mulberry32 PRNG (https://github.com/bryc/code/blob/master/jshash/PRNGs.md)
-function mulberry32(seed: number): () => number {
+// gallery-compose 側でも seed 固定の決定論的乱数として使うので export している。
+export function mulberry32(seed: number): () => number {
   let state = seed >>> 0;
   return () => {
     state = (state + 0x6d2b79f5) >>> 0;
