@@ -66,7 +66,7 @@ Astro.response.headers.set(
 
 <Public title="Quote" description={tweet.body?.slice(0, 120)} ogType="article">
   <article class="mx-auto mt-40 mb-24 w-full max-w-211 px-6 min-[880px]:px-10">
-    <div class="flex flex-col max-w-2/3 justify-self-center-safe mb-20">
+    <div class="flex flex-col w-2/3 justify-self-center-safe mb-20">
       {
         tweet.parent && tweet.parent.body && (
           <ReferenceCard
@@ -119,11 +119,11 @@ Astro.response.headers.set(
 
     {
       replies.length > 0 && (
-        <section class="mt-24 text-right flex flex-col max-w-2/3 justify-self-center-safe">
+        <section class="mt-24 text-right flex flex-col w-2/3 justify-self-center-safe">
           <h2 class="mb-8 k-label-mini">({replies.length}) Replies</h2>
           <ol class="m-0 flex list-none flex-col items-end gap-10 p-0">
             {replies.map((reply) => (
-              <li class="max-w-[75%] border-(--ink-15)">
+              <li class="border-(--ink-15)">
                 <a
                   href={`/tweets/${reply.id}`}
                   class="block no-underline transition-opacity hover:opacity-60"
