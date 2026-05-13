@@ -308,6 +308,16 @@ html.lenis body {
   will-change: transform;
 }
 
+/* 汎用 parallax target (Intro テキスト等の static-flow 要素)。
+   .k-quote-wrap と違って translateX(-50%) の中央寄せは付かないので、
+   普通の flex / block layout の子要素にそのまま当てられる。GalleryParallax
+   が `.k-parallax` も同じ --k-parallax-y セッターに含めて scroll 中に
+   更新する。 */
+.k-shell .k-parallax {
+  transform: translateY(calc(var(--k-parallax-y, 0) * 1px));
+  will-change: transform;
+}
+
 /* quote 本文側: opacity + translateY 浮かび上がり */
 .k-shell .k-quote[data-reveal] {
   transform: translateY(14px);
@@ -370,5 +380,8 @@ html.lenis body {
   }
   .k-shell .k-quote-wrap {
     transform: translateX(-50%);
+  }
+  .k-shell .k-parallax {
+    transform: none;
   }
 }

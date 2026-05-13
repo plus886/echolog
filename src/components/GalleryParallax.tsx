@@ -1,11 +1,17 @@
 import { useEffect } from "react";
 
-// Astro Island。旧 app/(public)/gallery-parallax.tsx の移植 (内容同一)。
+// Astro Island。旧 app/(public)/gallery-parallax.tsx の移植 + 拡張。
 //
-// 各 .k-quote-wrap がローカルパララックスで「写真より遅くスクロール」する。
-// 進捗 (0 → 1) を 0 → MAX_OFFSET の translateY に写像することで、
-// photo より体感速度が遅くなる。
+// 元はギャラリー内の .k-quote-wrap だけが対象だったが、Intro テキストにも
+// 同じ「写真より遅くスクロール」を適用したくなったので、generic な
+// `.k-parallax` クラスも query 対象に加えた。各要素の進捗 (viewport 中央
+// との相対位置 0 → 1) を 0 → MAX_OFFSET の translateY に写像する。
+// CSS 側 (portfolio.css):
+//   - .k-quote-wrap → translateX(-50%) translateY(--k-parallax-y px)
+//   - .k-parallax   → translateY(--k-parallax-y px) のみ
+// どちらも reduced-motion では transform 無効化。
 const MAX_OFFSET = 80;
+const PARALLAX_SELECTOR = ".k-quote-wrap, .k-parallax";
 
 export function GalleryParallax() {
   useEffect(() => {
@@ -13,7 +19,7 @@ export function GalleryParallax() {
 
     const apply = () => {
       const vh = window.innerHeight;
-      const wraps = document.querySelectorAll<HTMLElement>(".k-quote-wrap");
+      const wraps = document.querySelectorAll<HTMLElement>(PARALLAX_SELECTOR);
       wraps.forEach((el) => {
         const rect = el.getBoundingClientRect();
         const eh = rect.height;

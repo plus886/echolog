@@ -105,11 +105,18 @@ Astro.response.headers.set(
     </div>
   </section>
 
-  {/* Intro — narrow column, sits to the left, sans body */}
+  {
+    /* Intro — narrow column (left) + 小ぶりのプロフィール写真 (右)。
+      写真は 24-grid の col-5 (≈ 21%) で、Gallery と同じ "decision jitter"
+      の世界観を維持するため translateY + 軽い rotate を当てる。Jitter 量
+      は静的1要素なので seeded PRNG ではなくマジックナンバー固定。 */
+  }
   <section
-    class="ml-col-2 mt-10 w-col-20 min-w-0 min-[880px]:w-col-6 min-[880px]:min-w-[260px] min-[880px]:mt-10"
+    class="ml-col-2 mt-10 flex flex-col gap-10 min-w-0 min-[880px]:mt-10 min-[880px]:flex-row min-[880px]:items-start min-[880px]:gap-0"
   >
-    <p class="m-0 text-[16px] leading-[1.8] font-serif tracking-wider">
+    <p
+      class="k-parallax m-0 font-serif text-[16px] leading-[1.8] tracking-wider min-[880px]:min-w-[260px] min-[880px]:flex-none"
+    >
       台湾研究者。<br />
       日本名は出田康一郎。<br />
       専門は台湾思想・台湾文化論。<br />
@@ -118,6 +125,17 @@ Astro.response.headers.set(
       國立台灣師範大學台灣語文學系修了。<br />
       2011年から台湾在住。<br />
     </p>
+    <figure
+      class="m-0 max-w-[120px] min-[880px]:col-5 min-[880px]:ml-auto min-[880px]:max-w-[150px] min-[880px]:translate-y-32 min-[880px]:-translate-x-12"
+      aria-hidden="true"
+    >
+      <img
+        src="/profile.jpg"
+        alt=""
+        loading="lazy"
+        class="block aspect-[3/4] w-full bg-(--paper-2) object-cover invert-10 sepia-30 contrast-90"
+      />
+    </figure>
   </section>
 
   {/* Gallery — microCMS /days と tweet 引用が混ざったスクロール面 */}
