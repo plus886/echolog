@@ -1,4 +1,6 @@
 ---
+import { ClientRouter } from "astro:transitions";
+
 import "@/styles/global.css";
 import "@/styles/portfolio.css";
 import { getEnv } from "@/lib/env";
@@ -90,6 +92,12 @@ const FONTPLUS_SRC =
     <meta name="twitter:image" content={ogImageUrl} />
 
     <script src={FONTPLUS_SRC} is:inline></script>
+
+    {/* SPA-style soft navigation + View Transitions for inter-page swaps.
+        portfolio.css 側で ::view-transition-old(root) / new(root) の長さと
+        easing を 420ms / cubic-bezier に揃えてある。クライアント遷移なので
+        chrome が transition:persist 指定された Island は再 mount されない。 */}
+    <ClientRouter />
   </head>
   <body class="k-shell relative min-h-screen overflow-x-hidden text-[15px] leading-[1.45] antialiased">
     <slot />
