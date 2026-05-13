@@ -46,3 +46,5 @@ export function GalleryParallax() {
 
   return null;
 }
+
+export default GalleryParallax;

@@ -143,3 +143,5 @@ export function AdminTweetRow({
     </article>
   );
 }
+
+export default AdminTweetRow;

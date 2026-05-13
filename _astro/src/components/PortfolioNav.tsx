@@ -117,3 +117,5 @@ export function PortfolioNav() {
     </header>
   );
 }
+
+export default PortfolioNav;

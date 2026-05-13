@@ -34,3 +34,5 @@ export function NavState() {
 
   return null;
 }
+
+export default NavState;

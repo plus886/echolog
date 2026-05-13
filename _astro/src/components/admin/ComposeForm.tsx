@@ -170,3 +170,5 @@ function ModeBanner({
     </div>
   );
 }
+
+export default ComposeForm;

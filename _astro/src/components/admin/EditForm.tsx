@@ -86,3 +86,5 @@ export function EditForm({ id, defaultBody, isDraft }: Props) {
     </div>
   );
 }
+
+export default EditForm;

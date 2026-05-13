@@ -153,3 +153,5 @@ export function QuoteImages({ images }: { images: ImageEntry[] }) {
     </>
   );
 }
+
+export default QuoteImages;

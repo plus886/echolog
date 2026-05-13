@@ -38,3 +38,5 @@ export function ScrollReveal() {
 
   return null;
 }
+
+export default ScrollReveal;

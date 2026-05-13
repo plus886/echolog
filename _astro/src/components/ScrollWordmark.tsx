@@ -51,3 +51,5 @@ export function ScrollWordmark() {
 
   return null;
 }
+
+export default ScrollWordmark;

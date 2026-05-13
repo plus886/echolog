@@ -54,3 +54,5 @@ export function WordmarkLink({
     </a>
   );
 }
+
+export default WordmarkLink;

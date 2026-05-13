@@ -58,3 +58,5 @@ export function ScrollMemory() {
 
   return null;
 }
+
+export default ScrollMemory;
