@@ -45,3 +45,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Astro (parallel migration target — see MIGRATION_PLAN.md)
+_astro/node_modules/
+_astro/dist/
+_astro/.astro/
