@@ -21,9 +21,12 @@
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"astro": "^6.3.1",
+		"jose": "^6.2.3",
+		"microcms-js-sdk": "^3.4.0",
 		"react": "^19.2.6",
 		"react-dom": "^19.2.6",
-		"tailwindcss": "^4.3.0"
+		"tailwindcss": "^4.3.0",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"wrangler": "^4.90.1"

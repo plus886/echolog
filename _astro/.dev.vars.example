@@ -1,0 +1,24 @@
+# Astro on Cloudflare local dev variables.
+# Copy this file to `.dev.vars` and fill in real values (or copy from
+# the parent project's `.env.local`). `.dev.vars` is git-ignored.
+
+# microCMS (echolog workspace — tweets API)
+MICROCMS_SERVICE_DOMAIN=
+MICROCMS_API_KEY=
+MICROCMS_MANAGEMENT_API_KEY=
+MICROCMS_WEBHOOK_SECRET=
+
+# microCMS (formosa-chiaroscuro workspace — portfolio /days API)
+FORMOSA_MICROCMS_SERVICE_DOMAIN=
+FORMOSA_MICROCMS_API_KEY=
+FORMOSA_MICROCMS_WEBHOOK_SECRET=
+
+# Cloudflare Access (本番でのみ必須。dev では BYPASS_AUTH=true で省略可)
+CF_ACCESS_TEAM_DOMAIN=
+CF_ACCESS_AUD=
+
+# Public site URL — Astro では PUBLIC_ prefix (旧 NEXT_PUBLIC_)
+PUBLIC_SITE_URL=http://localhost:4321
+
+# Dev だけで使う。NODE_ENV=production では絶対にセットしないこと。
+BYPASS_AUTH=true
