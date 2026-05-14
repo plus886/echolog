@@ -1,5 +1,6 @@
 ---
 import Public from "@/layouts/Public.astro";
+import GalleryLightbox from "@/components/GalleryLightbox.tsx";
 import GalleryParallax from "@/components/GalleryParallax.tsx";
 import ScrollMemory from "@/components/ScrollMemory.tsx";
 import ScrollReveal from "@/components/ScrollReveal.tsx";
@@ -163,8 +164,10 @@ Astro.response.headers.set(
               <figure
                 data-reveal
                 data-parallax={parallax ? "" : undefined}
+                data-lightbox-photo
+                data-lightbox-src={`${item.day.image.url}?w=1600`}
                 class:list={[
-                  "k-pos absolute m-0 bg-(--paper-2)",
+                  "k-pos absolute m-0 cursor-zoom-in bg-(--paper-2)",
                   parallax ? "k-parallax-center" : "-translate-x-1/2",
                 ]}
                 style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: ${slot.top}px; width: ${slot.w}px; height: ${slot.h}px;`}
@@ -330,5 +333,6 @@ Astro.response.headers.set(
   <ScrollReveal client:load />
   <ScrollWordmark client:load />
   <GalleryParallax client:load />
+  <GalleryLightbox client:load />
   <ScrollMemory client:load />
 </Public>
