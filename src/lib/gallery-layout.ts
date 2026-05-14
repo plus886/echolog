@@ -20,6 +20,10 @@ export type Slot = {
   h: number;
   // true なら縦書き (writing-mode: vertical-rl)。photo / 横書き quote では undefined。
   vertical?: boolean;
+  // ランダムに parallax 効果を adoption する。true の slot は markup で
+  // data-parallax 属性を付与し、GalleryParallax の RAF が --k-parallax-y
+  // を update する。false の slot は属性なし → CSS var 未設定 → translateY(0)。
+  parallax?: boolean;
 };
 
 export type ImageDim = {
@@ -75,6 +79,12 @@ const SAFE_MARGIN_PCT = 6;
 // 全体が再シャッフルされない方が望ましい。
 const DEFAULT_SEED = 6;
 
+// Parallax 抽選確率と抽選用 seed offset。layout 用 PRNG とは独立した stream
+// を使うことで、parallax の確率を変えても座標が動かない (= position は完全に
+// stable、parallax decision だけが変わる) ようにする。
+const PARALLAX_PROB = 0.5;
+const PARALLAX_SEED_OFFSET = 7919; // 大きめの素数で seed 空間をシフト
+
 export function generateGalleryLayout(
   items: LayoutItem[],
   seed: number = DEFAULT_SEED,
@@ -83,6 +93,7 @@ export function generateGalleryLayout(
   if (count <= 0) return { slots: [], totalHeight: 0 };
 
   const rand = mulberry32(seed);
+  const parallaxRand = mulberry32((seed + PARALLAX_SEED_OFFSET) >>> 0);
   const slots: Slot[] = [];
   let nextTop = FIRST_TOP;
   let maxBottom = 0;
@@ -164,8 +175,11 @@ export function generateGalleryLayout(
       }
     }
 
+    const parallax = parallaxRand() < PARALLAX_PROB;
     slots.push(
-      vertical ? { leftPct, top, w, h, vertical } : { leftPct, top, w, h },
+      vertical
+        ? { leftPct, top, w, h, vertical, parallax }
+        : { leftPct, top, w, h, parallax },
     );
 
     if (top + h > maxBottom) maxBottom = top + h;

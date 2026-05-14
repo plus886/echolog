@@ -2,16 +2,17 @@ import { useEffect } from "react";
 
 // Astro Island。旧 app/(public)/gallery-parallax.tsx の移植 + 拡張。
 //
-// 元はギャラリー内の .k-quote-wrap だけが対象だったが、Intro テキストにも
-// 同じ「写真より遅くスクロール」を適用したくなったので、generic な
-// `.k-parallax` クラスも query 対象に加えた。各要素の進捗 (viewport 中央
-// との相対位置 0 → 1) を 0 → MAX_OFFSET の translateY に写像する。
-// CSS 側 (portfolio.css):
-//   - .k-quote-wrap → translateX(-50%) translateY(--k-parallax-y px)
-//   - .k-parallax   → translateY(--k-parallax-y px) のみ
-// どちらも reduced-motion では transform 無効化。
+// 「parallax を発動するか」は呼び出し側 (markup) が `data-parallax` 属性で
+// opt in する。本コンポーネントは属性付き要素を全 query して、各々に
+// scroll 進捗 (0 → 1) × MAX_OFFSET を `--k-parallax-y` として渡す。実際の
+// translateY は CSS 側で var を消費して描画する:
+//   - .k-quote-wrap     → translateX(-50%) translateY(--k-parallax-y px)
+//   - .k-parallax-center → 上と同じ (photo 用の対応物)
+//   - .k-parallax       → translateY(--k-parallax-y px) のみ (Intro 等)
+// 属性なしの要素は --k-parallax-y が unset → translateY(0) で静止する。
+// reduced-motion は CSS 側で transform を抑制。
 const MAX_OFFSET = 80;
-const PARALLAX_SELECTOR = ".k-quote-wrap, .k-parallax";
+const PARALLAX_SELECTOR = "[data-parallax]";
 
 export function GalleryParallax() {
   useEffect(() => {

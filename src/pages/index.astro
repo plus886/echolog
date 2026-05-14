@@ -117,6 +117,7 @@ Astro.response.headers.set(
   >
     <p
       class="k-parallax m-0 font-serif text-[16px] leading-[1.8] tracking-wider min-[880px]:min-w-[260px] min-[880px]:flex-none"
+      data-parallax
     >
       台湾研究者。<br />
       日本名は出田康一郎。<br />
@@ -151,11 +152,21 @@ Astro.response.headers.set(
         {items.map((item, i) => {
           const slot = slots[i];
           if (!slot) return null;
+          // gallery-layout が seeded PRNG で抽選した「parallax を採用するか」
+          // を slot.parallax に格納している。photo は centering+parallax の
+          // 結合 class .k-parallax-center で `-translate-x-1/2` を差し替え、
+          // quote は元から centering 込みの .k-quote-wrap を使うので、属性
+          // だけ付ければ JS が --k-parallax-y を流し込んでくれる。
+          const parallax = slot.parallax === true;
           if (item.kind === "photo") {
             return (
               <figure
                 data-reveal
-                class="k-pos absolute m-0 -translate-x-1/2 bg-(--paper-2)"
+                data-parallax={parallax ? "" : undefined}
+                class:list={[
+                  "k-pos absolute m-0 bg-(--paper-2)",
+                  parallax ? "k-parallax-center" : "-translate-x-1/2",
+                ]}
                 style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: ${slot.top}px; width: ${slot.w}px; height: ${slot.h}px;`}
               >
                 <img
@@ -171,6 +182,7 @@ Astro.response.headers.set(
           return (
             <a
               href={`/tweets/${item.id}`}
+              data-parallax={parallax ? "" : undefined}
               class="k-quote-wrap k-pos block no-underline"
               style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: ${slot.top}px; width: ${slot.w}px; height: ${slot.h}px;`}
             >

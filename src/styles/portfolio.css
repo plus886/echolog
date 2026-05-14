@@ -300,7 +300,9 @@ html.lenis body {
   );
 }
 
-/* Gallery 内 quote ラッパー (parallax 駆動) */
+/* Gallery 内 quote ラッパー (centering + parallax 内蔵)。--k-parallax-y が
+   set されない場合は translateY(0) になるので、`data-parallax` 属性なしの
+   quote はここで静止する。 */
 .k-shell .k-quote-wrap {
   position: absolute;
   margin: 0;
@@ -308,11 +310,20 @@ html.lenis body {
   will-change: transform;
 }
 
-/* 汎用 parallax target (Intro テキスト等の static-flow 要素)。
-   .k-quote-wrap と違って translateX(-50%) の中央寄せは付かないので、
-   普通の flex / block layout の子要素にそのまま当てられる。GalleryParallax
-   が `.k-parallax` も同じ --k-parallax-y セッターに含めて scroll 中に
-   更新する。 */
+/* Gallery 内 photo 用の centering + parallax 結合 (.k-quote-wrap の photo
+   版)。Tailwind の `-translate-x-1/2` (translate プロパティで吐かれる) を
+   そのまま使うと、`.k-parallax` 側の transform と property が分かれて重複
+   翻訳になるので、photo が parallax を採用する slot だけはこの class で
+   centering ごと差し替える。 */
+.k-shell .k-parallax-center {
+  transform: translateX(-50%) translateY(calc(var(--k-parallax-y, 0) * 1px));
+  will-change: transform;
+}
+
+/* 汎用 parallax target (Intro テキスト等の static-flow 要素)。translateX
+   の中央寄せは付かないので、普通の flex / block layout の子要素にそのまま
+   当てられる。GalleryParallax が `[data-parallax]` 経由で --k-parallax-y
+   を update する。 */
 .k-shell .k-parallax {
   transform: translateY(calc(var(--k-parallax-y, 0) * 1px));
   will-change: transform;
@@ -378,7 +389,8 @@ html.lenis body {
   .k-shell .k-quote[data-reveal] {
     transform: none;
   }
-  .k-shell .k-quote-wrap {
+  .k-shell .k-quote-wrap,
+  .k-shell .k-parallax-center {
     transform: translateX(-50%);
   }
   .k-shell .k-parallax {
