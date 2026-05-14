@@ -110,7 +110,7 @@ html.lenis body {
   --k-font-sans: "Inter Tight";
   --k-font-serif: "Cormorant Garamond";
 
-  --paper: #f9f8f2;
+  --paper: #f9f8f1;
   --paper-2: #f1ede2;
   --ink: #383838;
   --ink-70: rgba(56, 56, 56, 0.72);
@@ -135,7 +135,7 @@ html.lenis body {
   /* Override Tailwind's preset --font-serif token within this scope. */
   --font-serif: var(--serif);
 
-  background: var(--paper);
+  background: var(--paper-2);
   color: var(--ink);
   font-family: var(--sans);
   font-feature-settings: "kern", "liga", "palt";
