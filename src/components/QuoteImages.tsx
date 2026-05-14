@@ -176,15 +176,21 @@ export function QuoteImages({
 
       {openIdx !== null && (
         <div
-          className="fixed inset-0 z-50 flex cursor-zoom-out items-center justify-center bg-(--paper)/95 p-8"
-          onClick={close}
-          role="presentation"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-(--paper)/90 p-8"
+          // 背景フェードのタイミングを写真の morph と揃えるため、独自の
+          // view-transition-name を付ける。OLD/NEW 片方にしか存在しない
+          // (=出現/消失する) 要素は browser default で opacity 0↔1 を流すので、
+          // portfolio.css の ::view-transition-old/new(qimg-overlay) で
+          // duration/easing だけ写真側と一致させれば見た目が同期する。
+          style={{ viewTransitionName: "qimg-overlay" } as CSSProperties}
         >
+          {/* 写真をクリックして閉じる。余白 (overlay) はクリック無反応。
+              キーボードからは Escape で閉じる (上の useEffect)。 */}
           <img
             src={`${images[openIdx].url}?w=1600`}
             alt=""
-            className="max-h-[90vh] max-w-[90vw] cursor-default object-contain"
-            onClick={(e) => e.stopPropagation()}
+            className="max-h-[80vh] max-w-[80vw] cursor-zoom-out object-contain"
+            onClick={close}
             style={
               {
                 viewTransitionName: `qimg-${openIdx}`,

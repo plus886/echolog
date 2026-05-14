@@ -20,6 +20,7 @@
 ::view-transition-group(qimg-5),
 ::view-transition-group(qimg-6),
 ::view-transition-group(qimg-7),
+::view-transition-group(qimg-overlay),
 ::view-transition-old(qimg-0),
 ::view-transition-new(qimg-0),
 ::view-transition-old(qimg-1),
@@ -35,9 +36,30 @@
 ::view-transition-old(qimg-6),
 ::view-transition-new(qimg-6),
 ::view-transition-old(qimg-7),
-::view-transition-new(qimg-7) {
-  animation-duration: 380ms;
-  animation-timing-function: cubic-bezier(0.32, 0.72, 0.24, 1);
+::view-transition-new(qimg-7),
+::view-transition-old(qimg-overlay),
+::view-transition-new(qimg-overlay) {
+  animation-duration: 860ms;
+  animation-timing-function: cubic-bezier(0.78, 0, 0.22, 1);
+}
+
+/* Transition 中の擬似要素 z-order を real DOM と同じに固定する。デフォルト
+   stacking だと overlay の paper 半透明背景が photo snapshot を覆って "wash
+   out" し、transition 終了 (擬似要素が消えて real DOM = photo が overlay 内に
+   ある状態に復帰) の瞬間 z-order が "戻った" ように見える snap が出る。
+   overlay を下、photo を上に明示する。 */
+::view-transition-group(qimg-overlay) {
+  z-index: 1;
+}
+::view-transition-group(qimg-0),
+::view-transition-group(qimg-1),
+::view-transition-group(qimg-2),
+::view-transition-group(qimg-3),
+::view-transition-group(qimg-4),
+::view-transition-group(qimg-5),
+::view-transition-group(qimg-6),
+::view-transition-group(qimg-7) {
+  z-index: 2;
 }
 
 /* ─── Lenis smooth-scroll
