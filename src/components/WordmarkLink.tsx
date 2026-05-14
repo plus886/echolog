@@ -9,10 +9,15 @@ import { onRippleEnter, onRippleFocus, RippleLabel } from "./nav-ripple";
 // が <a> に soft nav と View Transitions を自動適用する状態に。
 //
 // 役割:
-//  - 既に / にいる場合: ナビゲーションせず scrollTo top + smooth
-//  - 詳細から / に戻る場合: 通常ナビ (ScrollMemory が古いスクロール位置
-//    を復元しないよう sessionStorage の k-home-scroll-y をクリア)
-//  - PortfolioNav と共通の per-character ripple を hover / focus で
+//  - linkable=true (= nav 固定 pin の方): / へのリンクとして機能。
+//    既に / にいる場合: ナビゲーションせず scrollTo top + smooth。
+//    詳細から / に戻る場合: 通常ナビ (ScrollMemory が古いスクロール位置
+//    を復元しないよう sessionStorage の k-home-scroll-y をクリア)。
+//    PortfolioNav と共通の per-character ripple を hover / focus で走らせる。
+//  - linkable=false (= home hero の中央配置の方): タイポグラフィ要素として
+//    のみ表示。リンク機能なし、hover ripple なし、per-character span 分割
+//    なし (= プレーン text)。既に / にいて操作する意味がないため、視覚
+//    ノイズも全て削ぐ。
 //
 // label prop の理由:
 //   Astro Island の slot 経由で渡される children は React 要素 (内部的に
@@ -27,12 +32,22 @@ export function WordmarkLink({
   className,
   style,
   "aria-hidden": ariaHidden,
+  linkable = true,
 }: {
   label: string;
   className?: string;
   style?: CSSProperties;
   "aria-hidden"?: boolean | "true" | "false";
+  linkable?: boolean;
 }) {
+  if (!linkable) {
+    return (
+      <span className={className} style={style} aria-hidden={ariaHidden}>
+        {label}
+      </span>
+    );
+  }
+
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
     try {
       sessionStorage.removeItem(SCROLL_KEY);
