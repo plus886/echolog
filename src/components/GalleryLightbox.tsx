@@ -29,6 +29,9 @@ type Item = {
   alt: string;
   // 閉じる時に morph 戻す先 (sample に取り直さず元の <img> 参照を保持)
   thumbImg: HTMLImageElement;
+  // microCMS Day の id (= 外部 gallery サイトの /days/:id slug)。
+  // 右余白の外部リンク用にだけ使う。なければ link を出さない。
+  id?: string;
 };
 
 type Session = {
@@ -46,8 +49,13 @@ function buildItem(el: HTMLElement): Item | null {
     src,
     alt: thumbImg.alt ?? "",
     thumbImg,
+    id: el.dataset.lightboxId || undefined,
   };
 }
+
+// 右余白に出す外部 gallery (https://photo.kokaiji.tw/days/:id/) のリンク先。
+// id 未設定の item では link を出さない。
+const GALLERY_BASE = "https://photo.kokaiji.tw/days";
 
 type ViewTransitionDocument = Document & {
   startViewTransition?: (cb: () => void | Promise<void>) => {
@@ -290,10 +298,15 @@ export function GalleryLightbox() {
   const N = items.length;
 
   // cue 共通スタイル。slide 中は素早く隠し、止まったらゆっくり戻す非対称
-  // transition。top / bottom の両方で同じ計算を使うので外で構築。
+  // transition。top / bottom / 左右リンクの全てで同じ計算を使うので外で構築。
+  // scale 300ms も列挙しておくのは、左右マージンの文字ボタンに hover:scale-105
+  // を当てた時に inline transition が Tailwind の class transition を上書き
+  // して animate しなくなるのを防ぐため (cue 自身は scale を使わないので無害)。
   const cueStyle: CSSProperties = {
     opacity: isSliding ? 0 : 1,
-    transition: isSliding ? "opacity 120ms ease-out" : "opacity 400ms ease-out",
+    transition: isSliding
+      ? "opacity 120ms ease-out, scale 300ms ease-out"
+      : "opacity 400ms ease-out, scale 300ms ease-out",
   };
 
   return (
@@ -390,6 +403,34 @@ export function GalleryLightbox() {
           <span className="animate-scroll-cue block h-6 w-px bg-current" />
         </div>
       )}
+
+      {/* 右余白の gallery 外部リンク。現 item に id があれば
+          https://photo.kokaiji.tw/days/:id/ に飛ばす。縦書きで right edge に
+          固定し、scroll cue と同様 slide 中は opacity 0、止まったら fade in。
+          target=_blank + noreferrer (外部ドメイン)。 */}
+      {items[currentIdx]?.id && (
+        <a
+          href={`${GALLERY_BASE}/${items[currentIdx].id}/`}
+          target="_blank"
+          rel="noreferrer"
+          className="absolute top-1/2 right-6 -translate-y-1/2 text-[11px] tracking-[0.3em] text-(--ink-30) uppercase no-underline [writing-mode:vertical-rl] hover:scale-105 hover:text-(--ink-50)"
+          style={cueStyle}
+        >
+          (gallery / {items[currentIdx].id})
+        </a>
+      )}
+
+      {/* 左余白の close ボタン。右の外部リンクと対称配置で sideways-lr
+          (テキスト全体を -90° 回転)。スタイルは右側に揃える。 */}
+      <button
+        type="button"
+        onClick={close}
+        className="absolute top-1/2 left-6 -translate-y-1/2 cursor-pointer border-0 bg-transparent p-0 text-[11px] tracking-[0.3em] text-(--ink-30) uppercase [writing-mode:sideways-lr] hover:scale-105 hover:text-(--ink-50)"
+        aria-label="Close lightbox"
+        style={cueStyle}
+      >
+        (close)
+      </button>
     </div>
   );
 }
