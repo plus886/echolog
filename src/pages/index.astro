@@ -63,11 +63,66 @@ const layoutItems: LayoutItem[] = items.map((it) =>
 );
 const { slots, totalHeight } = generateGalleryLayout(layoutItems);
 
-const EXPLORE = [
-  "https://picsum.photos/seed/k-e1/420/520",
-  "https://picsum.photos/seed/k-e2/420/520",
-  "https://picsum.photos/seed/k-e3/420/520",
-  "https://picsum.photos/seed/k-e4/420/520",
+// (works) section の thumbnail データ。Detail page は /works/[id] の前提で
+// href を組む (route はまだ未実装、TODO)。category は filter (ALL / TEXT /
+// MUSIC / PHOTO) の出し分けキー。aspect は thumbnail の縦横比、画像 src は
+// kokaiji.tw の asset URL を仮置き (後で public/works/ に移植予定)。
+type WorkCat = "text" | "music" | "photo";
+type Work = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  year: string;
+  category: WorkCat;
+  src: string;
+  aspect: string;
+};
+const works: Work[] = [
+  {
+    id: "taiwan",
+    title: "日本人のための台湾学入門",
+    subtitle: "平凡社新書",
+    year: "2025",
+    category: "text",
+    src: "https://kokaiji.tw/_astro/taiwan.jleloxE5_gGKlp.webp",
+    aspect: "3 / 4",
+  },
+  {
+    id: "fluonika",
+    title: "Fluonika",
+    subtitle: "フルオニカ",
+    year: "2024 —",
+    category: "music",
+    src: "https://kokaiji.tw/_astro/fluonika.CAJuWOQX_Z2wT6uW.webp",
+    aspect: "4 / 3",
+  },
+  {
+    id: "gardener",
+    title: "Gardener",
+    subtitle: "庭師",
+    year: "2021",
+    category: "music",
+    src: "https://kokaiji.tw/_astro/gardener.Bu3MoHOv_TkyES.webp",
+    aspect: "3 / 4",
+  },
+  {
+    id: "formosa-chiaroscuro",
+    title: "翳光臺灣",
+    subtitle: "Formosa Chiaroscuro",
+    year: "2024 —",
+    category: "photo",
+    src: "https://kokaiji.tw/_astro/retrotica.B2Sx7-yf_1VJ1de.webp",
+    aspect: "3 / 4",
+  },
+  {
+    id: "three-flowers",
+    title: "Formosa and Three Flowers",
+    subtitle: "台湾と三つの花",
+    year: "2020",
+    category: "photo",
+    src: "https://kokaiji.tw/_astro/threeflowers.CIOSeB1O_1PFhf0.webp",
+    aspect: "4 / 3",
+  },
 ];
 
 const year = new Date().getFullYear();
@@ -117,7 +172,7 @@ Astro.response.headers.set(
     class="ml-col-2 mt-10 flex flex-col gap-10 min-w-0 min-[880px]:mt-10 min-[880px]:flex-row min-[880px]:items-start min-[880px]:gap-0"
   >
     <p
-      class="k-parallax m-0 font-serif text-[16px] leading-[1.8] tracking-wider min-[880px]:min-w-[260px] min-[880px]:flex-none"
+      class="k-parallax m-0 font-serif text-[13px] leading-[1.8] tracking-wider min-[880px]:min-w-[260px] min-[880px]:flex-none"
       data-parallax
     >
       台湾研究者。<br />
@@ -125,8 +180,9 @@ Astro.response.headers.set(
       専門は台湾思想・台湾文化論。<br />
       1981年東京生まれ。<br />
       東京芸術大学音楽学部楽理科卒業。<br />
-      國立台灣師範大學台灣語文學系修了。<br />
-      修士（文学）。<br />
+      國立台灣師範大學台灣語文學系碩士班在籍中。<br />
+      <!-- 國立台灣師範大學台灣語文學系修了。<br />
+      修士（文学）。<br /> -->
       2011年から台湾在住。<br />
     </p>
     <figure
@@ -166,6 +222,7 @@ Astro.response.headers.set(
                 data-parallax={parallax ? "" : undefined}
                 data-lightbox-photo
                 data-lightbox-src={`${item.day.image.url}?w=1600`}
+                data-lightbox-id={item.day.id}
                 class:list={[
                   "k-pos absolute m-0 cursor-zoom-in bg-(--paper-2)",
                   parallax ? "k-parallax-center" : "-translate-x-1/2",
@@ -205,127 +262,196 @@ Astro.response.headers.set(
     )
   }
 
-  {/* Inline CTA — short paragraph, narrow left column */}
   <section
-    id="about"
-    data-reveal
-    class="ml-col-2 mt-35 w-col-20 min-[880px]:mt-55 min-[880px]:w-col-8"
+    class="ml-col-2 mt-10 mb-24 flex flex-col gap-10 min-w-0 min-[880px]:mt-10 min-[880px]:flex-row min-[880px]:items-start min-[880px]:gap-0"
   >
-    <p class="mb-4 text-[13px] leading-[1.7]">
-      If a project is brewing on your end and you think the way I see might suit
-      it, send a note via the {" "}
-      <a
-        href="#contact"
-        class="border-b border-current pb-px transition-opacity hover:opacity-60"
-      >
-        contact page
-      </a>
-      .
-    </p>
-    <p class="text-[13px] leading-[1.7]">
-      For something more wandering, the long {" "}
-      <a
-        href="#portfolio"
-        class="border-b border-current pb-px transition-opacity hover:opacity-60"
-      >
-        portfolio
-      </a>{" "}
-      is upstairs.
+    <p
+      class="m-0 font-serif text-[13px] leading-[1.8] tracking-wider min-[880px]:min-w-[260px] min-[880px]:flex-none"
+    >
+      指先から生まれたものたちは、わたしより長く息をする。<br />
+      わたしが忘れてしまった後も、誰かの本棚で、引き出しの奥で、静かに目を覚ましたままでいる。<br
+      />
+      それを想うと、生み出す手がときどき震える。
     </p>
   </section>
 
-  {/* (explore) — small parenthetical label + 4 tiny teaser cards */}
+  {
+    /* (works) — Gallery との境目を horizontal divider で明示。
+      左カラム: 2-col thumbnail grid。各 thumb は /works/[id] の detail page
+      へリンク (route 未実装、後で作る前提)。category attribute (data-cat)
+      で filter から visibility が切り替えられる。
+      右カラム: filter (ALL / TEXT / MUSIC / PHOTO)。position: sticky で
+      `top: 50vh` + `translateY(-50%)` により viewport 中央に貼り付く。
+      section が画面に入ると下からスライドイン → 中央に固定 → section が
+      過ぎたら一緒に流れ去る、という挙動が sticky だけで成立する。
+      フィルタリングは下方の <script> で簡素な data-cat / data-filter 突合。
+      Divider は section の直前に独立 <div.k-divider>。CSS Scroll-Driven
+      Animations (portfolio.css) で scroll 位置と scaleX が bind され、
+      view に入った直後から viewport 中央まで scroll するに連れて右端から
+      徐々に伸び、戻すと縮む reversible な挙動になる。 */
+  }
   <section
-    data-reveal
-    class="mt-35 flex flex-col items-end gap-3.5 px-col-2 min-[880px]:mt-55"
+    id="works"
+    class="ml-col-2 mt-16 mb-8 flex flex-col gap-12 min-[880px]:mt-56 min-[880px]:mb-24 min-[880px]:flex-row min-[880px]:items-start min-[880px]:gap-col-2"
   >
-    <p class="text-[12px] tracking-[0.04em] text-(--ink-50)">(explore)</p>
-    <div class="flex gap-2">
+    <div
+      id="works-grid"
+      class="grid grid-cols-3 gap-x-24 gap-y-12 min-[880px]:flex-1 min-[880px]:gap-x-col-1 min-[880px]:gap-y-20"
+    >
       {
-        EXPLORE.map((src, i) => (
+        works.map((work) => (
           <a
-            href="#portfolio"
-            class="block w-[78px] flex-none transition-opacity hover:opacity-60"
+            href={`/works/${work.id}`}
+            data-cat={work.category}
+            data-reveal
+            class="group flex flex-col gap-3 no-underline transition-opacity duration-300 hover:opacity-80"
           >
-            <img
-              src={src}
-              alt={`Project ${i + 1}`}
-              loading="lazy"
-              class="block aspect-[4/5] w-full object-cover bg-(--paper-2)"
-            />
+            <figure class="m-0">
+              {/* TODO: 画像を public/works/[id].webp 等に移植 */}
+              <img
+                src={work.src}
+                alt={work.title}
+                loading="lazy"
+                class="block w-full bg-(--paper-2) object-cover opacity-90 [filter:grayscale(45%)_sepia(30%)]"
+                style={`aspect-ratio: ${work.aspect};`}
+              />
+            </figure>
+            <header class="flex flex-col gap-0.5">
+              <p class="m-0 font-serif text-[15px] leading-[1.4] text-(--ink)">
+                {work.title}
+              </p>
+              {work.subtitle && (
+                <p class="m-0 text-[11px] text-(--ink-50)">{work.subtitle}</p>
+              )}
+              <p class="k-label-mini m-0 mt-1">{work.year}</p>
+            </header>
           </a>
         ))
       }
     </div>
+
+    <aside
+      class="order-first w-full min-[880px]:order-none min-[880px]:sticky min-[880px]:top-[50vh] min-[880px]:w-[120px] min-[880px]:flex-none min-[880px]:self-start"
+    >
+      <ul
+        id="works-filter"
+        class="m-0 flex list-none flex-row gap-x-5 p-0 text-[12px] tracking-[0.16em] lowercase min-[880px]:flex-col min-[880px]:gap-y-2"
+      >
+        <li>
+          <button
+            type="button"
+            data-filter="all"
+            data-active
+            class="cursor-pointer border-0 bg-transparent p-0 text-(--ink-50) transition-colors hover:text-(--ink) data-[active]:text-(--ink)"
+          >
+            all
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            data-filter="text"
+            class="cursor-pointer border-0 bg-transparent p-0 text-(--ink-50) transition-colors hover:text-(--ink) data-[active]:text-(--ink)"
+          >
+            text
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            data-filter="music"
+            class="cursor-pointer border-0 bg-transparent p-0 text-(--ink-50) transition-colors hover:text-(--ink) data-[active]:text-(--ink)"
+          >
+            music
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            data-filter="photo"
+            class="cursor-pointer border-0 bg-transparent p-0 text-(--ink-50) transition-colors hover:text-(--ink) data-[active]:text-(--ink)"
+          >
+            photo
+          </button>
+        </li>
+      </ul>
+    </aside>
   </section>
 
-  {/* Footer — 3-col link row + 3-col credits row */}
+  <script>
+    // (works) filter — data-cat に紐づく thumbnail の visibility を toggle。
+    // active filter は <button data-filter="..."> に data-active 属性で印付け、
+    // Tailwind の data-[active]:text-(--ink) で色だけ強調する。
+    const grid = document.getElementById("works-grid");
+    const filterUl = document.getElementById("works-filter");
+    if (grid && filterUl) {
+      const apply = (active: string) => {
+        grid.querySelectorAll<HTMLElement>("[data-cat]").forEach((el) => {
+          const cat = el.dataset.cat ?? "";
+          el.style.display = active === "all" || cat === active ? "" : "none";
+        });
+        filterUl
+          .querySelectorAll<HTMLButtonElement>("[data-filter]")
+          .forEach((b) => {
+            if (b.dataset.filter === active) b.setAttribute("data-active", "");
+            else b.removeAttribute("data-active");
+          });
+      };
+      filterUl.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        const btn = target.closest<HTMLButtonElement>("[data-filter]");
+        if (!btn) return;
+        apply(btn.dataset.filter ?? "all");
+      });
+    }
+  </script>
+
+  {
+    /* Footer — (menu) + (contact) の 2 col、credits 行で (follow) /
+      署名 / (colophon) の 3 col。subscribe / legal は portfolio 用途では
+      不要なので落として、代わりに colophon (使用技術) を入れた。 */
+  }
+  <section class="flex items-center justify-center-safe h-dvh">
+    <p class="m-0 font-serif text-[13px] leading-[1.8] tracking-wider">
+      執筆 / 講演 / 取材のご依頼は{" "}
+      <a
+        href="mailto:kokaiji.tw@gmail.com"
+        class="border-b border-current pb-px"
+      >
+        kokaiji.tw@gmail.com
+      </a>{" "}まで。
+    </p>
+  </section>
   <footer
     id="contact"
     data-reveal
-    class="mt-25 px-col-2 pb-15 text-[12px] leading-[1.7] min-[880px]:mt-40"
+    class="px-col-2 pb-15 text-[12px] leading-[1.7]"
   >
     <div
-      class="mb-15 grid grid-cols-1 gap-9 min-[880px]:grid-cols-[3fr_7fr_7fr] min-[880px]:gap-x-[calc(1/22*100%)] min-[880px]:gap-y-0"
-    >
-      <div>
-        <p class="mb-2.5 italic text-(--ink-50)">(menu)</p>
-        <ul>
-          <li class="mb-0.5 lowercase"><a href="#portfolio">portfolio</a></li>
-          <li class="mb-0.5 lowercase"><a href="#portfolio">information</a></li>
-          <li class="mb-0.5 lowercase"><a href="#about">about</a></li>
-          <li class="mb-0.5 lowercase"><a href="#contact">contact</a></li>
-        </ul>
-      </div>
-      <div>
-        <p class="mb-2.5 italic text-(--ink-50)">(subscribe)</p>
-        <p class="mb-1.5">
-          Not a generic letter. A short note four times a year on what I am
-          quietly looking at. {" "}
-          <a href="#" class="border-b border-current pb-px">Join here</a>.
-        </p>
-      </div>
-      <div>
-        <p class="mb-2.5 italic text-(--ink-50)">(contact me)</p>
-        <p class="mb-1.5">
-          To enquire about commissions, prints, or a slow conversation about
-          borders. {" "}
-          <a
-            href="mailto:cubicberry@gmail.com"
-            class="border-b border-current pb-px"
-          >
-            cubicberry@gmail.com
-          </a>
-        </p>
-      </div>
-    </div>
-
-    <div
-      class="grid grid-cols-1 items-end gap-4.5 border-t border-(--ink-15) pt-7 text-[11px] text-(--ink-70) min-[880px]:grid-cols-3 min-[880px]:gap-0"
+      class="grid grid-cols-1 items-end gap-4.5 pt-7 text-[11px] text-(--ink-70) min-[880px]:grid-cols-3 min-[880px]:gap-0"
     >
       <div class="text-left">
-        <p class="mb-1 text-(--ink-50) italic">(follow)</p>
+        <!-- <p class="mb-1 text-(--ink-50) italic">(follow)</p> -->
         <p class="mb-1">
-          <a href="#" class="border-b border-current pb-px">Instagram</a>
+          <a
+            href="https://note.com/plus886note"
+            class="border-b border-current pb-px">note</a
+          >
         </p>
         <p class="mb-1">
           <a
-            href="https://github.com/cubicberry"
-            class="border-b border-current pb-px"
+            href="https://www.facebook.com/koichiro.ideta"
+            class="border-b border-current pb-px">facebook</a
           >
-            GitHub
-          </a>
         </p>
       </div>
       <div class="text-left min-[880px]:text-center">
-        <p class="mb-1">Designed in Taipei.</p>
+        <p class="mb-1">Made in Taiwan with &hearts;.</p>
         <p class="mb-1"><em>© {year} Ko Kaiji.</em></p>
       </div>
       <div class="text-left min-[880px]:text-right">
-        <p class="mb-1 text-(--ink-50) italic">(legal stuff)</p>
-        <p class="mb-1">
-          <a href="#" class="border-b border-current pb-px">Privacy policy</a>
-        </p>
+        <!-- <p class="mb-1 text-(--ink-50) italic">(colophon)</p> -->
+        <p class="mb-1">Astro / microCMS / Claude Code</p>
       </div>
     </div>
   </footer>

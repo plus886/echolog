@@ -178,6 +178,18 @@ html.lenis body {
 .k-shell .ml-col-2 {
   margin-left: calc(2 / 24 * 100%);
 }
+.k-shell .ml-col-8 {
+  margin-left: calc(8 / 24 * 100%);
+}
+.k-shell .mr-col-1 {
+  margin-right: calc(1 / 24 * 100%);
+}
+.k-shell .mr-col-2 {
+  margin-right: calc(2 / 24 * 100%);
+}
+.k-shell .mr-col-8 {
+  margin-right: calc(8 / 24 * 100%);
+}
 .k-shell .px-col-1 {
   padding-inline: calc(1 / 24 * 100%);
 }
@@ -319,6 +331,43 @@ html.lenis body {
 .k-shell figure[data-reveal].is-revealed,
 .k-shell .k-quote[data-reveal].is-revealed {
   animation: k-gallery-mask 1s ease-out forwards;
+}
+
+/* Horizontal divider が scroll 位置に同期して右端から左へ伸びる。CSS
+   Scroll-Driven Animations (`animation-timeline: view()`) を使い、divider
+   が viewport を通過する間の進捗で transform: scaleX を直接 drive する。
+   - cover 0%   = divider が viewport 下端から現れた瞬間 → scaleX(0)
+   - cover 50%  = divider が viewport 中央に達した時 → scaleX(1)
+   - cover 50% 以降は scaleX(1) のまま (animation-fill-mode: both)
+   scroll を戻すと進捗が逆戻り → scaleX も縮む (一方向ではなく reversible)。
+
+   非対応ブラウザでは base rule の transform: none (= scaleX(1)) で
+   そのまま表示。reduced-motion でも同様にアニメ無効化。 */
+.k-shell .k-divider {
+  height: 1px;
+  background: var(--ink-15);
+}
+
+@supports (animation-timeline: view()) {
+  .k-shell .k-divider {
+    animation: k-divider-grow linear both;
+    animation-timeline: view();
+    animation-range: cover 0% cover 50%;
+  }
+  @keyframes k-divider-grow {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-shell .k-divider {
+    animation: none;
+  }
 }
 
 /* Gallery slot 共通: left は runtime に CSS clamp() で評価 */
