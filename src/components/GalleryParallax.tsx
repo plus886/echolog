@@ -5,10 +5,11 @@ import { useEffect } from "react";
 // 「parallax を発動するか」は呼び出し側 (markup) が `data-parallax` 属性で
 // opt in する。本コンポーネントは属性付き要素を全 query して、各々に
 // scroll 進捗 (0 → 1) × MAX_OFFSET を `--k-parallax-y` として渡す。実際の
-// translateY は CSS 側で var を消費して描画する:
-//   - .k-quote-wrap     → translateX(-50%) translateY(--k-parallax-y px)
-//   - .k-parallax-center → 上と同じ (photo 用の対応物)
-//   - .k-parallax       → translateY(--k-parallax-y px) のみ (Intro 等)
+// translateY は CSS 側 (portfolio.css) で var を消費して描画する。parallax
+// は一律 `transform: translateY(--k-parallax-y px)` に集約 (中央寄せは
+// .k-quote-wrap の translate / photo の Tailwind translate と別プロパティ):
+//   - .k-quote-wrap → 中央寄せ済みの quote ラッパー (transform で parallax)
+//   - .k-parallax   → 汎用 (Intro テキスト / gallery photo に重ねる)
 // 属性なしの要素は --k-parallax-y が unset → translateY(0) で静止する。
 // reduced-motion は CSS 側で transform を抑制。
 const MAX_OFFSET = 80;

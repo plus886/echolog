@@ -210,10 +210,12 @@ Astro.response.headers.set(
           const slot = slots[i];
           if (!slot) return null;
           // gallery-layout が seeded PRNG で抽選した「parallax を採用するか」
-          // を slot.parallax に格納している。photo は centering+parallax の
-          // 結合 class .k-parallax-center で `-translate-x-1/2` を差し替え、
-          // quote は元から centering 込みの .k-quote-wrap を使うので、属性
-          // だけ付ければ JS が --k-parallax-y を流し込んでくれる。
+          // を slot.parallax に格納している。1関心事=1プロパティ:
+          // photo は中央寄せを Tailwind `-translate-x-1/2` (translate
+          // プロパティ) で常時持ち、parallax 採用時のみ `.k-parallax`
+          // (transform: translateY、--k-parallax-y を消費) を重ねる。
+          // quote 側 (.k-quote-wrap) は中央寄せ + parallax を内蔵済み。
+          // `data-parallax` 属性が JS (GalleryParallax) の更新対象マーカー。
           const parallax = slot.parallax === true;
           if (item.kind === "photo") {
             return (
@@ -224,8 +226,8 @@ Astro.response.headers.set(
                 data-lightbox-src={`${item.day.image.url}?w=1600`}
                 data-lightbox-id={item.day.id}
                 class:list={[
-                  "k-pos absolute m-0 cursor-zoom-in bg-(--paper-2)",
-                  parallax ? "k-parallax-center" : "-translate-x-1/2",
+                  "k-pos absolute m-0 -translate-x-1/2 cursor-zoom-in bg-(--paper-2)",
+                  parallax && "k-parallax",
                 ]}
                 style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: ${slot.top}px; width: ${slot.w}px; height: ${slot.h}px;`}
               >

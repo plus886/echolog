@@ -119,6 +119,19 @@ html.lenis body {
   --ink-15: rgba(56, 56, 56, 0.15);
   --grey-light: #cecece;
 
+  /* Motion tokens — transition のテンポを 1箇所に集約。
+     - hover / dim : gallery の hover 拡大・dim focus
+     - reveal      : scroll-in の fade (opacity) と blur 抜け (filter)
+     reveal token は global [data-reveal] と #portfolio figure[data-reveal]
+     の両方が参照する (figure は hover scale 用に transition を再宣言する
+     必要があり、そこで reveal の値を hardcode しないためトークン化する)。
+     view-transition morph (860ms) は別系統なのでここには入れない。 */
+  --ease-soft: cubic-bezier(0.32, 0.72, 0.24, 1);
+  --dur-hover: 300ms;
+  --dur-dim: 450ms;
+  --dur-reveal: 1.4s;
+  --dur-reveal-blur: 1s;
+
   /* FOT 筑紫Cオールド明朝 (FontPlus loader 経由) is the intended display
      serif. Cormorant Garamond (@fontsource) and the system serif chain
      stand in while FontPlus fetches the face. _MinchoDigits は U+0030-0039
@@ -296,10 +309,10 @@ html.lenis body {
 /* ─── Reveal-on-scroll */
 .k-shell [data-reveal] {
   opacity: 0;
-  filter: blur(8px) sepia(0);
+  filter: blur(18px) sepia(0);
   transition:
-    opacity 1.4s ease-out,
-    filter 1s ease-out;
+    opacity var(--dur-reveal) ease-out,
+    filter var(--dur-reveal-blur) ease-out;
 }
 .k-shell [data-reveal].is-revealed {
   opacity: 1;
@@ -330,7 +343,7 @@ html.lenis body {
 }
 .k-shell figure[data-reveal].is-revealed,
 .k-shell .k-quote[data-reveal].is-revealed {
-  animation: k-gallery-mask 1s ease-out forwards;
+  animation: k-gallery-mask 1.4s ease-out forwards;
 }
 
 /* Horizontal divider が scroll 位置に同期して右端から左へ伸びる。CSS
@@ -380,45 +393,47 @@ html.lenis body {
   );
 }
 
-/* Gallery 内 quote ラッパー (centering + parallax 内蔵)。--k-parallax-y が
-   set されない場合は translateY(0) になるので、`data-parallax` 属性なしの
-   quote はここで静止する。 */
+/* Gallery 内 quote ラッパー。CSS プロパティを 1関心事=1プロパティで分離:
+   - translate : 中央寄せ (-50%)。静的。
+   - transform : scroll parallax の translateY。GalleryParallax が
+                 `--k-parallax-y` を毎フレーム書き換える。`data-parallax`
+                 属性なし (= var 未設定) なら translateY(0) で静止。
+   - scale     : hover 拡大 (:hover ルール側で 1.05)。
+   transition はこの要素唯一の宣言。opacity (= :has() dim の in/out) と
+   scale (= hover) のみ。transform (parallax) は JS 駆動の毎フレーム更新
+   なので transition に入れない (入れると scroll がカクつく)。 */
 .k-shell .k-quote-wrap {
   position: absolute;
   margin: 0;
-  transform: translateX(-50%) translateY(calc(var(--k-parallax-y, 0) * 1px));
+  translate: -50% 0;
+  transform: translateY(calc(var(--k-parallax-y, 0) * 1px));
+  transition:
+    opacity var(--dur-dim) var(--ease-soft),
+    scale var(--dur-hover) var(--ease-soft);
   will-change: transform;
 }
 
-/* Gallery 内 photo 用の centering + parallax 結合 (.k-quote-wrap の photo
-   版)。Tailwind の `-translate-x-1/2` (translate プロパティで吐かれる) を
-   そのまま使うと、`.k-parallax` 側の transform と property が分かれて重複
-   翻訳になるので、photo が parallax を採用する slot だけはこの class で
-   centering ごと差し替える。 */
-.k-shell .k-parallax-center {
-  transform: translateX(-50%) translateY(calc(var(--k-parallax-y, 0) * 1px));
-  will-change: transform;
-}
-
-/* 汎用 parallax target (Intro テキスト等の static-flow 要素)。translateX
-   の中央寄せは付かないので、普通の flex / block layout の子要素にそのまま
-   当てられる。GalleryParallax が `[data-parallax]` 経由で --k-parallax-y
-   を update する。 */
+/* 汎用 parallax target。transform = parallax の translateY のみ。中央寄せ
+   は持たないので、Intro テキストのような static-flow 要素にも、gallery
+   photo (中央寄せは Tailwind `-translate-x-1/2` = translate プロパティで
+   別途付与) にも、そのまま重ねられる。 */
 .k-shell .k-parallax {
   transform: translateY(calc(var(--k-parallax-y, 0) * 1px));
   will-change: transform;
 }
 
-/* quote 本文側: opacity + translateY 浮かび上がり */
+/* quote 本文側: opacity + 浮かび上がり。浮きは translate プロパティで
+   行う (transform は親 .k-quote-wrap が parallax で使うため、子でも
+   transform を避けて関心事を分離)。 */
 .k-shell .k-quote[data-reveal] {
-  transform: translateY(14px);
+  translate: 0 14px;
   transition:
     opacity 1.4s ease-out,
-    transform 1.4s ease-out,
+    translate 1.4s ease-out,
     filter 1.4s ease-out;
 }
 .k-shell .k-quote[data-reveal].is-revealed {
-  transform: translateY(0);
+  translate: 0 0;
 }
 
 /* 縦書きバリアント */
@@ -428,21 +443,57 @@ html.lenis body {
   height: 100%;
 }
 
-/* Gallery hover focus (:has()) */
+/* Gallery hover 系。reveal と dim を「別要素の opacity」に分離して衝突を
+   構造的に消す:
+   - photo : reveal は figure の opacity (global [data-reveal])、dim は
+             中の <img> の opacity。→ figure と img で別プロパティ扱い。
+   - quote : reveal は .k-quote の opacity、dim は親 .k-quote-wrap の
+             opacity。→ 元から別要素なので衝突なし。
+   `transition` は要素ごとに 1回だけ宣言し、状態ルール (:has() dim /
+   :hover) は値だけ変える。
+
+   dim focus (:has()): hover 中の item 以外を落とす。photo は <img> の
+   opacity / sepia、quote は wrapper の opacity。transition は各要素の
+   base ルール側で宣言済みなのでここには書かない。 */
 .k-shell
   #portfolio:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
-  figure[data-reveal]:not(:hover) {
+  figure[data-reveal]:not(:hover)
+  img {
   opacity: 0.2;
-  filter: blur(0) sepia(0.8);
-  transition:
-    opacity 400ms ease-out,
-    filter 400ms ease-out;
+  filter: sepia(0.8);
 }
 .k-shell
   #portfolio:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
   .k-quote-wrap:not(:hover) {
   opacity: 0.2;
-  transition: opacity 400ms ease-out;
+}
+
+/* figure の transition: reveal (opacity/filter) は global [data-reveal]
+   と同じ reveal トークンを参照 (= global の値変更に追従)。hover scale 用
+   に scale も併記。figure の opacity/filter は reveal 専用 (dim は <img>
+   に逃がした) なので、ここの opacity transition が global の reveal の
+   速度をそのまま体現する。 */
+.k-shell #portfolio figure[data-reveal] {
+  transition:
+    opacity var(--dur-reveal) ease-out,
+    filter var(--dur-reveal-blur) ease-out,
+    scale var(--dur-hover) var(--ease-soft);
+}
+
+/* photo の <img> は dim 専用。opacity / filter(sepia) を --dur-dim で。 */
+.k-shell #portfolio figure[data-reveal] img {
+  transition:
+    opacity var(--dur-dim) var(--ease-soft),
+    filter var(--dur-dim) var(--ease-soft);
+}
+
+/* hover した item (photo / tweet 双方) を scale 1.05。独立した `scale`
+   プロパティなので centering (translate) / parallax (transform) と衝突
+   しない。:has() dim は :not(:hover) 対象なので hover item には掛からず、
+   ここで拡大だけ乗る。 */
+.k-shell #portfolio figure[data-reveal]:hover,
+.k-shell #portfolio .k-quote-wrap:hover {
+  scale: 1.05;
 }
 
 /* ─── prefers-reduced-motion: kill animation */
@@ -466,14 +517,22 @@ html.lenis body {
     mask-image: none;
     animation: none;
   }
+  /* quote の reveal lift は translate プロパティ。即座に最終位置へ。 */
   .k-shell .k-quote[data-reveal] {
-    transform: none;
+    translate: none;
   }
+  /* parallax は transform プロパティ。kill しても中央寄せは別系統
+     (.k-quote-wrap の `translate: -50% 0` / photo の Tailwind translate)
+     で維持される。 */
   .k-shell .k-quote-wrap,
-  .k-shell .k-parallax-center {
-    transform: translateX(-50%);
-  }
   .k-shell .k-parallax {
     transform: none;
+  }
+  /* hover scale / dim は機能を残しつつ animation だけ切る。dim は
+     <img> 側に移ったので figure 内の img も対象に含める。 */
+  .k-shell #portfolio figure[data-reveal],
+  .k-shell #portfolio figure[data-reveal] img,
+  .k-shell .k-quote-wrap {
+    transition: none;
   }
 }
