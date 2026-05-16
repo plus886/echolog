@@ -8,6 +8,7 @@ import WordmarkLink from "@/components/WordmarkLink.tsx";
 // (public) ルート全体の chrome を載せた layout。Base.astro (HTML shell +
 // .k-shell + FontPlus + SEO meta) を内包し、上に PortfolioNav と
 // KO KAIJI pin、pathname-aware の NavState を Astro Island として配置する。
+// 末尾の credits footer (#contact) も全 (public) ルート共通でここに置く。
 //
 // 注: 旧プランの phase 5 で <ClientRouter /> + transition:persist による
 // SPA-style soft nav を試したが、FontPlus との相性問題 (PV 再カウント、
@@ -23,6 +24,7 @@ interface Props {
 }
 
 const props = Astro.props;
+const year = new Date().getFullYear();
 ---
 
 <Base {...props}>
@@ -33,6 +35,34 @@ const props = Astro.props;
     className="k-wordmark-pin fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light) no-underline"
   />
   <slot />
+  {/* credits footer — 全 (public) ルート共通 */}
+  <footer id="contact" class="px-col-2 pb-15 text-[12px] leading-[1.7]">
+    <div
+      class="grid grid-cols-1 items-end gap-4.5 pt-7 text-[11px] text-(--ink-70) min-[880px]:grid-cols-3 min-[880px]:gap-0"
+    >
+      <div class="text-left">
+        <p class="mb-1">
+          <a
+            href="https://note.com/plus886note"
+            class="border-b border-current pb-px">note</a
+          >
+        </p>
+        <p class="mb-1">
+          <a
+            href="https://www.facebook.com/koichiro.ideta"
+            class="border-b border-current pb-px">facebook</a
+          >
+        </p>
+      </div>
+      <div class="text-left min-[880px]:text-center">
+        <p class="mb-1">Made in Taiwan with &hearts;.</p>
+        <p class="mb-1"><em>© {year} Ko Kaiji.</em></p>
+      </div>
+      <div class="text-left min-[880px]:text-right">
+        <p class="mb-1">Astro / microCMS / Claude Code</p>
+      </div>
+    </div>
+  </footer>
   <SmoothScroll client:only="react" />
   <NavState client:load />
 </Base>

@@ -1,0 +1,131 @@
+---
+import Public from "@/layouts/Public.astro";
+import ScrollReveal from "@/components/ScrollReveal.tsx";
+import { getWork, type WorkCat } from "@/lib/works";
+
+// (works) detail page。Home の thumbnail grid から /works/[id] で遷移。
+// 余白を生かした 3 カラム構成 (縦書き)。grid は viewport 全幅、3 等分:
+//   左   — hero 画像。カラム幅いっぱい、16:9 横長
+//   中央 — 縦組み description (14px)
+//   右   — 縦組みタイトル (16px)
+// カラム間 gap は大きめ。縦組みは min-[880px] 以上のみで、モバイルは
+// 1 カラムに縦積み + 横組みに戻す。
+// データは @/lib/works に集約、route は SSR (prerender = false)。
+
+export const prerender = false;
+
+const { id } = Astro.params;
+if (!id) {
+  return new Response(null, { status: 404 });
+}
+
+const work = getWork(id);
+if (!work) {
+  return new Response(null, { status: 404 });
+}
+
+const hero = work.gallery[0];
+
+// 右カラムの控えめなメタデータ用。category → 表示ラベル、
+// 外部参考 URL は host だけ抜いて表示する (www. は落とす)。
+const CATEGORY_LABEL: Record<WorkCat, string> = {
+  text: "執筆",
+  photo: "撮影",
+  music: "音楽",
+};
+const refHost = new URL(work.url).hostname.replace(/^www\./, "");
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, s-maxage=3600, stale-while-revalidate=86400",
+);
+---
+
+<Public title={work.title} description={work.description.slice(0, 120)}>
+  <article class="flex min-h-screen flex-col">
+    <section class="flex flex-1 items-center py-32">
+      {
+        /* viewport 全幅の 3 カラムグリッド。幅比率は 7:6:4 (等分ではない)。
+          各トラックは minmax(0,Nfr) — 既定の minmax(auto,Nfr) だと content の
+          min-content (例: 参考URLの whitespace-nowrap) でカラムが広がり比率が
+          崩れるため、min を 0 にして比率を固定し、はみ出しは overflow させる。
+          縦位置は items-start で上端を起点にし、hero と description だけ
+          mt で少し下げる → タイトル (右) が一段高く、hero と description
+          (左・中央) は上端が揃って少し低い、という段差を作る。
+          reveal は filter で absolute 包含ブロックを生むが、ここは absolute
+          を使わないので各要素に付与で可。 */
+      }
+      <div
+        class="grid w-full grid-cols-1 items-start gap-14 min-[880px]:grid-cols-[minmax(0,7fr)_minmax(0,6fr)_minmax(0,4fr)] min-[880px]:gap-[6vw]"
+      >
+        {
+          /* 左カラム — hero。カラム幅いっぱい、16:9 横長。
+            初期は grayscale(1)、reveal (.is-revealed) で色が滲み出る。
+            少し遅延させて「表示されたあとに色が来る」運びにする。 */
+        }
+        <figure data-reveal class="group m-0 w-full min-[880px]:mt-[12vh]">
+          <img
+            src={hero.src}
+            alt={work.title}
+            class="block aspect-video w-full bg-(--paper-2) object-cover [filter:grayscale(1)] transition-[filter] delay-[1400ms] duration-[1800ms] ease-out group-[.is-revealed]:[filter:grayscale(0.3)]"
+          />
+        </figure>
+
+        {/* 中央カラム — 縦組み description */}
+        <p
+          data-reveal
+          class="m-0 w-full px-col-2 font-serif text-[14px] leading-[2.1] tracking-[0.08em] text-(--ink-70) min-[880px]:mt-[20vh] min-[880px]:h-[clamp(260px,48vh,480px)] min-[880px]:w-auto min-[880px]:justify-self-center min-[880px]:px-0 min-[880px]:[writing-mode:vertical-rl] [font-feature-settings:initial]"
+        >
+          {work.description}
+        </p>
+
+        {
+          /* 右カラム — 縦組みタイトル + 控えめなメタデータ。
+            desktop はラッパーを justify-self-end + mr-[6vw] で右端に固定し、
+            flex-row-reverse でタイトルを右・メタデータを左に置く。これで
+            参考URLリンクが長くても右端のタイトル位置は動かず、はみ出した分
+            だけラッパーが左 (gap 側) に伸びる。 */
+        }
+        <div
+          data-reveal
+          class="flex flex-col items-center gap-6 justify-self-center min-[880px]:mr-[6vw] min-[880px]:flex-row-reverse min-[880px]:items-start min-[880px]:justify-self-end min-[880px]:gap-7"
+        >
+          <h1
+            class="m-0 font-serif text-[17px] leading-[1.9] font-normal tracking-[0.12em] text-(--ink) min-[880px]:[writing-mode:vertical-rl] [font-feature-settings:initial]"
+          >
+            {work.title}
+          </h1>
+
+          {
+            /* メタデータ — タイプ / 発表年度 は縦組み。外部参考URL だけ
+              横組み + ↗ にして「向きのコントラスト」でリンクと分からせる
+              (控えめさは保ちつつ、事実の羅列に埋もれないように)。 */
+          }
+          <div
+            class="flex items-center gap-2 text-[11px] tracking-[0.12em] text-(--ink-50) min-[880px]:items-start min-[880px]:gap-4 min-[880px]:[writing-mode:vertical-rl]"
+          >
+            <span>{CATEGORY_LABEL[work.category]}</span>
+            <span>{work.year}</span>
+            <a
+              href={work.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="whitespace-nowrap text-(--ink-50) transition-colors hover:text-(--ink) min-[880px]:mt-2 min-[880px]:[writing-mode:horizontal-tb]"
+            >
+              <span class="font-serif italic">({refHost})</span>
+              <span aria-hidden="true"> ↗</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p
+      class="px-col-2 pb-12 mb-6 text-[12px] tracking-[0.1em] text-(--ink-50) italic font-serif"
+    >
+      <a href="/#works" class="pb-px no-underline"> ← (works) </a>
+    </p>
+  </article>
+
+  <ScrollReveal client:load />
+</Public>

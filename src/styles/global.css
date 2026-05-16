@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* 自動 content 検出が新規ネストディレクトリ (例: pages/works/v2) を
+   取りこぼすことがあるため、src 配下を明示的に source 登録する。 */
+@source "../**/*.{astro,html,ts,tsx,js,jsx}";
+
 /* Self-hosted webfonts (旧 next/font の置き換え。CSS 変数は portfolio.css
    側で --k-font-sans / --k-font-serif に詰める)。
    - Inter Tight 400: 本文 sans

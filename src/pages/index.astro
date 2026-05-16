@@ -9,6 +9,7 @@ import WordmarkLink from "@/components/WordmarkLink.tsx";
 import { composeGalleryItems, type GalleryQuote } from "@/lib/gallery-compose";
 import { generateGalleryLayout, type LayoutItem } from "@/lib/gallery-layout";
 import { listRootTweets, loadGalleryDays } from "@/lib/microcms";
+import { works } from "@/lib/works";
 import type { Day } from "@/types/microcms";
 
 // 旧 app/(public)/page.tsx の Astro 移植。
@@ -63,69 +64,8 @@ const layoutItems: LayoutItem[] = items.map((it) =>
 );
 const { slots, totalHeight } = generateGalleryLayout(layoutItems);
 
-// (works) section の thumbnail データ。Detail page は /works/[id] の前提で
-// href を組む (route はまだ未実装、TODO)。category は filter (ALL / TEXT /
-// MUSIC / PHOTO) の出し分けキー。aspect は thumbnail の縦横比、画像 src は
-// kokaiji.tw の asset URL を仮置き (後で public/works/ に移植予定)。
-type WorkCat = "text" | "music" | "photo";
-type Work = {
-  id: string;
-  title: string;
-  subtitle?: string;
-  year: string;
-  category: WorkCat;
-  src: string;
-  aspect: string;
-};
-const works: Work[] = [
-  {
-    id: "taiwan",
-    title: "日本人のための台湾学入門",
-    subtitle: "平凡社新書",
-    year: "2025",
-    category: "text",
-    src: "https://kokaiji.tw/_astro/taiwan.jleloxE5_gGKlp.webp",
-    aspect: "3 / 4",
-  },
-  {
-    id: "fluonika",
-    title: "Fluonika",
-    subtitle: "フルオニカ",
-    year: "2024 —",
-    category: "music",
-    src: "https://kokaiji.tw/_astro/fluonika.CAJuWOQX_Z2wT6uW.webp",
-    aspect: "4 / 3",
-  },
-  {
-    id: "gardener",
-    title: "Gardener",
-    subtitle: "庭師",
-    year: "2021",
-    category: "music",
-    src: "https://kokaiji.tw/_astro/gardener.Bu3MoHOv_TkyES.webp",
-    aspect: "3 / 4",
-  },
-  {
-    id: "formosa-chiaroscuro",
-    title: "翳光臺灣",
-    subtitle: "Formosa Chiaroscuro",
-    year: "2024 —",
-    category: "photo",
-    src: "https://kokaiji.tw/_astro/retrotica.B2Sx7-yf_1VJ1de.webp",
-    aspect: "3 / 4",
-  },
-  {
-    id: "three-flowers",
-    title: "Formosa and Three Flowers",
-    subtitle: "台湾と三つの花",
-    year: "2020",
-    category: "photo",
-    src: "https://kokaiji.tw/_astro/threeflowers.CIOSeB1O_1PFhf0.webp",
-    aspect: "4 / 3",
-  },
-];
-
-const year = new Date().getFullYear();
+// (works) section の thumbnail データは @/lib/works に集約。Home の
+// thumbnail grid と /works/[id] detail page で共有する。
 
 Astro.response.headers.set(
   "Cache-Control",
@@ -251,7 +191,7 @@ Astro.response.headers.set(
               <blockquote
                 data-reveal
                 class:list={[
-                  "k-quote m-0 font-serif text-[16px] leading-[1.85] text-(--ink-70)",
+                  "k-quote m-0 font-serif text-[15px] tracking-wide leading-[1.85] text-(--ink-70)",
                   isVertical && "k-quote-v",
                 ]}
               >
@@ -268,7 +208,7 @@ Astro.response.headers.set(
     class="ml-col-2 mt-10 mb-24 flex flex-col gap-10 min-w-0 min-[880px]:mt-10 min-[880px]:flex-row min-[880px]:items-start min-[880px]:gap-0"
   >
     <p
-      class="m-0 font-serif text-[13px] leading-[1.8] tracking-wider min-[880px]:min-w-[260px] min-[880px]:flex-none"
+      class="m-0 font-serif text-[13px] leading-[1.8] tracking-wider min-[880px]:min-w-[260px] min-[880px]:flex-none text-(--ink-70)"
     >
       指先から生まれたものたちは、わたしより長く息をする。<br />
       わたしが忘れてしまった後も、誰かの本棚で、引き出しの奥で、静かに目を覚ましたままでいる。<br
@@ -409,13 +349,12 @@ Astro.response.headers.set(
   </script>
 
   {
-    /* Footer — (menu) + (contact) の 2 col、credits 行で (follow) /
-      署名 / (colophon) の 3 col。subscribe / legal は portfolio 用途では
-      不要なので落として、代わりに colophon (使用技術) を入れた。 */
+    /* contact — full-viewport の連絡先セクション。credits footer は
+      Public.astro 側に全ルート共通で配置した。 */
   }
   <section class="flex items-center justify-center-safe h-dvh">
     <p class="m-0 font-serif text-[13px] leading-[1.8] tracking-wider">
-      執筆 / 講演 / 取材のご依頼は{" "}
+      執筆 / 講演 / 取材のご依頼・協業のお誘いは{" "}
       <a
         href="mailto:kokaiji.tw@gmail.com"
         class="border-b border-current pb-px"
@@ -424,39 +363,6 @@ Astro.response.headers.set(
       </a>{" "}まで。
     </p>
   </section>
-  <footer
-    id="contact"
-    data-reveal
-    class="px-col-2 pb-15 text-[12px] leading-[1.7]"
-  >
-    <div
-      class="grid grid-cols-1 items-end gap-4.5 pt-7 text-[11px] text-(--ink-70) min-[880px]:grid-cols-3 min-[880px]:gap-0"
-    >
-      <div class="text-left">
-        <!-- <p class="mb-1 text-(--ink-50) italic">(follow)</p> -->
-        <p class="mb-1">
-          <a
-            href="https://note.com/plus886note"
-            class="border-b border-current pb-px">note</a
-          >
-        </p>
-        <p class="mb-1">
-          <a
-            href="https://www.facebook.com/koichiro.ideta"
-            class="border-b border-current pb-px">facebook</a
-          >
-        </p>
-      </div>
-      <div class="text-left min-[880px]:text-center">
-        <p class="mb-1">Made in Taiwan with &hearts;.</p>
-        <p class="mb-1"><em>© {year} Ko Kaiji.</em></p>
-      </div>
-      <div class="text-left min-[880px]:text-right">
-        <!-- <p class="mb-1 text-(--ink-50) italic">(colophon)</p> -->
-        <p class="mb-1">Astro / microCMS / Claude Code</p>
-      </div>
-    </div>
-  </footer>
 
   <ScrollReveal client:load />
   <ScrollWordmark client:load />
