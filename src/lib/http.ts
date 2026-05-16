@@ -9,8 +9,9 @@ export const json = (data: unknown, init?: ResponseInit) =>
 
 // SSR ページ共通の edge cache ポリシー。s-maxage=3600 で Cloudflare edge に
 // 1 時間 cache し、stale-while-revalidate=86400 で 1 日間は古い HTML を返し
-// つつ裏で再生成する (旧 Next.js の ISR revalidate=3600 相当)。
-export function setEdgeCache(response: Response): void {
+// つつ裏で再生成する。引数は Astro.response (Response そのものではなく
+// ResponseInit + headers を持つオブジェクト) を渡せるよう headers のみ要求。
+export function setEdgeCache(response: { headers: Headers }): void {
   response.headers.set(
     "Cache-Control",
     "public, s-maxage=3600, stale-while-revalidate=86400",
