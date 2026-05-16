@@ -38,5 +38,8 @@ yarn-error.log*
 .idea/
 .vercel
 
+# Claude Code (local settings)
+.claude/settings.local.json
+
 # typescript
 *.tsbuildinfo
