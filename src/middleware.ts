@@ -10,11 +10,9 @@ import {
 // env の調達は cloudflare:workers から module-level import で完結する
 // (lib/env.ts 参照) ため、ここで AsyncLocalStorage 等の plumbing は不要。
 //
-// 旧 matcher: ["/admin", "/admin/:path*", "/api/tweets/:path*",
-//              "/api/og-preview", "/api/uploads"]
+// 旧 matcher: ["/admin", "/admin/:path*", "/api/og-preview", "/api/uploads"]
 function requiresAuth(pathname: string): boolean {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
-  if (pathname.startsWith("/api/tweets")) return true;
   if (pathname === "/api/og-preview") return true;
   if (pathname === "/api/uploads") return true;
   return false;
