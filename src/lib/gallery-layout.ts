@@ -74,6 +74,66 @@ const DEFAULT_SEED = 6;
 const PARALLAX_PROB = 0.5;
 const PARALLAX_SEED_OFFSET = 7919; // 大きめの素数で seed 空間をシフト
 
+// ---- 衝突判定の共通ロジック ----
+// generateGalleryLayout と generateQuoteImagesLayout は同じ手順で配置する。
+// 差は container 幅 / safe margin / min gap の 3 定数だけなので ClampParams
+// に束ねて渡し、判定本体はこの 2 関数に集約する。
+type ClampParams = {
+  containerW: number;
+  safeMarginPct: number;
+  minGap: number;
+};
+
+const GALLERY_CLAMP: ClampParams = {
+  containerW: ASSUMED_CONTAINER_W,
+  safeMarginPct: SAFE_MARGIN_PCT,
+  minGap: MIN_GAP,
+};
+
+// leftPct / w から、clamp 済み座標空間での水平バウンディングボックスを返す。
+function clampedBox(
+  leftPct: number,
+  w: number,
+  p: ClampParams,
+): { leftEdge: number; rightEdge: number } {
+  const halfWidthPct = (w / p.containerW) * 50;
+  const minLeftPct = p.safeMarginPct + halfWidthPct;
+  const maxLeftPct = 100 - p.safeMarginPct - halfWidthPct;
+  const clampedLeftPct = Math.max(minLeftPct, Math.min(maxLeftPct, leftPct));
+  const centerPx = (clampedLeftPct / 100) * p.containerW;
+  return { leftEdge: centerPx - w / 2, rightEdge: centerPx + w / 2 };
+}
+
+// candidateTop から、配置済み slot のうち水平に重なるものを避けて top を
+// 確定する。直近の slot から上方向に走査し、垂直に届かなくなったら打ち切る。
+// 上方 slot の center は配置当時と同じく leftPct を clamp し直して比較する。
+function resolveTop(
+  candidateTop: number,
+  box: { leftEdge: number; rightEdge: number },
+  priorSlots: ReadonlyArray<{
+    leftPct: number;
+    top: number;
+    w: number;
+    h: number;
+  }>,
+  p: ClampParams,
+): number {
+  let top = candidateTop;
+  for (let j = priorSlots.length - 1; j >= 0; j--) {
+    const prior = priorSlots[j];
+    if (prior.top + prior.h + p.minGap <= top) break;
+    const pBox = clampedBox(prior.leftPct, prior.w, p);
+    const hOverlap =
+      pBox.rightEdge + p.minGap > box.leftEdge &&
+      pBox.leftEdge - p.minGap < box.rightEdge;
+    if (hOverlap) {
+      const minTop = prior.top + prior.h + p.minGap;
+      if (top < minTop) top = minTop;
+    }
+  }
+  return top;
+}
+
 export function generateGalleryLayout(
   items: LayoutItem[],
   seed: number = DEFAULT_SEED,
@@ -132,37 +192,8 @@ export function generateGalleryLayout(
     // 衝突判定用の座標は「狭い viewport で clamp() が効いた後の位置」を
     // 想定する。これにより narrow ですれ違うアイテムも no-overlap が保証
     // され、wide で peripheral 復活時には更に離れるだけなので安全。
-    const halfWidthPct = (w / ASSUMED_CONTAINER_W) * 50;
-    const minLeftPct = SAFE_MARGIN_PCT + halfWidthPct;
-    const maxLeftPct = 100 - SAFE_MARGIN_PCT - halfWidthPct;
-    const clampedLeftPct = Math.max(minLeftPct, Math.min(maxLeftPct, leftPct));
-
-    const centerPx = (clampedLeftPct / 100) * ASSUMED_CONTAINER_W;
-    const leftEdge = centerPx - w / 2;
-    const rightEdge = centerPx + w / 2;
-
-    // 直近 slot から順に上方向へ走査して垂直に届く範囲のものを bounding
-    // box で当たり判定。重なるなら top を minTop まで押し下げる。
-    // 上方の slot の center は当時 clamp したものを再計算して比較。
-    let top = nextTop;
-    for (let j = i - 1; j >= 0; j--) {
-      const p = slots[j];
-      if (p.top + p.h + MIN_GAP <= top) break;
-      const pHalfPct = (p.w / ASSUMED_CONTAINER_W) * 50;
-      const pClamped = Math.max(
-        SAFE_MARGIN_PCT + pHalfPct,
-        Math.min(100 - SAFE_MARGIN_PCT - pHalfPct, p.leftPct),
-      );
-      const pCenter = (pClamped / 100) * ASSUMED_CONTAINER_W;
-      const pLeft = pCenter - p.w / 2;
-      const pRight = pCenter + p.w / 2;
-      const hOverlap =
-        pRight + MIN_GAP > leftEdge && pLeft - MIN_GAP < rightEdge;
-      if (hOverlap) {
-        const minTop = p.top + p.h + MIN_GAP;
-        if (top < minTop) top = minTop;
-      }
-    }
+    const box = clampedBox(leftPct, w, GALLERY_CLAMP);
+    const top = resolveTop(nextTop, box, slots, GALLERY_CLAMP);
 
     const parallax = parallaxRand() < PARALLAX_PROB;
     slots.push(
@@ -224,6 +255,12 @@ const QI_MIN_GAP = 18;
 const QI_SAFE_MARGIN_PCT = 4;
 const QI_DEFAULT_SEED = 17;
 
+const QI_CLAMP: ClampParams = {
+  containerW: QI_ASSUMED_CONTAINER_W,
+  safeMarginPct: QI_SAFE_MARGIN_PCT,
+  minGap: QI_MIN_GAP,
+};
+
 function quoteImageZones(count: number): readonly number[] {
   if (count <= 1) return [50];
   if (count === 2) return [32, 68];
@@ -255,33 +292,8 @@ export function generateQuoteImagesLayout(
 
     // 衝突判定: Home gallery と同じ手順で、想定 container 幅における
     // bounding box を計算し、上方の slot と当たるなら下に押し下げる。
-    const halfWidthPct = (w / QI_ASSUMED_CONTAINER_W) * 50;
-    const minLeftPct = QI_SAFE_MARGIN_PCT + halfWidthPct;
-    const maxLeftPct = 100 - QI_SAFE_MARGIN_PCT - halfWidthPct;
-    const clampedLeftPct = Math.max(minLeftPct, Math.min(maxLeftPct, leftPct));
-    const centerPx = (clampedLeftPct / 100) * QI_ASSUMED_CONTAINER_W;
-    const leftEdge = centerPx - w / 2;
-    const rightEdge = centerPx + w / 2;
-
-    let top = nextTop;
-    for (let j = i - 1; j >= 0; j--) {
-      const p = slots[j];
-      if (p.top + p.h + QI_MIN_GAP <= top) break;
-      const pHalfPct = (p.w / QI_ASSUMED_CONTAINER_W) * 50;
-      const pClamped = Math.max(
-        QI_SAFE_MARGIN_PCT + pHalfPct,
-        Math.min(100 - QI_SAFE_MARGIN_PCT - pHalfPct, p.leftPct),
-      );
-      const pCenter = (pClamped / 100) * QI_ASSUMED_CONTAINER_W;
-      const pLeft = pCenter - p.w / 2;
-      const pRight = pCenter + p.w / 2;
-      const hOverlap =
-        pRight + QI_MIN_GAP > leftEdge && pLeft - QI_MIN_GAP < rightEdge;
-      if (hOverlap) {
-        const minTop = p.top + p.h + QI_MIN_GAP;
-        if (top < minTop) top = minTop;
-      }
-    }
+    const box = clampedBox(leftPct, w, QI_CLAMP);
+    const top = resolveTop(nextTop, box, slots, QI_CLAMP);
 
     slots.push({ leftPct, top, w, h });
     if (top + h > maxBottom) maxBottom = top + h;
