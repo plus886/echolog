@@ -2,7 +2,7 @@ import { type CSSProperties, type MouseEvent } from "react";
 
 import { HOME_SCROLL_KEY } from "@/lib/constants";
 
-import { onRippleEnter, onRippleFocus, RippleLabel } from "./nav-ripple";
+import { onRippleEnter, onRippleFocus, RippleLabel } from "./NavRipple";
 
 // Astro Island。旧 app/(public)/wordmark-link.tsx の移植。
 // 旧版は TransitionLink (View Transitions API + next/router で SPA 遷移

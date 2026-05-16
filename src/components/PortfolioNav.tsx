@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { onRippleEnter, onRippleFocus, RippleLabel } from "./nav-ripple";
+import { onRippleEnter, onRippleFocus, RippleLabel } from "./NavRipple";
 
 // Astro Island。旧 app/(public)/portfolio-nav.tsx の移植。
 // 旧版は next/link で navigation していたが、phase 3 段階では素の <a> で
