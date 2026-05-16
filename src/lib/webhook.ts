@@ -5,13 +5,9 @@
 // Astro 移植版。旧 lib/webhook.ts (NextResponse 使用) を Response 直構築に
 // 切替。ロジックは同一。
 
-const SIGNATURE_HEADER = "x-microcms-signature";
+import { json } from "@/lib/http";
 
-const json = (data: unknown, init?: ResponseInit) =>
-  new Response(JSON.stringify(data), {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
+const SIGNATURE_HEADER = "x-microcms-signature";
 
 export type WebhookVerifyResult =
   | { ok: true; body: string }

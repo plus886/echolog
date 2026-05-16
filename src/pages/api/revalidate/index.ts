@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 
 import { getEnv } from "@/lib/env";
+import { json } from "@/lib/http";
 import { verifyMicroCMSWebhook } from "@/lib/webhook";
 
 // 旧 app/api/revalidate/route.ts (microCMS tweets webhook) の Astro 移植。
@@ -20,12 +21,6 @@ type WebhookPayload = {
     old?: { id?: string };
   };
 };
-
-const json = (data: unknown, init?: ResponseInit) =>
-  new Response(JSON.stringify(data), {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
 
 export const POST: APIRoute = async ({ request }) => {
   const verified = await verifyMicroCMSWebhook(

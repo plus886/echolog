@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 
+import { json } from "@/lib/http";
 import { uploadMedia } from "@/lib/microcms-management";
 
 // 旧 app/api/uploads/route.ts の Astro 移植。
@@ -14,12 +15,6 @@ const ALLOWED_MIME = new Set([
   "image/gif",
   "image/webp",
 ]);
-
-const json = (data: unknown, init?: ResponseInit) =>
-  new Response(JSON.stringify(data), {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
 
 export const POST: APIRoute = async ({ request }) => {
   let formData: FormData;

@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 
+import { json } from "@/lib/http";
 import { parseOgp } from "@/lib/og-parse";
 import { isPublicHttpUrl } from "@/lib/url-detect";
 
@@ -13,12 +14,6 @@ export const prerender = false;
 
 const FETCH_TIMEOUT_MS = 5000;
 const MAX_BYTES = 1024 * 1024; // 1MB
-
-const json = (data: unknown, init?: ResponseInit) =>
-  new Response(JSON.stringify(data), {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
 
 export const GET: APIRoute = async ({ url }) => {
   const target = url.searchParams.get("url");

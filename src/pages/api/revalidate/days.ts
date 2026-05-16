@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 
 import { getEnv } from "@/lib/env";
+import { json } from "@/lib/http";
 import { verifyMicroCMSWebhook } from "@/lib/webhook";
 
 // 旧 app/api/revalidate/days/route.ts (formosa-chiaroscuro days webhook)
@@ -10,12 +11,6 @@ import { verifyMicroCMSWebhook } from "@/lib/webhook";
 // 対応予定 (下記 TODO)。現状は Cache-Control の TTL に委ねる。
 
 export const prerender = false;
-
-const json = (data: unknown, init?: ResponseInit) =>
-  new Response(JSON.stringify(data), {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
 
 export const POST: APIRoute = async ({ request }) => {
   const verified = await verifyMicroCMSWebhook(
