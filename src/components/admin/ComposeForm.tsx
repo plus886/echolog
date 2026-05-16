@@ -134,9 +134,7 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
         </div>
       </div>
 
-      {error && (
-        <p className="font-serif text-[14px] italic text-(--ink-70)">{error}</p>
-      )}
+      {error && <p className="k-form-error">{error}</p>}
     </form>
   );
 }

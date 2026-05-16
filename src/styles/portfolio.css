@@ -172,6 +172,14 @@ html.lenis body {
   color: var(--ink-50);
 }
 
+/* ─── Admin フォームのエラーテキスト (ComposeForm / EditForm / ImageUploader 共通) */
+.k-shell .k-form-error {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ink-70);
+}
+
 /* ─── Scroll-cue keyframes + utility */
 @keyframes k-scroll-cue-pulse {
   0%,

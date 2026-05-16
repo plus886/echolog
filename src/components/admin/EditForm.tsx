@@ -80,9 +80,7 @@ export function EditForm({ id, defaultBody, isDraft }: Props) {
         </div>
       </div>
 
-      {error && (
-        <p className="font-serif text-[14px] italic text-(--ink-70)">{error}</p>
-      )}
+      {error && <p className="k-form-error">{error}</p>}
     </div>
   );
 }
