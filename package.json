@@ -36,8 +36,10 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.9",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
+    "typescript": "^6.0.3",
     "wrangler": "^4.90.1"
   },
   "overrides": {

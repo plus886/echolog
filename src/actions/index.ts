@@ -64,7 +64,7 @@ const ComposeFormInput = z.object({
   images: z.string().optional(), // JSON string
 });
 
-function normalizeCompose(input: z.infer<typeof ComposeFormInput>) {
+function normalizeCompose(input: ReturnType<typeof ComposeFormInput.parse>) {
   const parent = input.parent?.trim() || undefined;
   const retweetOf = input.retweetOf?.trim() || undefined;
   const body = input.body ?? "";
