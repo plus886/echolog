@@ -28,6 +28,10 @@ export function SmoothScroll() {
       // デフォルトの easeOutExpo 系で十分滑らか。tuning が要れば後で。
       // autoRaf: false (= 自前 RAF) にしてループ管理を unmount に揃える。
       autoRaf: false,
+      // anchors: true — 同一ページ内のアンカーリンク (<a href="/#...">) の
+      // クリックを Lenis が intercept して scrollTo で滑らかにスクロールする。
+      // pathname 不一致 (= 別ページ宛) のリンクは通常遷移のまま。
+      anchors: true,
     });
     window.__lenis = lenis;
 

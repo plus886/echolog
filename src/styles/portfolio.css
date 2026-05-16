@@ -122,7 +122,7 @@ html.lenis body {
   /* Motion tokens — transition のテンポを 1箇所に集約。
      - hover / dim : gallery の hover 拡大・dim focus
      - reveal      : scroll-in の fade (opacity) と blur 抜け (filter)
-     reveal token は global [data-reveal] と #portfolio figure[data-reveal]
+     reveal token は global [data-reveal] と #echolog figure[data-reveal]
      の両方が参照する (figure は hover scale 用に transition を再宣言する
      必要があり、そこで reveal の値を hardcode しないためトークン化する)。
      view-transition morph (860ms) は別系統なのでここには入れない。 */
@@ -383,6 +383,48 @@ html.lenis body {
   }
 }
 
+/* ─── Scroll progress — 画面最上部のスクロール進捗インジケーター。
+   scroll-driven animation (animation-timeline: scroll()) で root の
+   スクロール進捗に scaleX を bind する (JS 不要、Lenis の native scroll に
+   追従)。非対応ブラウザ / reduced-motion では進捗を追えないため非表示。 */
+.k-shell .k-scroll-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .k-shell .k-scroll-progress {
+    animation: k-scroll-progress linear both;
+    animation-timeline: scroll(root);
+  }
+  @keyframes k-scroll-progress {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+}
+
+@supports not (animation-timeline: scroll()) {
+  .k-shell .k-scroll-progress {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-shell .k-scroll-progress {
+    display: none;
+  }
+}
+
 /* Gallery slot 共通: left は runtime に CSS clamp() で評価 */
 .k-shell .k-pos {
   --side-margin: 60px;
@@ -456,14 +498,14 @@ html.lenis body {
    opacity / sepia、quote は wrapper の opacity。transition は各要素の
    base ルール側で宣言済みなのでここには書かない。 */
 .k-shell
-  #portfolio:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
+  #echolog:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
   figure[data-reveal]:not(:hover)
   img {
   opacity: 0.2;
   filter: sepia(0.8);
 }
 .k-shell
-  #portfolio:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
+  #echolog:has(figure[data-reveal]:hover, .k-quote-wrap:hover)
   .k-quote-wrap:not(:hover) {
   opacity: 0.2;
 }
@@ -473,7 +515,7 @@ html.lenis body {
    に scale も併記。figure の opacity/filter は reveal 専用 (dim は <img>
    に逃がした) なので、ここの opacity transition が global の reveal の
    速度をそのまま体現する。 */
-.k-shell #portfolio figure[data-reveal] {
+.k-shell #echolog figure[data-reveal] {
   transition:
     opacity var(--dur-reveal) ease-out,
     filter var(--dur-reveal-blur) ease-out,
@@ -481,7 +523,7 @@ html.lenis body {
 }
 
 /* photo の <img> は dim 専用。opacity / filter(sepia) を --dur-dim で。 */
-.k-shell #portfolio figure[data-reveal] img {
+.k-shell #echolog figure[data-reveal] img {
   transition:
     opacity var(--dur-dim) var(--ease-soft),
     filter var(--dur-dim) var(--ease-soft);
@@ -491,8 +533,8 @@ html.lenis body {
    プロパティなので centering (translate) / parallax (transform) と衝突
    しない。:has() dim は :not(:hover) 対象なので hover item には掛からず、
    ここで拡大だけ乗る。 */
-.k-shell #portfolio figure[data-reveal]:hover,
-.k-shell #portfolio .k-quote-wrap:hover {
+.k-shell #echolog figure[data-reveal]:hover,
+.k-shell #echolog .k-quote-wrap:hover {
   scale: 1.05;
 }
 
@@ -530,8 +572,8 @@ html.lenis body {
   }
   /* hover scale / dim は機能を残しつつ animation だけ切る。dim は
      <img> 側に移ったので figure 内の img も対象に含める。 */
-  .k-shell #portfolio figure[data-reveal],
-  .k-shell #portfolio figure[data-reveal] img,
+  .k-shell #echolog figure[data-reveal],
+  .k-shell #echolog figure[data-reveal] img,
   .k-shell .k-quote-wrap {
     transition: none;
   }

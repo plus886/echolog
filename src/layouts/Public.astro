@@ -28,6 +28,8 @@ const year = new Date().getFullYear();
 ---
 
 <Base {...props}>
+  {/* 画面最上部のスクロール進捗インジケーター (CSS scroll-driven) */}
+  <div class="k-scroll-progress" aria-hidden="true"></div>
   <PortfolioNav client:only="react" />
   <WordmarkLink
     client:only="react"

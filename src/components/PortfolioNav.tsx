@@ -36,7 +36,7 @@ export function PortfolioNav() {
       <ul className="k-nav-row pointer-events-auto hidden items-baseline justify-between text-[12px] font-normal uppercase tracking-[0.1em] min-[880px]:flex">
         <li>
           <a
-            href="#about"
+            href="/#about"
             className="k-nav-link"
             onMouseEnter={onRippleEnter}
             onFocus={onRippleFocus}
@@ -46,7 +46,7 @@ export function PortfolioNav() {
         </li>
         <li>
           <a
-            href="#"
+            href="/#echolog"
             className="k-nav-link"
             onMouseEnter={onRippleEnter}
             onFocus={onRippleFocus}
@@ -60,7 +60,7 @@ export function PortfolioNav() {
         </li>
         <li>
           <a
-            href="#portfolio"
+            href="/#works"
             className="k-nav-link"
             onMouseEnter={onRippleEnter}
             onFocus={onRippleFocus}
@@ -70,7 +70,7 @@ export function PortfolioNav() {
         </li>
         <li>
           <a
-            href="#contact"
+            href="/#contact"
             className="k-nav-link"
             onMouseEnter={onRippleEnter}
             onFocus={onRippleFocus}
@@ -97,12 +97,12 @@ export function PortfolioNav() {
         >
           <ul className="flex flex-col gap-7 text-[22px] uppercase tracking-[0.06em]">
             <li>
-              <a href="#about" onClick={() => setMenuOpen(false)}>
+              <a href="/#about" onClick={() => setMenuOpen(false)}>
                 About
               </a>
             </li>
             <li>
-              <a href="#" onClick={() => setMenuOpen(false)}>
+              <a href="/#echolog" onClick={() => setMenuOpen(false)}>
                 Echolog
               </a>
             </li>
@@ -112,12 +112,12 @@ export function PortfolioNav() {
               </a>
             </li>
             <li>
-              <a href="#portfolio" onClick={() => setMenuOpen(false)}>
+              <a href="/#works" onClick={() => setMenuOpen(false)}>
                 Works
               </a>
             </li>
             <li>
-              <a href="#contact" onClick={() => setMenuOpen(false)}>
+              <a href="/#contact" onClick={() => setMenuOpen(false)}>
                 Contact
               </a>
             </li>
