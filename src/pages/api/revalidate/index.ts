@@ -1,11 +1,10 @@
 import type { APIRoute } from "astro";
 
 import { getEnv } from "@/lib/env";
-import { revalidateTweetPaths } from "@/lib/revalidate";
 import { verifyMicroCMSWebhook } from "@/lib/webhook";
 
 // 旧 app/api/revalidate/route.ts (microCMS tweets webhook) の Astro 移植。
-// HMAC 検証 → payload 解釈 → revalidate (現状 stub)。
+// HMAC 検証 → payload 解釈 → ack 応答。即時の cache purge は phase 6 で対応。
 // 認証は middleware の matcher 外 (webhook は外部から HMAC で叩くため
 // Cloudflare Access ゲートに含めない設計、旧版と同じ)。
 
@@ -45,10 +44,6 @@ export const POST: APIRoute = async ({ request }) => {
   const tweetId =
     payload.id ?? payload.contents?.new?.id ?? payload.contents?.old?.id;
   const parentId = payload.contents?.new?.publishValue?.parent?.id ?? null;
-
-  revalidateTweetPaths(tweetId ?? undefined, {
-    parent: parentId ?? undefined,
-  });
 
   return json({
     revalidated: true,

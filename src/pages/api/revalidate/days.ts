@@ -4,11 +4,10 @@ import { getEnv } from "@/lib/env";
 import { verifyMicroCMSWebhook } from "@/lib/webhook";
 
 // 旧 app/api/revalidate/days/route.ts (formosa-chiaroscuro days webhook)
-// の Astro 移植。HMAC 検証 + ホーム再生成 (現状 stub)。
+// の Astro 移植。HMAC 検証 → ack 応答。
 //
-// /days の更新はホームの gallery にだけ影響するため revalidate 対象は
-// シンプル ("/" のみ)。stub 関数 lib/revalidate.ts に同種を作る価値も
-// 薄いので本ファイル内では特に何もしない。
+// /days の更新はホームの gallery にだけ影響する。即時 purge は phase 6 で
+// 対応予定 (下記 TODO)。現状は Cache-Control の TTL に委ねる。
 
 export const prerender = false;
 

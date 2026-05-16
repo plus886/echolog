@@ -9,7 +9,6 @@ import {
   updateTweet,
   type TweetWriteFields,
 } from "@/lib/microcms-management";
-import { revalidateTweetPaths } from "@/lib/revalidate";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
 // 旧 app/(admin)/admin/_actions.ts の Astro Actions 移植。
@@ -112,7 +111,6 @@ export const server = {
       const { id } = await createTweet(
         buildContent({ body, parent, retweetOf, images }),
       );
-      revalidateTweetPaths(id, { parent, retweetOf });
       return { id };
     },
   }),
@@ -136,7 +134,6 @@ export const server = {
         buildContent({ body, parent, retweetOf, images }),
         { isDraft: true },
       );
-      revalidateTweetPaths(id, { parent, retweetOf });
       return { id };
     },
   }),
@@ -162,7 +159,6 @@ export const server = {
         { body: input.body },
         publish ? { isDraft: false } : undefined,
       );
-      revalidateTweetPaths(input.id);
       return { id: input.id };
     },
   }),
@@ -172,7 +168,6 @@ export const server = {
     input: z.object({ id: z.string().min(1) }),
     handler: async (input) => {
       await deleteTweet(input.id);
-      revalidateTweetPaths(input.id);
       return { id: input.id };
     },
   }),
@@ -192,7 +187,6 @@ export const server = {
         retweetOf: input.targetId,
         retweetType: ["retweet"],
       });
-      revalidateTweetPaths(id, { retweetOf: input.targetId });
       return { id };
     },
   }),
