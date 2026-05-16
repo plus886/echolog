@@ -11,7 +11,6 @@ export type WorkCat = "text" | "music" | "photo";
 export type Work = {
   id: string;
   title: string;
-  subtitle?: string;
   year: string;
   category: WorkCat;
   src: string;

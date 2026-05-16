@@ -61,19 +61,9 @@ export function getRetweetKind(
 
 // ---- Portfolio gallery (formosa-chiaroscuro / days) ----
 
-export type DayCamera =
-  | "LEICA M11"
-  | "RICOH GRIII"
-  | "APPLE IPHONE 13 MINI"
-  | "APPLE IPHONE 17 PRO MAX";
-
 export type DayFields = {
   image: MicroCMSImage;
   date: string;
-  camera: [DayCamera] | [];
-  // lens は今後増減が予想されるので open enum
-  lens?: [string] | [];
-  featured?: boolean;
 };
 
 export type Day = DayFields & MicroCMSContentId & EchologDate;
