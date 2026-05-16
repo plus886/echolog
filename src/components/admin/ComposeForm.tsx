@@ -8,12 +8,9 @@ import { evaluateTweetText } from "@/lib/tweet-text";
 import { extractFirstUrl } from "@/lib/url-detect";
 import type { TweetReference } from "@/types/microcms";
 
-// 旧 components/admin/ComposeForm.tsx の Astro 移植。
-//
-// 旧版は React 19 の useActionState + Next.js Server Actions だった。
-// Astro Actions には useActionState 等価がないため、本実装は
-// useTransition + 自前 state で同等の UX を組む。actions.publishTweet
-// (form input 受け) を呼び、{ data, error } を受け取って分岐。
+// Astro Actions には useActionState 等価がないため、useTransition + 自前
+// state で同等の UX を組む。actions.publishTweet (form input 受け) を呼び、
+// { data, error } を受け取って分岐。
 
 export type ComposeMode =
   | { kind: "new" }

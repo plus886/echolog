@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 
 import type { OgpData } from "@/lib/og-parse";
 
-// 旧 components/admin/LinkPreview.tsx の Astro 移植 (実装同一)。
-// API 呼び出しは /api/og-preview のままで OK (phase 3 で同 path を移植済)。
+// 本文中の URL の OGP プレビューを /api/og-preview から取得して表示する。
 
 const DEBOUNCE_MS = 600;
 

@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 
-// Astro Island。旧 app/(public)/scroll-reveal.tsx の移植。"use client"
-// ディレクティブのみ削除、ロジックは framework agnostic で完全同一。
+// Astro Island。
 //
 // [data-reveal] 要素を IntersectionObserver で監視し、初めて viewport
 // に入ったタイミングで `.is-revealed` を付与 (CSS 側 portfolio.css の

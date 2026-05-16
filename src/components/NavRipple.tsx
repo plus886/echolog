@@ -1,9 +1,5 @@
 import type { FocusEvent, MouseEvent } from "react";
 
-// Astro 移植版。旧 app/(public)/nav-ripple.tsx と機能同一。
-// "use client" ディレクティブのみ削除 (Astro は呼び出し側 .astro 上で
-// `client:*` を指定する)。
-//
 // Nav・KO KAIJI ワードマークで共有する per-character opacity ripple。
 // label の各文字を .k-nav-char で包み、mouseenter / focus 時に
 // cursor の x 座標との距離に応じた --ripple-delay を仕込んで

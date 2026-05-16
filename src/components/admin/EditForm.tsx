@@ -4,10 +4,8 @@ import { useState, useTransition } from "react";
 import { CharCounter } from "@/components/admin/CharCounter";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
-// 旧 components/admin/EditForm.tsx の Astro 移植。
-// updateTweet は redirect を旧版で行っていたが、Astro Action は redirect
-// 機能を持たないので action 成功後に window.location.href で /admin に
-// 戻す。
+// updateTweet は Astro Action に redirect 機能が無いため、成功後に
+// window.location.href で /admin に戻す。
 
 type Props = {
   id: string;

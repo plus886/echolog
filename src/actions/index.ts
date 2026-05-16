@@ -11,19 +11,6 @@ import {
 } from "@/lib/microcms-management";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
-// 旧 app/(admin)/admin/_actions.ts の Astro Actions 移植。
-//
-// Next.js Server Actions ↔ Astro Actions の対応:
-//   `"use server"` + export async function → defineAction({ accept, input, handler })
-//   `redirect()` (next/navigation)        → action returns { id }、page 側で
-//                                            Astro.getActionResult() を見て
-//                                            Astro.redirect() するか、Island
-//                                            側で手動で window.location 切替
-//   throw new Error()                     → throw new ActionError({ code, message })
-//   `useActionState(action)`              → React Island 側で
-//                                            actions.publishTweet(formData) を
-//                                            useTransition + 自前 state で受ける
-//
 // `accept: "form"` 経由の入力は Astro が FormData → zod を自動でやってくれる。
 // 但し空 string ("") は undefined にはならない (.optional() の挙動)。空白
 // trim + フォールバックは handler 内で行う。

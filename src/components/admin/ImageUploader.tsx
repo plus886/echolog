@@ -3,13 +3,7 @@ import { useRef, useState } from "react";
 import { MAX_IMAGES } from "@/lib/constants";
 
 // ComposeForm 内で使う image アップロード UI。Island 境界の内側なので
-// 親 (ComposeForm) と一緒に hydrate される。
-//
-// Astro 移植版。差分:
-//  - next/image → 素の <img> (R2 配信なら img src で十分。Astro の
-//    astro:assets は build-time 変換のため動的 microCMS URL では使えない)
-//  - "use client" 削除 (Astro 規約)
-//  - その他、fetch("/api/uploads") 経由の挙動は同一
+// 親 (ComposeForm) と一緒に hydrate される。/api/uploads に POST する。
 
 type Props = {
   value: { url: string }[];

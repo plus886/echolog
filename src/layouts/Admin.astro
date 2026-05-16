@@ -6,9 +6,8 @@ import Base from "@/layouts/Base.astro";
 // portfolio-nav 等の演出 chrome は admin では使わないため Public.astro
 // は使わず、Base + 自前の最小ヘッダで構成する。
 //
-// 旧 app/(admin)/admin/layout.tsx の Astro 移植。
-// 旧 next/headers でのユーザ email / bypass 判定は Astro では
-// middleware が Astro.locals.user に詰めた値を受け取って描画する。
+// ユーザの email / bypass 判定は middleware が Astro.locals.user に詰めた
+// 値を受け取って描画する。
 
 interface Props {
   title?: string;

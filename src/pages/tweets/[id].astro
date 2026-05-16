@@ -9,18 +9,9 @@ import { getTweet, listThreadReplies } from "@/lib/microcms";
 import { hashStringToSeed } from "@/lib/prng";
 import { getRetweetKind, type Tweet } from "@/types/microcms";
 
-// 旧 app/(public)/tweets/[id]/page.tsx の Astro 移植。
-// 移植ポイント:
-//  - Next.js の async params (`Promise<{ id: string }>`) は Astro では
-//    同期で `Astro.params` から取れる。
-//  - notFound() は `new Response(null, { status: 404 })` で同等。
-//  - generateMetadata() は <head> に直接書く方針 (Base layout に title
-//    を渡す形)。
-//  - Next.js の `revalidate = 3600` (ISR) は HTTP cache header に置換。
-//  - QuoteImages は client:only="react" で SSR をスキップ。`flushSync`
-//    (react-dom) の import が SSR 段階で問題を起こすため、かつ View
-//    Transitions API の morph はもとより client-side 専用なので妥当。
-//  - parent / retweetOf / 本文 / 返信 のセクション構成は不変。
+// QuoteImages は client:only="react" で SSR をスキップする — flushSync
+// (react-dom) の import が SSR 段階で問題を起こすため、かつ View
+// Transitions API の morph はもとより client-side 専用なので妥当。
 
 export const prerender = false;
 

@@ -1,9 +1,6 @@
 // microCMS の signed webhook を検証して raw body を返す共通ヘルパー。
 // /api/revalidate (echolog tweets) と /api/revalidate/days (formosa days)
 // で同じ仕組み。
-//
-// Astro 移植版。旧 lib/webhook.ts (NextResponse 使用) を Response 直構築に
-// 切替。ロジックは同一。
 
 import { json } from "@/lib/http";
 

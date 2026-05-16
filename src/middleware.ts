@@ -6,9 +6,9 @@ import {
   verifyAccess,
 } from "@/lib/access";
 
-// 旧 middleware.ts (Next.js) からの移植。役割は認証パスのゲートのみ。
-// env の調達は cloudflare:workers から module-level import で完結する
-// (lib/env.ts 参照) ため、ここで AsyncLocalStorage 等の plumbing は不要。
+// 認証が要るパスのゲートのみを担う。env は cloudflare:workers からの
+// module-level import で完結する (lib/env.ts) ため、AsyncLocalStorage 等の
+// plumbing は不要。
 //
 // 旧 matcher: ["/admin", "/admin/:path*", "/api/og-preview", "/api/uploads"]
 function requiresAuth(pathname: string): boolean {

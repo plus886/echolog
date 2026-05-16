@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 
-// Astro Island。旧 app/(public)/scroll-wordmark.tsx の移植 + hydration
-// race の修正。
+// Astro Island。
 //
 // 役割: hero の .k-wordmark が nav 線まで上ってきたタイミングで .k-shell
 // に .is-scrolled を付与。CSS 側 (portfolio.css) で hero wordmark を hide

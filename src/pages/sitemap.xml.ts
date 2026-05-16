@@ -3,10 +3,6 @@ import type { APIRoute } from "astro";
 import { getEnv } from "@/lib/env";
 import { listTweets } from "@/lib/microcms";
 
-// 旧 app/sitemap.ts の Astro 移植。Next.js の MetadataRoute.Sitemap が
-// JSON DSL でフォーマットを自動生成するのに対し、Astro では生 XML を
-// 自前で組み立てる。
-
 export const prerender = false;
 
 const SITEMAP_LIMIT = 100;

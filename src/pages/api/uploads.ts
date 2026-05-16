@@ -3,7 +3,6 @@ import type { APIRoute } from "astro";
 import { json } from "@/lib/http";
 import { uploadMedia } from "@/lib/microcms-management";
 
-// 旧 app/api/uploads/route.ts の Astro 移植。
 // 認証は middleware が /api/uploads を Cloudflare Access JWT で gate。
 
 export const prerender = false;

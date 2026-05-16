@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-// Astro Island。旧 app/(public)/gallery-parallax.tsx の移植 + 拡張。
+// Astro Island。
 //
 // 「parallax を発動するか」は呼び出し側 (markup) が `data-parallax` 属性で
 // opt in する。本コンポーネントは属性付き要素を全 query して、各々に

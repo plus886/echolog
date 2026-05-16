@@ -1,14 +1,11 @@
 import { useIsoLayoutEffect } from "@/lib/use-iso-layout-effect";
 
-// Astro Island。旧 app/(public)/nav-state.tsx の移植。
+// Astro Island。
 //
-// 旧版は usePathname() (next/navigation) で reactive に pathname を購読し、
-// SPA 風遷移でも追従できた。Astro phase 3 段階では <ClientRouter /> を
-// まだ入れていないため、毎回 full page navigation で本コンポーネントは
-// 新規 mount される。よって useIsoLayoutEffect の依存は [] で十分で、
-// mount 時に 1 度だけ window.location.pathname を読めば足りる。
-// (phase 5 で <ClientRouter /> を入れたときは astro:after-swap イベント
-// を listen して再評価するパターンに切り替える想定。)
+// 毎回 full page navigation で本コンポーネントは新規 mount されるため、
+// useIsoLayoutEffect の依存は [] で十分 — mount 時に 1 度だけ
+// window.location.pathname を読めば足りる。(phase 5 で <ClientRouter /> を
+// 入れたら astro:after-swap を listen して再評価する想定。)
 //
 // 役割: pathname に応じて .k-shell の .is-scrolled を管理する。
 //  - "/" (home): ScrollWordmark と ScrollMemory に任せて何もしない。

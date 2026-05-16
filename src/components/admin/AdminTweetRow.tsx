@@ -4,18 +4,12 @@ import { useState, useTransition } from "react";
 import { formatPortfolioTimestamp } from "@/lib/format";
 import type { AdminTweet } from "@/types/microcms";
 
-// 旧 components/admin/AdminTweetRow.tsx の Astro 移植。
-//
-// 主な差分:
-//  - retweetedTargetIds: 旧版は Set<string>。Astro は Island prop を
-//    JSON serialize するため Set はそのまま渡せない。string[] にして
-//    Array.includes() で判定。
-//  - delete: 旧版は <form action={deleteTweetAction}> + 自動 redirect。
-//    Astro Action は redirect 機能が無いので、ボタン onClick で
-//    actions.deleteTweet(formData) → 成功時 location.reload() で
-//    list を更新する。
-//  - retweet: actions.retweet(formData) → エラーは alert で表示
-//    (旧版同様の UX)。
+// 設計メモ:
+//  - retweetedTargetIds は string[]。Island prop は JSON serialize される
+//    ため Set<string> をそのまま渡せず、Array.includes() で判定する。
+//  - delete: Astro Action は redirect 機能が無いので、ボタン onClick で
+//    actions.deleteTweet(formData) → 成功時 location.reload() で list 更新。
+//  - retweet: actions.retweet(formData) → エラーは alert で表示。
 
 type Props = {
   tweet: AdminTweet;

@@ -3,8 +3,7 @@ import Admin from "@/layouts/Admin.astro";
 import AdminTweetRow from "@/components/admin/AdminTweetRow.tsx";
 import { listAdminTweets } from "@/lib/microcms-management";
 
-// 旧 app/(admin)/admin/drafts/page.tsx の Astro 移植。
-// status=DRAFT で下書きのみ取得。
+// status=DRAFT で下書きのみを一覧する。
 
 export const prerender = false;
 

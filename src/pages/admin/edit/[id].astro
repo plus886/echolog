@@ -3,8 +3,6 @@ import Admin from "@/layouts/Admin.astro";
 import EditForm from "@/components/admin/EditForm.tsx";
 import { getAdminTweet } from "@/lib/microcms-management";
 
-// 旧 app/(admin)/admin/edit/[id]/page.tsx の Astro 移植。
-
 export const prerender = false;
 
 const { id } = Astro.params;

@@ -9,15 +9,11 @@ import type {
   TweetListResponse,
 } from "@/types/microcms";
 
-// Astro 移行ポイント:
-// - 旧版は module-top で createClient していたが、Astro on Cloudflare では
-//   起動時に env が読めないため、関数呼び出し時に getEnv() で取り出して
-//   都度クライアントを作る。クライアント生成は軽量 (ただの設定オブジェクト
-//   保持)。
-// - 旧版の `customRequestInit: { next: { revalidate: 3600 } }` (Next.js ISR
-//   ヒント) は Astro / Cloudflare では無効。キャッシュ戦略は HTTP cache
-//   header を route 側で `Cache-Control` で表現する方針に切替 (フェーズ
-//   3 以降で各ページに実装)。
+// 注意点:
+// - Astro on Cloudflare では起動時に env が読めないため、関数呼び出し時に
+//   getEnv() で取り出して都度クライアントを作る (生成は軽量)。
+// - キャッシュ戦略は各 route の Cache-Control header で表現する
+//   (lib/http.ts の setEdgeCache)。
 
 function getEcholog() {
   const env = getEnv();

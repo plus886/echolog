@@ -2,10 +2,8 @@ import { useEffect, useState } from "react";
 
 import { onRippleEnter, onRippleFocus, RippleLabel } from "./NavRipple";
 
-// Astro Island。旧 app/(public)/portfolio-nav.tsx の移植。
-// 旧版は next/link で navigation していたが、phase 3 段階では素の <a> で
-// full page nav。phase 5 で <ClientRouter /> を入れれば astro:transitions
-// が <a> に soft nav を自動付与する。
+// Astro Island。リンクは素の <a> で full page nav (phase 5 で
+// <ClientRouter /> を入れれば astro:transitions が soft nav を自動付与)。
 //
 // 24-col grid に 5 slot (about / echolog / [center spacer] / works /
 // contact)。880px 未満は (menu)/(close) toggle に collapse して

@@ -4,10 +4,9 @@ import { getEnv } from "@/lib/env";
 import { json } from "@/lib/http";
 import { verifyMicroCMSWebhook } from "@/lib/webhook";
 
-// 旧 app/api/revalidate/route.ts (microCMS tweets webhook) の Astro 移植。
-// HMAC 検証 → payload 解釈 → ack 応答。即時の cache purge は phase 6 で対応。
-// 認証は middleware の matcher 外 (webhook は外部から HMAC で叩くため
-// Cloudflare Access ゲートに含めない設計、旧版と同じ)。
+// microCMS tweets webhook。HMAC 検証 → payload 解釈 → ack 応答。即時の
+// cache purge は phase 6 で対応。認証は middleware の matcher 外 (webhook は
+// 外部から HMAC で叩くため Cloudflare Access ゲートに含めない)。
 
 export const prerender = false;
 

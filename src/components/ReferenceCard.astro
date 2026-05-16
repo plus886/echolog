@@ -1,11 +1,6 @@
 ---
-// 旧 app/(public)/reference-card.tsx (React Server Component) の Astro 移植。
-// 役割は不変: 左罫線 + ラベル + serif 本文の参照ブロック。
-//
-// 旧 React 版は TransitionLink で wrap してクリック遷移を View Transitions
-// API でアニメさせていた。Astro では <ClientRouter /> (フェーズ 5) を
-// layout に入れれば <a> タグの SPA 遷移化が自動的にかかるため、ここでは
-// 素の <a> で済ませる。
+// 左罫線 + ラベル + serif 本文の参照ブロック。クリック遷移は素の <a>
+// (phase 5 で <ClientRouter /> を入れれば SPA 遷移化が自動でかかる)。
 
 interface Props {
   label: string;

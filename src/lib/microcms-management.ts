@@ -11,13 +11,12 @@ import type {
   TweetFields,
 } from "@/types/microcms";
 
-// Astro 移植版。旧 lib/microcms-management.ts と機能同一。差分:
-//  - "server-only" import を削除 (Astro は対応概念なし。本ファイルを
-//    client component から import すると vite が bundle に含めてしまうので
-//    呼び出し側で気をつける = api routes / Astro Actions / SSR pages のみ)。
-//  - cachedClient を関数内 lazy 化 (getEnv() は呼ばれた時に Cloudflare:
-//    workers env が確実に読める前提のため、module top-level で env を読む
-//    のを避ける)。
+// 注意点:
+//  - "server-only" 相当が Astro に無い。本ファイルを client component から
+//    import すると vite が bundle に含めてしまうので、呼び出しは api routes
+//    / Astro Actions / SSR pages からのみにする。
+//  - cachedClient は関数内で lazy 化。getEnv() は呼ばれた時に Cloudflare:
+//    workers env が読める前提のため、module top-level で env を読まない。
 
 const TWEETS_ENDPOINT = "tweets";
 

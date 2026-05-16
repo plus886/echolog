@@ -13,19 +13,6 @@ import { listRootTweets, loadGalleryDays } from "@/lib/microcms";
 import { papers, works } from "@/lib/works";
 import type { Day } from "@/types/microcms";
 
-// 旧 app/(public)/page.tsx の Astro 移植。
-// 移植ポイント:
-//  - Next.js の `revalidate = 3600` (ISR) は Cache-Control に置換。
-//  - <TransitionLink> / <Link> はすべて素の <a> に。phase 5 で
-//    <ClientRouter /> を入れれば soft nav + View Transitions が <a> に
-//    自動適用される。
-//  - WordmarkLink (hero 内) は React Island として client:load。
-//  - ScrollReveal / ScrollWordmark / GalleryParallax / ScrollMemory は
-//    page bottom にまとめて mount (旧構造と同じ)。
-//  - React の `style={{...} as React.CSSProperties}` は Astro でも object
-//    形式で渡せるが、レイアウト数値は明示的に px 文字列にする (Astro は
-//    React のような自動 px 付与をしないため)。
-
 export const prerender = false;
 
 let days: Day[] = [];

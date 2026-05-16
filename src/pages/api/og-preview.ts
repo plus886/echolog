@@ -4,11 +4,8 @@ import { json } from "@/lib/http";
 import { parseOgp } from "@/lib/og-parse";
 import { isPublicHttpUrl } from "@/lib/url-detect";
 
-// 旧 app/api/og-preview/route.ts の Astro 移植。
 // 認証は middleware が /api/og-preview を Cloudflare Access JWT で gate。
-// 旧版の `next: { revalidate: 86400 }` (Next.js fetch cache) は Astro
-// では無効。代替に Cache-Control header を Response に付けて edge cache
-// に乗せる。
+// 結果は Response の Cache-Control header で edge cache に乗せる。
 
 export const prerender = false;
 

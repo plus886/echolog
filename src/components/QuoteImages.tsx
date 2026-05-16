@@ -8,18 +8,13 @@ import {
   type ViewTransitionDocument,
 } from "@/lib/view-transition";
 
-// Astro Island。旧 app/(public)/tweets/[id]/quote-images.tsx (Next.js
-// "use client" component) からの移植 → tweet 詳細用 jitter scatter に拡張。
+// Astro Island。tweet 詳細の画像を `.k-pos` + 決定論的 jitter で散らす。
+// slot 計算は呼び出し側 (tweets/[id].astro) で generateQuoteImagesLayout(
+// images, hashStringToSeed(tweet.id)) として実行し、結果を props で受け取る。
+// QuoteImages 自体は client:only なので、計算結果は SSR フェーズで決まり
+// client mount 後に同じ slot が再現される。
 //
-// 旧実装: 96x96 thumbnail を flex-wrap で並べるだけ。
-// 現実装: Home gallery と同じ `.k-pos` + 決定論的 jitter 配置。slot 計算は
-//   呼び出し側 (tweets/[id].astro) で `generateQuoteImagesLayout(images,
-//   hashStringToSeed(tweet.id))` として実行し、結果を props で受け取る。
-//   QuoteImages 自体は client:only なので、計算結果は SSR フェーズで決まり
-//   client mount 後に同じ slot が再現される。
-//
-// View Transitions API でサムネ ↔ overlay を直接 morph させるロジックは
-// 旧実装と同じ。サムネのサイズ/位置が違うだけで qimg-N の対応関係は不変。
+// View Transitions API でサムネ ↔ overlay を直接 morph させる (qimg-N)。
 
 type ImageEntry = {
   url: string;

@@ -2,10 +2,6 @@ import type { APIRoute } from "astro";
 
 import { getEnv } from "@/lib/env";
 
-// 旧 app/robots.ts の Astro 移植。Next.js の MetadataRoute.Robots が
-// JSON 形式の DSL なのに対し、Astro は素朴に robots.txt のテキストを
-// Response として返す形が一般的。
-
 export const prerender = false;
 
 export const GET: APIRoute = () => {
