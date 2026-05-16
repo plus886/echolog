@@ -16,10 +16,6 @@
 ::view-transition-group(qimg-1),
 ::view-transition-group(qimg-2),
 ::view-transition-group(qimg-3),
-::view-transition-group(qimg-4),
-::view-transition-group(qimg-5),
-::view-transition-group(qimg-6),
-::view-transition-group(qimg-7),
 ::view-transition-group(qimg-overlay),
 ::view-transition-group(gimg-active),
 ::view-transition-group(gimg-overlay),
@@ -31,14 +27,6 @@
 ::view-transition-new(qimg-2),
 ::view-transition-old(qimg-3),
 ::view-transition-new(qimg-3),
-::view-transition-old(qimg-4),
-::view-transition-new(qimg-4),
-::view-transition-old(qimg-5),
-::view-transition-new(qimg-5),
-::view-transition-old(qimg-6),
-::view-transition-new(qimg-6),
-::view-transition-old(qimg-7),
-::view-transition-new(qimg-7),
 ::view-transition-old(qimg-overlay),
 ::view-transition-new(qimg-overlay),
 ::view-transition-old(gimg-active),
@@ -63,10 +51,6 @@
 ::view-transition-group(qimg-1),
 ::view-transition-group(qimg-2),
 ::view-transition-group(qimg-3),
-::view-transition-group(qimg-4),
-::view-transition-group(qimg-5),
-::view-transition-group(qimg-6),
-::view-transition-group(qimg-7),
 ::view-transition-group(gimg-active) {
   z-index: 2;
 }
@@ -167,50 +151,17 @@ html.lenis body {
 .k-shell .col-2 {
   width: calc(2 / 24 * 100%);
 }
-.k-shell .col-3 {
-  width: calc(3 / 24 * 100%);
-}
-.k-shell .col-4 {
-  width: calc(4 / 24 * 100%);
-}
 .k-shell .col-5 {
   width: calc(5 / 24 * 100%);
 }
-.k-shell .col-6 {
-  width: calc(6 / 24 * 100%);
-}
-.k-shell .col-8 {
-  width: calc(8 / 24 * 100%);
-}
-.k-shell .col-20 {
-  width: calc(20 / 24 * 100%);
-}
-.k-shell .ml-col-1 {
-  margin-left: calc(1 / 24 * 100%);
-}
 .k-shell .ml-col-2 {
   margin-left: calc(2 / 24 * 100%);
-}
-.k-shell .ml-col-8 {
-  margin-left: calc(8 / 24 * 100%);
-}
-.k-shell .mr-col-1 {
-  margin-right: calc(1 / 24 * 100%);
-}
-.k-shell .mr-col-2 {
-  margin-right: calc(2 / 24 * 100%);
-}
-.k-shell .mr-col-8 {
-  margin-right: calc(8 / 24 * 100%);
 }
 .k-shell .px-col-1 {
   padding-inline: calc(1 / 24 * 100%);
 }
 .k-shell .px-col-2 {
   padding-inline: calc(2 / 24 * 100%);
-}
-.k-shell .right-col-2 {
-  right: calc(2 / 24 * 100%);
 }
 
 /* ─── Mini label */
@@ -220,10 +171,6 @@ html.lenis body {
   letter-spacing: 0.16em;
   color: var(--ink-50);
 }
-
-/* Below: home / nav 関連 CSS は home page 移植 (フェーズ 3 後半) で使う。
-   tweet 詳細だけ動かす段階では参照されないが、追加コストはほぼ無いので
-   そのまま含めておく。 */
 
 /* ─── Scroll-cue keyframes + utility */
 @keyframes k-scroll-cue-pulse {
@@ -291,19 +238,6 @@ html.lenis body {
   50% {
     opacity: 0.2;
   }
-}
-
-/* Accessible label kept in DOM but hidden from layout */
-.k-shell .visually-hidden {
-  position: absolute !important;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
 }
 
 /* ─── Reveal-on-scroll */
