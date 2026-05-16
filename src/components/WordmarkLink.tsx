@@ -1,5 +1,7 @@
 import { type CSSProperties, type MouseEvent } from "react";
 
+import { HOME_SCROLL_KEY } from "@/lib/constants";
+
 import { onRippleEnter, onRippleFocus, RippleLabel } from "./nav-ripple";
 
 // Astro Island。旧 app/(public)/wordmark-link.tsx の移植。
@@ -25,7 +27,6 @@ import { onRippleEnter, onRippleFocus, RippleLabel } from "./nav-ripple";
 //   ため、RippleLabel が `[...children]` で spread した瞬間に
 //   "children is not iterable" で落ちる。文字列のまま受けたい識字情報
 //   は children を使わず明示的に label prop として受ける。
-const SCROLL_KEY = "k-home-scroll-y";
 
 export function WordmarkLink({
   label,
@@ -50,7 +51,7 @@ export function WordmarkLink({
 
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
     try {
-      sessionStorage.removeItem(SCROLL_KEY);
+      sessionStorage.removeItem(HOME_SCROLL_KEY);
     } catch {
       // sessionStorage がない / quota 等は無視
     }

@@ -1,8 +1,7 @@
 import { useEffect } from "react";
 
+import { HOME_SCROLL_KEY } from "@/lib/constants";
 import { useIsoLayoutEffect } from "@/lib/use-iso-layout-effect";
-
-const KEY = "k-home-scroll-y";
 
 // Astro Island。旧 app/(public)/scroll-memory.tsx の移植 (内容同一)。
 //
@@ -25,7 +24,7 @@ export function ScrollMemory() {
     const isReload = nav?.type === "reload";
     if (isReload) return;
 
-    const saved = sessionStorage.getItem(KEY);
+    const saved = sessionStorage.getItem(HOME_SCROLL_KEY);
     if (!saved) return;
     const y = parseInt(saved, 10);
     if (!Number.isFinite(y) || y <= 0) return;
@@ -49,7 +48,7 @@ export function ScrollMemory() {
     const onScroll = () => {
       if (rafId !== null) return;
       rafId = requestAnimationFrame(() => {
-        sessionStorage.setItem(KEY, String(window.scrollY));
+        sessionStorage.setItem(HOME_SCROLL_KEY, String(window.scrollY));
         rafId = null;
       });
     };
