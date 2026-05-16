@@ -3,11 +3,9 @@ import Public from "@/layouts/Public.astro";
 import QuoteImages from "@/components/QuoteImages.tsx";
 import ReferenceCard from "@/components/ReferenceCard.astro";
 import { formatPortfolioTimestamp } from "@/lib/format";
-import {
-  generateQuoteImagesLayout,
-  hashStringToSeed,
-} from "@/lib/gallery-layout";
+import { generateQuoteImagesLayout } from "@/lib/gallery-layout";
 import { getTweet, listThreadReplies } from "@/lib/microcms";
+import { hashStringToSeed } from "@/lib/prng";
 import { getRetweetKind, type Tweet } from "@/types/microcms";
 
 // 旧 app/(public)/tweets/[id]/page.tsx の Astro 移植。

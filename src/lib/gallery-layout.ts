@@ -1,15 +1,4 @@
-// mulberry32 PRNG (https://github.com/bryc/code/blob/master/jshash/PRNGs.md)
-// gallery-compose 側でも seed 固定の決定論的乱数として使うので export している。
-export function mulberry32(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { mulberry32 } from "@/lib/prng";
 
 export type Slot = {
   // 理想 (clamp 前) の center % 値。runtime に CSS clamp() で左右端余白を
@@ -302,13 +291,4 @@ export function generateQuoteImagesLayout(
   }
 
   return { slots, totalHeight: Math.round(maxBottom + QI_BOTTOM_MARGIN) };
-}
-
-// djb2-xor 風の決定論的文字列ハッシュ。tweet id を seed に変換する用。
-export function hashStringToSeed(s: string): number {
-  let h = 5381;
-  for (let i = 0; i < s.length; i++) {
-    h = (((h << 5) + h) ^ s.charCodeAt(i)) >>> 0;
-  }
-  return h >>> 0;
 }

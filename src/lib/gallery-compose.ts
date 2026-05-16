@@ -1,4 +1,4 @@
-import { mulberry32 } from "@/lib/gallery-layout";
+import { mulberry32 } from "@/lib/prng";
 import type { Day } from "@/types/microcms";
 
 export type GalleryQuote = { id: string; text: string };
