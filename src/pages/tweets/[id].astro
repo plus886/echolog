@@ -4,6 +4,7 @@ import QuoteImages from "@/components/QuoteImages.tsx";
 import ReferenceCard from "@/components/ReferenceCard.astro";
 import { formatPortfolioTimestamp } from "@/lib/format";
 import { generateQuoteImagesLayout } from "@/lib/gallery-layout";
+import { setEdgeCache } from "@/lib/http";
 import { getTweet, listThreadReplies } from "@/lib/microcms";
 import { hashStringToSeed } from "@/lib/prng";
 import { getRetweetKind, type Tweet } from "@/types/microcms";
@@ -53,13 +54,7 @@ const imageLayout =
     ? generateQuoteImagesLayout(images, hashStringToSeed(id))
     : { slots: [], totalHeight: 0 };
 
-// 旧 Next.js の `revalidate = 3600` 相当を CDN cache header で表現。
-// `s-maxage=3600` で Cloudflare edge に 1 時間 cache、
-// `stale-while-revalidate=86400` で 1 日間古い HTML を返しつつ裏で更新。
-Astro.response.headers.set(
-  "Cache-Control",
-  "public, s-maxage=3600, stale-while-revalidate=86400",
-);
+setEdgeCache(Astro.response);
 ---
 
 <Public title="Quote" description={tweet.body?.slice(0, 120)} ogType="article">

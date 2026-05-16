@@ -1,6 +1,7 @@
 ---
 import Public from "@/layouts/Public.astro";
 import ScrollReveal from "@/components/ScrollReveal.tsx";
+import { setEdgeCache } from "@/lib/http";
 import { getWork, type WorkCat } from "@/lib/works";
 
 // (works) detail page。Home の thumbnail grid から /works/[id] で遷移。
@@ -33,10 +34,7 @@ const CATEGORY_LABEL: Record<WorkCat, string> = {
 };
 const refHost = new URL(work.url).hostname.replace(/^www\./, "");
 
-Astro.response.headers.set(
-  "Cache-Control",
-  "public, s-maxage=3600, stale-while-revalidate=86400",
-);
+setEdgeCache(Astro.response);
 ---
 
 <Public title={work.title} description={work.description.slice(0, 120)}>

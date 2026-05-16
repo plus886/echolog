@@ -8,6 +8,7 @@ import ScrollWordmark from "@/components/ScrollWordmark.tsx";
 import WordmarkLink from "@/components/WordmarkLink.tsx";
 import { composeGalleryItems, type GalleryQuote } from "@/lib/gallery-compose";
 import { generateGalleryLayout, type LayoutItem } from "@/lib/gallery-layout";
+import { setEdgeCache } from "@/lib/http";
 import { listRootTweets, loadGalleryDays } from "@/lib/microcms";
 import { papers, works } from "@/lib/works";
 import type { Day } from "@/types/microcms";
@@ -67,10 +68,7 @@ const { slots, totalHeight } = generateGalleryLayout(layoutItems);
 // (works) section の thumbnail データは @/lib/works に集約。Home の
 // thumbnail grid と /works/[id] detail page で共有する。
 
-Astro.response.headers.set(
-  "Cache-Control",
-  "public, s-maxage=3600, stale-while-revalidate=86400",
-);
+setEdgeCache(Astro.response);
 ---
 
 <Public>
