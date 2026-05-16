@@ -2,6 +2,12 @@ import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
+import { useScrollLock } from "@/lib/use-scroll-lock";
+import {
+  supportsViewTransition,
+  type ViewTransitionDocument,
+} from "@/lib/view-transition";
+
 // Astro Island。旧 app/(public)/tweets/[id]/quote-images.tsx (Next.js
 // "use client" component) からの移植 → tweet 詳細用 jitter scatter に拡張。
 //
@@ -28,12 +34,6 @@ type Slot = {
   h: number;
 };
 
-type ViewTransitionDocument = Document & {
-  startViewTransition?: (cb: () => void | Promise<void>) => {
-    finished?: Promise<void>;
-  };
-};
-
 export function QuoteImages({
   images,
   slots,
@@ -47,13 +47,11 @@ export function QuoteImages({
   const [morphIdx, setMorphIdx] = useState<number | null>(null);
   const isAnimatingRef = useRef(false);
 
-  const supportsVT = (): boolean =>
-    typeof (document as ViewTransitionDocument).startViewTransition ===
-    "function";
+  useScrollLock(openIdx !== null);
 
   const open = useCallback((i: number) => {
     if (isAnimatingRef.current) return;
-    if (!supportsVT()) {
+    if (!supportsViewTransition()) {
       setOpenIdx(i);
       return;
     }
@@ -72,7 +70,7 @@ export function QuoteImages({
 
   const close = useCallback(() => {
     if (isAnimatingRef.current) return;
-    if (!supportsVT()) {
+    if (!supportsViewTransition()) {
       setOpenIdx(null);
       setMorphIdx(null);
       return;
@@ -95,33 +93,14 @@ export function QuoteImages({
     t.finished?.then(cleanup).catch(cleanup);
   }, [openIdx]);
 
+  // Escape で閉じる。背景スクロールのロックは useScrollLock が担当。
   useEffect(() => {
     if (openIdx === null) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     };
     document.addEventListener("keydown", onKey);
-    // Lenis が走っている時は Lenis に停止指示。`.lenis-stopped` が <html>
-    // に付き、portfolio.css の overflow: clip で背景スクロールが止まる。
-    // Lenis 未マウント (reduced-motion) 時は従来通り body の overflow で
-    // ロック。Lenis と body.style.overflow を併用すると Lenis 内部の
-    // wheel handling と競合するので、必ずどちらか一方だけにする。
-    const lenis = window.__lenis;
-    let prevOverflow = "";
-    if (lenis) {
-      lenis.stop();
-    } else {
-      prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-    }
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      if (lenis) {
-        lenis.start();
-      } else {
-        document.body.style.overflow = prevOverflow;
-      }
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [openIdx, close]);
 
   if (images.length === 0) return null;

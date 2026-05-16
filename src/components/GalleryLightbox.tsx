@@ -2,6 +2,12 @@ import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 
+import { useScrollLock } from "@/lib/use-scroll-lock";
+import {
+  supportsViewTransition,
+  type ViewTransitionDocument,
+} from "@/lib/view-transition";
+
 // Astro Island。トップページ Gallery (index.astro) の写真を click すると
 // 全 photo を横並びにした carousel + lightbox を開く。tweet 詳細で動いている
 // QuoteImages と「単発 morph」だけ共通で、navigation 体験は別物 (本コンポは
@@ -57,12 +63,6 @@ function buildItem(el: HTMLElement): Item | null {
 // id 未設定の item では link を出さない。
 const GALLERY_BASE = "https://photo.kokaiji.tw/days";
 
-type ViewTransitionDocument = Document & {
-  startViewTransition?: (cb: () => void | Promise<void>) => {
-    finished?: Promise<void>;
-  };
-};
-
 // Lenis virtual-scroll callback の payload (型定義は library 側にあるが
 // 直接 import する代わりに最小 shape だけ手書き)。
 type VirtualScrollPayload = { deltaY?: number };
@@ -91,9 +91,7 @@ export function GalleryLightbox() {
   // をブロックする (急発進・連続発火防止)。
   const lastNavigateAtRef = useRef(0);
 
-  const supportsVT = (): boolean =>
-    typeof (document as ViewTransitionDocument).startViewTransition ===
-    "function";
+  useScrollLock(session !== null);
 
   const open = useCallback((el: HTMLElement) => {
     if (isAnimatingRef.current) return;
@@ -111,7 +109,7 @@ export function GalleryLightbox() {
     const currentIdx = items.findIndex((it) => it.el === el);
     if (currentIdx < 0) return;
     const newSession: Session = { items, currentIdx };
-    if (!supportsVT()) {
+    if (!supportsViewTransition()) {
       setSession(newSession);
       return;
     }
@@ -162,7 +160,7 @@ export function GalleryLightbox() {
       }
     }
 
-    if (!supportsVT()) {
+    if (!supportsViewTransition()) {
       setSession(null);
       return;
     }
@@ -229,7 +227,8 @@ export function GalleryLightbox() {
     return () => document.removeEventListener("click", onClick);
   }, [open]);
 
-  // Esc / 矢印キー / scroll lock / wheel-driven carousel navigation。
+  // Esc / 矢印キー / wheel-driven carousel navigation。背景スクロールの
+  // ロックは useScrollLock が担当する。
   // Lenis は stop しても virtual-scroll event は input ベースで fire し続ける
   // ので、その deltaY を accumulate して SNAP_THRESHOLD を超えた瞬間に前後へ
   // navigate する。
@@ -245,13 +244,6 @@ export function GalleryLightbox() {
     document.addEventListener("keydown", onKey);
 
     const lenis = window.__lenis;
-    let prevOverflow = "";
-    if (lenis) {
-      lenis.stop();
-    } else {
-      prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-    }
 
     const tryNavigate = (deltaY: number) => {
       // slide 中はクールダウン: 入力を捨てて accum も 0 にしておく。
@@ -285,11 +277,6 @@ export function GalleryLightbox() {
     return () => {
       detachScroll();
       document.removeEventListener("keydown", onKey);
-      if (lenis) {
-        lenis.start();
-      } else {
-        document.body.style.overflow = prevOverflow;
-      }
     };
   }, [session, close, navigate]);
 
