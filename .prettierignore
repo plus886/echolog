@@ -12,9 +12,6 @@ package-lock.json
 pnpm-lock.yaml
 yarn.lock
 
-# 退役した Next.js コード (現プロジェクトの整形対象外)
-_legacy_nextjs/
-
 # 静的アセット (binary は Prettier が触らないが念のため)
 public/
 
