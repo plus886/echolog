@@ -9,7 +9,7 @@ import WordmarkLink from "@/components/WordmarkLink.tsx";
 import { composeGalleryItems, type GalleryQuote } from "@/lib/gallery-compose";
 import { generateGalleryLayout, type LayoutItem } from "@/lib/gallery-layout";
 import { listRootTweets, loadGalleryDays } from "@/lib/microcms";
-import { works } from "@/lib/works";
+import { papers, works } from "@/lib/works";
 import type { Day } from "@/types/microcms";
 
 // 旧 app/(public)/page.tsx の Astro 移植。
@@ -238,7 +238,7 @@ Astro.response.headers.set(
   >
     <div
       id="works-grid"
-      class="grid grid-cols-3 gap-x-24 gap-y-12 min-[880px]:flex-1 min-[880px]:gap-x-col-1 min-[880px]:gap-y-20"
+      class="grid grid-cols-3 gap-x-24 gap-y-12 transition-opacity duration-[250ms] ease-out min-[880px]:flex-1 min-[880px]:gap-x-col-1 min-[880px]:gap-y-20"
     >
       {
         works.map((work) => (
@@ -246,25 +246,24 @@ Astro.response.headers.set(
             href={`/works/${work.id}`}
             data-cat={work.category}
             data-reveal
-            class="group flex flex-col gap-3 no-underline transition-opacity duration-300 hover:opacity-80"
+            class="group flex flex-col gap-3 no-underline"
           >
             <figure class="m-0">
-              {/* TODO: 画像を public/works/[id].webp 等に移植 */}
+              {/* TODO: 画像を public/works/[id].webp 等に移植。
+                サムネイルは aspect-[3/4] 固定 + object-cover で高さを揃える
+                (元画像の縦横比はトリミングで吸収)。通常は grayscale+sepia の
+                フィルターをかけ、hover でフィルターを外して発色させる。 */}
               <img
                 src={work.src}
                 alt={work.title}
                 loading="lazy"
-                class="block w-full bg-(--paper-2) object-cover opacity-90 [filter:grayscale(45%)_sepia(30%)]"
-                style={`aspect-ratio: ${work.aspect};`}
+                class="block aspect-[3/4] w-full bg-(--paper-2) object-cover opacity-90 [filter:grayscale(85%)_sepia(30%)] transition duration-500 ease-out group-hover:[filter:grayscale(0%)_sepia(0%)]"
               />
             </figure>
             <header class="flex flex-col gap-0.5">
               <p class="m-0 font-serif text-[15px] leading-[1.4] text-(--ink)">
                 {work.title}
               </p>
-              {work.subtitle && (
-                <p class="m-0 text-[11px] text-(--ink-50)">{work.subtitle}</p>
-              )}
               <p class="k-label-mini m-0 mt-1">{work.year}</p>
             </header>
           </a>
@@ -324,14 +323,33 @@ Astro.response.headers.set(
     // (works) filter — data-cat に紐づく thumbnail の visibility を toggle。
     // active filter は <button data-filter="..."> に data-active 属性で印付け、
     // Tailwind の data-[active]:text-(--ink) で色だけ強調する。
+    // 切替時は grid 全体をフェードアウト → 不可視の間に display を差し替え
+    // (reflow のガタつきを隠す) → フェードインする In/Out 演出を入れる。
+    // 連打対策に pending timeout を clearTimeout で畳む。reduced-motion 時は
+    // フェードを省いて即時切替。
     const grid = document.getElementById("works-grid");
     const filterUl = document.getElementById("works-filter");
     if (grid && filterUl) {
+      const FADE_MS = 250;
+      const reduce = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      let pending: number | undefined;
       const apply = (active: string) => {
-        grid.querySelectorAll<HTMLElement>("[data-cat]").forEach((el) => {
-          const cat = el.dataset.cat ?? "";
-          el.style.display = active === "all" || cat === active ? "" : "none";
-        });
+        const swap = () => {
+          grid.querySelectorAll<HTMLElement>("[data-cat]").forEach((el) => {
+            const cat = el.dataset.cat ?? "";
+            el.style.display = active === "all" || cat === active ? "" : "none";
+          });
+          grid.style.opacity = "1";
+        };
+        if (reduce) {
+          swap();
+        } else {
+          grid.style.opacity = "0";
+          clearTimeout(pending);
+          pending = window.setTimeout(swap, FADE_MS);
+        }
         filterUl
           .querySelectorAll<HTMLButtonElement>("[data-filter]")
           .forEach((b) => {
@@ -347,6 +365,27 @@ Astro.response.headers.set(
       });
     }
   </script>
+
+  {/* 発表論文リスト — Works グリッドの下。サムネイル無しのテキストのみ。 */}
+  <section class="ml-col-2 mt-16 mb-8 min-[880px]:mt-24 min-[880px]:mb-24">
+    <p class="k-label-mini m-0 mb-6">papers</p>
+    <ul
+      data-reveal
+      class="m-0 flex list-none flex-col gap-5 p-0 font-serif text-[14px] leading-[1.85] tracking-wide"
+    >
+      {
+        papers.map((paper) => (
+          <li class="m-0">
+            <>
+              <span class="text-(--ink)">{paper.title}</span>
+              <br />
+            </>
+            <span class="text-(--ink-50)">{paper.source}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
 
   {
     /* contact — full-viewport の連絡先セクション。credits footer は

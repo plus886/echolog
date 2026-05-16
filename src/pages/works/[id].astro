@@ -24,8 +24,6 @@ if (!work) {
   return new Response(null, { status: 404 });
 }
 
-const hero = work.gallery[0];
-
 // 右カラムの控えめなメタデータ用。category → 表示ラベル、
 // 外部参考 URL は host だけ抜いて表示する (www. は落とす)。
 const CATEGORY_LABEL: Record<WorkCat, string> = {
@@ -65,7 +63,7 @@ Astro.response.headers.set(
         }
         <figure data-reveal class="group m-0 w-full min-[880px]:mt-[12vh]">
           <img
-            src={hero.src}
+            src={work.src}
             alt={work.title}
             class="block aspect-video w-full bg-(--paper-2) object-cover [filter:grayscale(1)] transition-[filter] delay-[1400ms] duration-[1800ms] ease-out group-[.is-revealed]:[filter:grayscale(0.3)]"
           />
