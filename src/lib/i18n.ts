@@ -87,8 +87,13 @@ const uiJa = {
 
 export type UIKey = keyof typeof uiJa;
 
-// TODO(i18n): 台湾華語訳をここに追記する。未記入のキーは ja を表示。
-const uiZh: Partial<Record<UIKey, string>> = {};
+// 台湾華語訳。未記入のキーは t() が ja にフォールバックする。
+// TODO(i18n): 残りのキーも順次追記する。
+const uiZh: Partial<Record<UIKey, string>> = {
+  "works.cat.text": "寫作",
+  "works.cat.music": "音樂",
+  "works.cat.photo": "攝影",
+};
 
 const ui: Record<Locale, Partial<Record<UIKey, string>>> = {
   ja: uiJa,
