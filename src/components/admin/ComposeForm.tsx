@@ -4,24 +4,32 @@ import { type FormEvent, useMemo, useState, useTransition } from "react";
 import { CharCounter } from "@/components/admin/CharCounter";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { LinkPreview } from "@/components/admin/LinkPreview";
+import { Button } from "@/components/admin/ui";
 import { evaluateTweetText } from "@/lib/tweet-text";
 import { extractFirstUrl } from "@/lib/url-detect";
-import type { TweetReference } from "@/types/microcms";
 
-// Astro Actions には useActionState 等価がないため、useTransition + 自前
-// state で同等の UX を組む。actions.publishTweet (form input 受け) を呼び、
-// { data, error } を受け取って分岐。
+// 投稿フォーム。AdminDashboard 内に置かれ、投稿成功を onPosted で親へ
+// 通知する (親が一覧を再フェッチする)。reply / quote モードは親 (一覧の
+// 行クリック) が mode prop で制御し、onCancelMode で解除する。
+
+export type ComposeTarget = { id: string; body?: string };
 
 export type ComposeMode =
   | { kind: "new" }
-  | { kind: "reply"; target: TweetReference }
-  | { kind: "quote"; target: TweetReference };
+  | { kind: "reply"; target: ComposeTarget }
+  | { kind: "quote"; target: ComposeTarget };
 
 type Props = {
   mode?: ComposeMode;
+  onPosted?: (kind: "publish" | "draft") => void;
+  onCancelMode?: () => void;
 };
 
-export function ComposeForm({ mode = { kind: "new" } }: Props) {
+export function ComposeForm({
+  mode = { kind: "new" },
+  onPosted,
+  onCancelMode,
+}: Props) {
   const [body, setBody] = useState("");
   const [images, setImages] = useState<{ url: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +58,7 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
 
   const handlePublish = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (submitDisabled || noContent) return;
     setError(null);
     const formData = collectFormData();
     startPublish(async () => {
@@ -58,6 +67,7 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
         setError(result.error.message);
       } else {
         reset();
+        onPosted?.("publish");
       }
     });
   };
@@ -72,13 +82,24 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
         setError(result.error.message);
       } else {
         reset();
+        onPosted?.("draft");
       }
     });
   };
 
+  const submitLabel = isPublishing
+    ? "送信中…"
+    : mode.kind === "reply"
+      ? "返信"
+      : mode.kind === "quote"
+        ? "引用"
+        : "投稿";
+
   return (
-    <form onSubmit={handlePublish} className="flex flex-col gap-5">
-      {mode.kind !== "new" && <ModeBanner mode={mode} />}
+    <form onSubmit={handlePublish} className="flex flex-col gap-3">
+      {mode.kind !== "new" && (
+        <ModeBanner mode={mode} onCancel={onCancelMode} />
+      )}
 
       <textarea
         name="body"
@@ -88,15 +109,14 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
           mode.kind === "reply"
             ? "返信を書く"
             : mode.kind === "quote"
-              ? "引用ツイートにコメント"
+              ? "引用にコメントを添える"
               : "いまどうしてる？"
         }
-        rows={6}
+        rows={5}
         autoFocus={mode.kind !== "new"}
-        className="w-full resize-none border-0 bg-(--paper-2) p-5 font-serif text-[18px] leading-[1.85] text-(--ink) placeholder:text-(--ink-50) placeholder:italic focus:outline-none focus:ring-1 focus:ring-(--ink-30)"
+        className="w-full resize-y rounded-md border border-(--ink-15) bg-(--paper) p-3 text-base leading-relaxed text-(--ink) placeholder:text-(--ink-50) focus-visible:border-(--ink-30) focus-visible:ring-2 focus-visible:ring-(--ink-15) focus-visible:outline-none"
         // FontPlus が hydration 前に inline font-family を注入するため、
-        // controlled textarea で attribute mismatch 警告が出る。最終 font は
-        // 意図通りなのでこの要素のみ警告を抑止。
+        // controlled textarea の attribute mismatch 警告をこの要素のみ抑止。
         suppressHydrationWarning
       />
 
@@ -104,56 +124,54 @@ export function ComposeForm({ mode = { kind: "new" } }: Props) {
 
       <LinkPreview url={previewUrl} />
 
-      <div className="flex items-center justify-between gap-4">
+      {error && (
+        <p className="m-0 rounded-md bg-red-50 px-3 py-2 text-[13px] text-red-700">
+          {error}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between gap-3">
         <CharCounter status={status} />
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
             onClick={handleSaveDraft}
             disabled={submitDisabled || noContent}
-            className="border border-(--ink-30) px-5 py-2 text-[11px] uppercase tracking-[0.16em] text-(--ink-70) transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isDraftPending ? "saving…" : "save draft"}
-          </button>
-          <button
-            type="submit"
-            disabled={submitDisabled || noContent}
-            className="bg-(--ink) px-5 py-2 text-[11px] uppercase tracking-[0.16em] text-(--paper) transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {isPublishing
-              ? "posting…"
-              : mode.kind === "reply"
-                ? "reply"
-                : mode.kind === "quote"
-                  ? "quote"
-                  : "publish"}
-          </button>
+            {isDraftPending ? "保存中…" : "下書き保存"}
+          </Button>
+          <Button type="submit" disabled={submitDisabled || noContent}>
+            {submitLabel}
+          </Button>
         </div>
       </div>
-
-      {error && <p className="k-form-error">{error}</p>}
     </form>
   );
 }
 
 function ModeBanner({
   mode,
+  onCancel,
 }: {
   mode: Extract<ComposeMode, { kind: "reply" | "quote" }>;
+  onCancel?: () => void;
 }) {
-  const label = mode.kind === "reply" ? "In reply to" : "Quoting";
+  const label = mode.kind === "reply" ? "返信先" : "引用元";
   return (
-    <div className="border-l border-(--ink-30) pl-5">
+    <div className="rounded-md border border-(--ink-15) bg-(--paper-2) p-3">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="m-0 k-label-mini">{label}</p>
-        <a
-          href="/admin"
-          className="text-[11px] lowercase text-(--ink-50) transition-opacity hover:opacity-60"
+        <span className="text-[11px] font-medium tracking-wide text-(--ink-50) uppercase">
+          {label}
+        </span>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-[13px] text-(--ink-50) transition-opacity hover:opacity-60"
         >
-          cancel
-        </a>
+          解除
+        </button>
       </div>
-      <p className="mt-2 line-clamp-3 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink-70)">
+      <p className="m-0 mt-1.5 line-clamp-3 text-[13px] leading-relaxed whitespace-pre-wrap text-(--ink-70)">
         {mode.target.body || "(本文なし)"}
       </p>
     </div>

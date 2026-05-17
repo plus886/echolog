@@ -1,72 +1,66 @@
 ---
 import Base from "@/layouts/Base.astro";
 
-// Admin chrome は public 側と同じ design token (paper bg、ink、明朝、
-// 24-col grid helper) を Base.astro 経由で共有する。
-// portfolio-nav 等の演出 chrome は admin では使わないため Public.astro
-// は使わず、Base + 自前の最小ヘッダで構成する。
-//
-// ユーザの email / bypass 判定は middleware が Astro.locals.user に詰めた
-// 値を受け取って描画する。
+// admin の shell。公開サイトの装飾は継承せず、実用本位・モバイル
+// ファーストのレイアウトにする。配色は既存の --ink / --paper トークン流用。
+// ユーザの bypass 判定は middleware が Astro.locals.user に詰めた値を使う。
 
 interface Props {
   title?: string;
 }
 const { title } = Astro.props;
 const user = Astro.locals.user;
+const path = Astro.url.pathname;
+
+const navItems = [
+  { href: "/admin", label: "投稿" },
+  { href: "/admin/drafts", label: "下書き" },
+  { href: "/", label: "サイト" },
+];
 ---
 
-{
-  /* noindex: 検索結果に admin route が出ないよう保険 (robots.txt の Disallow に
-    加えて meta も併用) */
-}
+{/* noindex: 検索結果に admin route が出ないよう保険 */}
 <Base title={title ?? "Admin"} noindex>
-  <header class="px-col-1 pt-9 pb-6">
-    <div
-      class="flex items-baseline justify-between gap-6 text-[12px] uppercase tracking-[0.1em]"
-    >
-      <nav class="flex flex-wrap items-baseline gap-x-8 gap-y-2">
-        <a
-          href="/admin"
-          class="font-serif text-[15px] normal-case tracking-[0.02em] italic text-(--ink)"
-        >
-          echolog <span class="not-italic text-(--ink-50)">/ admin</span>
-        </a>
-        <a
-          href="/admin"
-          class="lowercase text-(--ink-70) transition-opacity hover:opacity-60"
-        >
-          compose
-        </a>
-        <a
-          href="/admin/drafts"
-          class="lowercase text-(--ink-70) transition-opacity hover:opacity-60"
-        >
-          drafts
-        </a>
-        <a
-          href="/"
-          class="lowercase text-(--ink-70) transition-opacity hover:opacity-60"
-        >
-          site
-        </a>
-      </nav>
+  <div class="flex min-h-screen flex-col bg-(--paper-2)">
+    <header class="sticky top-0 z-10 border-b border-(--ink-15) bg-(--paper)">
       <div
-        class="flex items-baseline gap-3 text-[11px] normal-case tracking-normal text-(--ink-50)"
+        class="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6"
       >
-        {user?.email && <span>{user.email}</span>}
+        <a
+          href="/admin"
+          class="mr-auto text-[15px] font-semibold tracking-tight text-(--ink) no-underline"
+        >
+          echolog<span class="font-normal text-(--ink-50)"> admin</span>
+        </a>
+        <nav class="flex items-center gap-1 text-sm">
+          {
+            navItems.map((item) => (
+              <a
+                href={item.href}
+                class:list={[
+                  "rounded-md px-2.5 py-1.5 no-underline transition-colors hover:bg-(--paper-2)",
+                  path === item.href
+                    ? "font-medium text-(--ink)"
+                    : "text-(--ink-50)",
+                ]}
+              >
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
         {
           user?.bypassed && (
-            <span class="border border-(--ink-30) px-2 py-0.5 uppercase tracking-[0.1em] italic text-(--ink-70)">
+            <span class="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-700 uppercase">
               bypass
             </span>
           )
         }
       </div>
-    </div>
-    <div class="mt-7 h-px bg-(--ink-15)"></div>
-  </header>
-  <div class="px-col-1 pb-20">
-    <slot />
+    </header>
+
+    <main class="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+      <slot />
+    </main>
   </div>
 </Base>

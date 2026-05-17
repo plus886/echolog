@@ -1,36 +1,70 @@
 import { actions } from "astro:actions";
 import { useState, useTransition } from "react";
 
+import { cx } from "@/components/admin/ui";
 import { formatPortfolioTimestamp } from "@/lib/format";
 import type { AdminTweet } from "@/types/microcms";
 
-// 設計メモ:
-//  - retweetedTargetIds は string[]。Island prop は JSON serialize される
-//    ため Set<string> をそのまま渡せず、Array.includes() で判定する。
-//  - delete: Astro Action は redirect 機能が無いので、ボタン onClick で
-//    actions.deleteTweet(formData) → 成功時 location.reload() で list 更新。
-//  - retweet: actions.retweet(formData) → エラーは alert で表示。
+// 一覧の1行。日本語と台湾華語訳を併記する。投稿の変更 (削除 / RT) は
+// onMutated で親へ通知し、親が一覧を再フェッチする。reply / quote は
+// onReply / onQuote で親 (ComposeForm の mode) へ渡す。
 
 type Props = {
   tweet: AdminTweet;
-  /** 既に retweet 済みの元ツイート ID 配列 (コメントなし RT は重複不可) */
   retweetedTargetIds?: string[];
+  onMutated?: () => void;
+  onReply?: (tweet: AdminTweet) => void;
+  onQuote?: (tweet: AdminTweet) => void;
 };
 
-export function AdminTweetRow({ tweet, retweetedTargetIds = [] }: Props) {
+const actionCls =
+  "rounded px-2 py-1 text-[13px] text-(--ink-70) transition-colors hover:bg-(--paper-2) hover:text-(--ink) disabled:cursor-not-allowed disabled:opacity-40";
+
+function BodyCell({
+  label,
+  text,
+  muted,
+}: {
+  label: string;
+  text?: string;
+  muted?: string;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="m-0 mb-1 text-[10px] font-medium tracking-wide text-(--ink-50) uppercase">
+        {label}
+      </p>
+      {text ? (
+        <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap text-(--ink)">
+          {text}
+        </p>
+      ) : (
+        <p className="m-0 text-sm text-(--ink-50) italic">{muted}</p>
+      )}
+    </div>
+  );
+}
+
+export function AdminTweetRow({
+  tweet,
+  retweetedTargetIds = [],
+  onMutated,
+  onReply,
+  onQuote,
+}: Props) {
   const [isRetweeting, startRetweet] = useTransition();
   const [isDeleting, startDelete] = useTransition();
   const isDraft = !tweet.publishedAt;
   const timestamp = tweet.publishedAt ?? tweet.updatedAt;
   const isRetweet = tweet.retweetType?.[0] === "retweet";
   const alreadyRetweeted = retweetedTargetIds.includes(tweet.id);
-  const [retweetState, setRetweetState] = useState<"idle" | "done">(
-    alreadyRetweeted ? "done" : "idle",
-  );
+  const [retweetDone, setRetweetDone] = useState(alreadyRetweeted);
+  const images = tweet.images ?? [];
+  const hasText = Boolean(tweet.body || tweet.bodyZh);
 
   const handleRetweet = () => {
-    if (retweetState === "done" || isRetweet || isDraft) return;
-    if (!confirm("このツイートを RT しますか？")) return;
+    if (retweetDone || isRetweet || isDraft) return;
+    if (!confirm("このツイートをリツイートしますか？")) return;
     const formData = new FormData();
     formData.set("targetId", tweet.id);
     startRetweet(async () => {
@@ -38,7 +72,8 @@ export function AdminTweetRow({ tweet, retweetedTargetIds = [] }: Props) {
       if (result.error) {
         alert(result.error.message);
       } else {
-        setRetweetState("done");
+        setRetweetDone(true);
+        onMutated?.();
       }
     });
   };
@@ -52,83 +87,108 @@ export function AdminTweetRow({ tweet, retweetedTargetIds = [] }: Props) {
       if (result.error) {
         alert(result.error.message);
       } else {
-        // list を更新するため reload
-        window.location.reload();
+        onMutated?.();
       }
     });
   };
 
   return (
-    <article className="py-5">
-      <p className="m-0 whitespace-pre-wrap font-serif text-[15px] leading-[1.8] text-(--ink)">
-        {isRetweet ? (
-          <span className="k-label-mini not-italic">↻ self retweet</span>
-        ) : (
-          (tweet.body ?? (
-            <span className="italic text-(--ink-50)">(本文なし)</span>
-          ))
+    <article className="rounded-lg border border-(--ink-15) bg-(--paper) p-4">
+      <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
+        {isDraft && (
+          <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-700">
+            下書き
+          </span>
         )}
-      </p>
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] uppercase tracking-[0.12em] text-(--ink-50)">
+        {isRetweet && (
+          <span className="rounded bg-(--paper-2) px-1.5 py-0.5 font-medium text-(--ink-70)">
+            リツイート
+          </span>
+        )}
         {isDraft ? (
-          <span className="border border-(--ink-30) px-2 py-0.5 italic text-(--ink-70)">
-            draft
+          <span className="text-(--ink-50)">
+            {formatPortfolioTimestamp(timestamp)}
           </span>
         ) : (
           <a
             href={`/tweets/${tweet.id}`}
-            className="normal-case tracking-normal transition-opacity hover:opacity-60"
+            className="text-(--ink-50) transition-opacity hover:opacity-60"
           >
             {formatPortfolioTimestamp(timestamp)}
           </a>
         )}
+      </div>
 
+      {isRetweet ? (
+        <p className="m-0 text-sm text-(--ink-50)">↻ コメントなしリツイート</p>
+      ) : hasText ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <BodyCell label="日本語" text={tweet.body} muted="(本文なし)" />
+          <BodyCell label="台湾華語" text={tweet.bodyZh} muted="(未翻訳)" />
+        </div>
+      ) : (
+        <p className="m-0 text-sm text-(--ink-50) italic">(本文なし)</p>
+      )}
+
+      {images.length > 0 && (
+        <ul className="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">
+          {images.map((img) => (
+            <li key={img.url} className="m-0 p-0">
+              <img
+                src={`${img.url}?w=120&h=120&fit=crop`}
+                alt=""
+                loading="lazy"
+                className="h-14 w-14 rounded bg-(--paper-2) object-cover"
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-1 border-t border-(--ink-15) pt-2">
         {!isDraft && !isRetweet && (
           <>
-            <a
-              href={`/admin?mode=reply&target=${tweet.id}`}
-              className="lowercase transition-opacity hover:opacity-60"
-            >
-              reply
-            </a>
-            <a
-              href={`/admin?mode=quote&target=${tweet.id}`}
-              className="lowercase transition-opacity hover:opacity-60"
-            >
-              quote
-            </a>
             <button
               type="button"
+              className={actionCls}
+              onClick={() => onReply?.(tweet)}
+            >
+              返信
+            </button>
+            <button
+              type="button"
+              className={actionCls}
+              onClick={() => onQuote?.(tweet)}
+            >
+              引用
+            </button>
+            <button
+              type="button"
+              className={actionCls}
               onClick={handleRetweet}
-              disabled={retweetState === "done" || isRetweeting}
-              className="cursor-pointer lowercase transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
-              title={
-                retweetState === "done" ? "既に RT 済み" : "コメントなし RT"
-              }
+              disabled={retweetDone || isRetweeting}
             >
               {isRetweeting
-                ? "retweeting…"
-                : retweetState === "done"
-                  ? "↻ retweeted"
-                  : "↻ retweet"}
+                ? "RT中…"
+                : retweetDone
+                  ? "↻ RT済み"
+                  : "↻ リツイート"}
             </button>
           </>
         )}
-
-        <a
-          href={`/admin/edit/${tweet.id}`}
-          className="lowercase transition-opacity hover:opacity-60"
-        >
-          edit
+        <a href={`/admin/edit/${tweet.id}`} className={actionCls}>
+          編集
         </a>
         <button
           type="button"
           onClick={handleDelete}
           disabled={isDeleting}
-          className="cursor-pointer italic lowercase tracking-normal text-(--ink-70) transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
+          className={cx(
+            actionCls,
+            "ml-auto text-red-700 hover:bg-red-50 hover:text-red-800",
+          )}
         >
-          {isDeleting ? "deleting…" : "delete"}
+          {isDeleting ? "削除中…" : "削除"}
         </button>
       </div>
     </article>

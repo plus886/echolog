@@ -1,9 +1,9 @@
 ---
 import Admin from "@/layouts/Admin.astro";
-import AdminTweetRow from "@/components/admin/AdminTweetRow.tsx";
+import AdminDashboard from "@/components/admin/AdminDashboard.tsx";
 import { listAdminTweets } from "@/lib/microcms-management";
 
-// status=DRAFT で下書きのみを一覧する。
+// 下書き一覧。AdminDashboard を drafts フィルタ初期値で再利用する。
 
 export const prerender = false;
 
@@ -15,23 +15,9 @@ const { contents } = await listAdminTweets({
 ---
 
 <Admin title="Drafts">
-  <main class="mx-auto mt-6 w-full max-w-[720px]">
-    <h1 class="mb-8 k-label-mini">Drafts</h1>
-
-    {
-      contents.length === 0 ? (
-        <p class="font-serif text-[15px] leading-[1.8] text-(--ink-70) italic">
-          下書きはありません。
-        </p>
-      ) : (
-        <ol class="m-0 flex list-none flex-col p-0">
-          {contents.map((tweet) => (
-            <li class="border-t border-(--ink-15) first:border-t-0">
-              <AdminTweetRow tweet={tweet} client:only="react" />
-            </li>
-          ))}
-        </ol>
-      )
-    }
-  </main>
+  <AdminDashboard
+    initialTweets={contents}
+    initialFilter="drafts"
+    client:only="react"
+  />
 </Admin>

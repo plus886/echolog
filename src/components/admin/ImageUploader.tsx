@@ -2,8 +2,7 @@ import { useRef, useState } from "react";
 
 import { MAX_IMAGES } from "@/lib/constants";
 
-// ComposeForm 内で使う image アップロード UI。Island 境界の内側なので
-// 親 (ComposeForm) と一緒に hydrate される。/api/uploads に POST する。
+// ComposeForm 内で使う image アップロード UI。/api/uploads に POST する。
 
 type Props = {
   value: { url: string }[];
@@ -60,17 +59,13 @@ export function ImageUploader({ value, onChange }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       {value.length > 0 && (
-        <ul
-          className={`m-0 grid list-none gap-2 p-0 ${
-            value.length === 1 ? "grid-cols-1" : "grid-cols-2"
-          }`}
-        >
+        <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0 sm:grid-cols-4">
           {value.map((image, index) => (
             <li
               key={image.url}
-              className="relative aspect-video overflow-hidden bg-(--paper-2)"
+              className="relative aspect-square overflow-hidden rounded-md bg-(--paper-2)"
             >
               <img
                 src={image.url}
@@ -81,9 +76,9 @@ export function ImageUploader({ value, onChange }: Props) {
                 type="button"
                 onClick={() => handleRemove(index)}
                 aria-label="画像を削除"
-                className="absolute right-2 top-2 bg-(--ink)/80 px-2 py-0.5 text-[11px] uppercase tracking-[0.1em] text-(--paper) transition-opacity hover:opacity-80"
+                className="absolute top-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-(--ink)/85 text-base leading-none text-(--paper) transition-opacity hover:opacity-80"
               >
-                remove
+                ×
               </button>
             </li>
           ))}
@@ -102,25 +97,23 @@ export function ImageUploader({ value, onChange }: Props) {
             setDragOver(false);
             void handleFiles(e.dataTransfer.files);
           }}
-          className={`border border-dashed px-4 py-4 text-center text-[12px] ${
+          className={`flex flex-col items-center gap-1 rounded-md border border-dashed px-4 py-5 text-center text-[13px] transition-colors ${
             isDragOver
               ? "border-(--ink-50) bg-(--paper-2)"
-              : "border-(--ink-15) text-(--ink-50)"
+              : "border-(--ink-30)"
           }`}
         >
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={isUploading}
-            className="lowercase tracking-[0.04em] text-(--ink-70) transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
+            className="font-medium text-(--ink-70) transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isUploading
-              ? "uploading…"
-              : `add image (${remaining} of ${MAX_IMAGES} remaining)`}
+              ? "アップロード中…"
+              : `画像を追加（残り ${remaining}/${MAX_IMAGES}）`}
           </button>
-          <span className="ml-3 italic text-(--ink-50)">
-            or drop a file here
-          </span>
+          <span className="text-(--ink-50)">またはここにドロップ</span>
           <input
             ref={inputRef}
             type="file"
@@ -132,7 +125,7 @@ export function ImageUploader({ value, onChange }: Props) {
         </div>
       )}
 
-      {error && <p className="k-form-error">{error}</p>}
+      {error && <p className="m-0 text-[13px] text-red-700">{error}</p>}
     </div>
   );
 }

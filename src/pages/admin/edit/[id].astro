@@ -19,23 +19,25 @@ const isDraft = !tweet.publishedAt;
 ---
 
 <Admin title="Edit">
-  <main class="mx-auto mt-6 w-full max-w-[720px]">
-    <header class="mb-8 flex items-baseline justify-between">
-      <h1 class="k-label-mini">Edit</h1>
+  <div class="flex flex-col gap-4">
+    <div class="flex items-center gap-2">
+      <h1 class="m-0 text-base font-semibold text-(--ink)">投稿を編集</h1>
       {
         isDraft && (
-          <span class="border border-(--ink-30) px-2 py-0.5 text-[11px] uppercase tracking-[0.1em] italic text-(--ink-70)">
-            draft
+          <span class="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
+            下書き
           </span>
         )
       }
-    </header>
-
-    <EditForm
-      id={tweet.id}
-      defaultBody={tweet.body ?? ""}
-      isDraft={isDraft}
-      client:only="react"
-    />
-  </main>
+    </div>
+    <div class="rounded-lg border border-(--ink-15) bg-(--paper) p-4 sm:p-5">
+      <EditForm
+        id={tweet.id}
+        defaultBody={tweet.body ?? ""}
+        defaultBodyZh={tweet.bodyZh ?? ""}
+        isDraft={isDraft}
+        client:only="react"
+      />
+    </div>
+  </div>
 </Admin>

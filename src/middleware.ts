@@ -17,6 +17,7 @@ import { defaultLocale, type Locale } from "@/lib/i18n";
 // 旧 matcher: ["/admin", "/admin/:path*", "/api/og-preview", "/api/uploads"]
 function requiresAuth(pathname: string): boolean {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
+  if (pathname.startsWith("/api/admin/")) return true;
   if (pathname === "/api/og-preview") return true;
   if (pathname === "/api/uploads") return true;
   return false;

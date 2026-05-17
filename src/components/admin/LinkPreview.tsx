@@ -65,15 +65,15 @@ export function LinkPreview({ url }: Props) {
 
   if (state.status === "loading") {
     return (
-      <div className="border-l border-(--ink-15) py-2 pl-4 text-[12px] italic text-(--ink-50)">
-        loading OGP… <span className="opacity-60 not-italic">{url}</span>
+      <div className="rounded-md border border-(--ink-15) px-3 py-2 text-[13px] text-(--ink-50)">
+        リンクプレビューを取得中…
       </div>
     );
   }
   if (state.status === "error") {
     return (
-      <div className="border-l border-(--ink-15) py-2 pl-4 text-[12px] italic text-(--ink-50)">
-        プレビューを取得できませんでした ({state.message})
+      <div className="rounded-md border border-(--ink-15) px-3 py-2 text-[13px] text-(--ink-50)">
+        プレビューを取得できませんでした（{state.message}）
       </div>
     );
   }
@@ -83,24 +83,28 @@ export function LinkPreview({ url }: Props) {
       href={data.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex gap-4 border-l border-(--ink-30) py-2 pl-4 no-underline transition-opacity hover:opacity-70"
+      className="flex gap-3 overflow-hidden rounded-md border border-(--ink-15) no-underline transition-colors hover:bg-(--paper-2)"
     >
       {data.image && (
         <img
           src={data.image}
           alt=""
-          className="h-20 w-32 shrink-0 bg-(--paper-2) object-cover"
+          className="h-20 w-28 shrink-0 bg-(--paper-2) object-cover"
         />
       )}
-      <div className="flex min-w-0 flex-col gap-1">
-        {data.siteName && <p className="m-0 k-label-mini">{data.siteName}</p>}
+      <div className="flex min-w-0 flex-col justify-center gap-0.5 py-2 pr-3">
+        {data.siteName && (
+          <p className="m-0 text-[11px] tracking-wide text-(--ink-50) uppercase">
+            {data.siteName}
+          </p>
+        )}
         {data.title && (
-          <p className="m-0 line-clamp-2 font-serif text-[15px] leading-[1.6] text-(--ink)">
+          <p className="m-0 line-clamp-2 text-sm leading-snug font-medium text-(--ink)">
             {data.title}
           </p>
         )}
         {data.description && (
-          <p className="m-0 line-clamp-2 font-serif text-[13px] leading-[1.7] text-(--ink-70)">
+          <p className="m-0 line-clamp-2 text-[13px] leading-snug text-(--ink-70)">
             {data.description}
           </p>
         )}

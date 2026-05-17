@@ -1,22 +1,18 @@
 import type { TweetTextStatus } from "@/lib/tweet-text";
 
-// ComposeForm / EditForm 内で使う pure な小コンポーネント。Island 境界の
-// 内側に住むので "use client" 不要、独自 client directive も不要。
+// ComposeForm / EditForm 内で使う pure な小コンポーネント。残り文字数表示。
 
 type Props = {
   status: TweetTextStatus;
 };
 
 export function CharCounter({ status }: Props) {
-  const tone =
-    status.isOver || status.isWarning
-      ? "text-(--ink) italic"
+  const tone = status.isOver
+    ? "text-red-700"
+    : status.isWarning
+      ? "text-amber-600"
       : "text-(--ink-50)";
   return (
-    <span
-      className={`tabular-nums font-serif text-[15px] tracking-[0.04em] ${tone}`}
-    >
-      {status.remaining}
-    </span>
+    <span className={`text-sm tabular-nums ${tone}`}>{status.remaining}</span>
   );
 }

@@ -2,18 +2,21 @@ import { actions } from "astro:actions";
 import { useState, useTransition } from "react";
 
 import { CharCounter } from "@/components/admin/CharCounter";
+import { Button } from "@/components/admin/ui";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
-// updateTweet は Astro Action に redirect 機能が無いため、成功後に
-// window.location.href で /admin に戻す。
+// 編集フォーム。日本語本文のみ編集可能。台湾華語訳は編集時に再翻訳され
+// ない仕様なので参考として読み取り専用で表示する。
+// updateTweet は Astro Action に redirect が無いため成功後に /admin へ。
 
 type Props = {
   id: string;
   defaultBody: string;
+  defaultBodyZh: string;
   isDraft: boolean;
 };
 
-export function EditForm({ id, defaultBody, isDraft }: Props) {
+export function EditForm({ id, defaultBody, defaultBodyZh, isDraft }: Props) {
   const [body, setBody] = useState(defaultBody);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -32,53 +35,67 @@ export function EditForm({ id, defaultBody, isDraft }: Props) {
       if (result.error) {
         setError(result.error.message);
       } else {
-        // 旧 next/navigation redirect("/admin") 相当
         window.location.href = "/admin";
       }
     });
   };
 
   return (
-    <div className="flex flex-col gap-5">
-      <textarea
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-        rows={7}
-        className="w-full resize-none border-0 bg-(--paper-2) p-5 font-serif text-[18px] leading-[1.85] text-(--ink) placeholder:text-(--ink-50) placeholder:italic focus:outline-none focus:ring-1 focus:ring-(--ink-30)"
-        suppressHydrationWarning
-      />
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[11px] font-medium tracking-wide text-(--ink-50) uppercase">
+          日本語
+        </span>
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={6}
+          className="w-full resize-y rounded-md border border-(--ink-15) bg-(--paper) p-3 text-base leading-relaxed text-(--ink) focus-visible:border-(--ink-30) focus-visible:ring-2 focus-visible:ring-(--ink-15) focus-visible:outline-none"
+          suppressHydrationWarning
+        />
+      </div>
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[11px] font-medium tracking-wide text-(--ink-50) uppercase">
+          台湾華語訳（参考・編集時は再翻訳されません）
+        </span>
+        <p className="m-0 rounded-md border border-(--ink-15) bg-(--paper-2) p-3 text-sm leading-relaxed whitespace-pre-wrap text-(--ink-70)">
+          {defaultBodyZh || "(未翻訳)"}
+        </p>
+      </div>
+
+      {error && (
+        <p className="m-0 rounded-md bg-red-50 px-3 py-2 text-[13px] text-red-700">
+          {error}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between gap-3">
         <CharCounter status={status} />
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <a
             href="/admin"
-            className="k-label-mini transition-opacity hover:opacity-60"
+            className="rounded-md px-3 py-2 text-sm text-(--ink-50) transition-opacity hover:opacity-60"
           >
-            cancel
+            キャンセル
           </a>
-          <button
-            type="button"
+          <Button
+            variant="outline"
             onClick={() => handleSubmit(false)}
             disabled={submitDisabled}
-            className="border border-(--ink-30) px-5 py-2 text-[11px] uppercase tracking-[0.16em] text-(--ink-70) transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isPending ? "saving…" : "save"}
-          </button>
+            {isPending ? "保存中…" : "保存"}
+          </Button>
           {isDraft && (
-            <button
-              type="button"
+            <Button
               onClick={() => handleSubmit(true)}
               disabled={submitDisabled}
-              className="bg-(--ink) px-5 py-2 text-[11px] uppercase tracking-[0.16em] text-(--paper) transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {isPending ? "publishing…" : "publish"}
-            </button>
+              {isPending ? "公開中…" : "公開"}
+            </Button>
           )}
         </div>
       </div>
-
-      {error && <p className="k-form-error">{error}</p>}
     </div>
   );
 }
