@@ -12,6 +12,12 @@ declare global {
         email: string;
         bypassed: boolean;
       };
+
+      // i18n。middleware が全リクエストで設定する。
+      //  - locale: 表示言語 (URL の /zh 接頭辞から判定)
+      //  - path:   locale 接頭辞を剥がした論理パス (言語切替リンク生成用)
+      locale?: import("@/lib/i18n").Locale;
+      path?: string;
     }
   }
 

@@ -5,6 +5,7 @@ import ReferenceCard from "@/components/ReferenceCard.astro";
 import { formatPortfolioTimestamp } from "@/lib/format";
 import { generateQuoteImagesLayout } from "@/lib/gallery-layout";
 import { setEdgeCache } from "@/lib/http";
+import { defaultLocale, localeUrl, localizedBody, t } from "@/lib/i18n";
 import { getTweet, listThreadReplies } from "@/lib/microcms";
 import { hashStringToSeed } from "@/lib/prng";
 import { getRetweetKind, type Tweet } from "@/types/microcms";
@@ -36,6 +37,16 @@ const replies = repliesRes?.contents ?? [];
 const retweetKind = getRetweetKind(tweet);
 const images = tweet.images ?? [];
 
+// locale 別の本文。zh スキーマ (bodyZh) 未投入なら ja (body) にフォールバック。
+const locale = Astro.locals.locale ?? defaultLocale;
+const body = localizedBody(tweet, locale);
+const parentBody = tweet.parent
+  ? localizedBody(tweet.parent, locale)
+  : undefined;
+const retweetBody = tweet.retweetOf
+  ? localizedBody(tweet.retweetOf, locale)
+  : undefined;
+
 // 画像 scatter のレイアウトを server-side で決定論的に計算する。seed は
 // tweet.id から生成するので、同じ tweet を何度開いても同じ配置に。images
 // の数 / aspect ratio が変われば自然に再配置される。QuoteImages 自体は
@@ -48,35 +59,43 @@ const imageLayout =
 setEdgeCache(Astro.response);
 ---
 
-<Public title="Quote" description={tweet.body?.slice(0, 120)} ogType="article">
+<Public
+  title={t(locale, "tweet.title")}
+  description={body?.slice(0, 120)}
+  ogType="article"
+>
   <article class="mx-auto mt-40 mb-24 w-full max-w-211 px-6 min-[880px]:px-10">
     <div class="w-2/3 mb-20">
       {
-        tweet.parent && tweet.parent.body && (
+        tweet.parent && parentBody && (
           <ReferenceCard
-            label="In reply to"
-            body={tweet.parent.body}
-            href={`/tweets/${tweet.parent.id}`}
+            label={t(locale, "tweet.replyTo")}
+            body={parentBody}
+            href={localeUrl(`/tweets/${tweet.parent.id}`, locale)}
             class="mb-12"
           />
         )
       }
 
       {
-        tweet.body && (
+        body && (
           <p
             class="m-0 whitespace-pre-wrap font-serif text-[20px] leading-[1.75] text-(--ink)"
-            set:text={tweet.body}
+            set:text={body}
           />
         )
       }
 
       {
-        tweet.retweetOf && tweet.retweetOf.body && (
+        tweet.retweetOf && retweetBody && (
           <ReferenceCard
-            label={retweetKind === "quote" ? "Quoting" : "Retweeted"}
-            body={tweet.retweetOf.body}
-            href={`/tweets/${tweet.retweetOf.id}`}
+            label={
+              retweetKind === "quote"
+                ? t(locale, "tweet.quoting")
+                : t(locale, "tweet.retweeted")
+            }
+            body={retweetBody}
+            href={localeUrl(`/tweets/${tweet.retweetOf.id}`, locale)}
             as="blockquote"
             class="mt-10"
           />
@@ -104,40 +123,45 @@ setEdgeCache(Astro.response);
     {
       replies.length > 0 && (
         <section class="mt-24 text-right flex flex-col w-2/3 justify-self-end-safe">
-          <h2 class="mb-8 k-label-mini">({replies.length}) Replies</h2>
+          <h2 class="mb-8 k-label-mini">
+            ({replies.length}) {t(locale, "tweet.replies")}
+          </h2>
           <ol class="m-0 flex list-none flex-col items-end gap-10 p-0">
-            {replies.map((reply) => (
-              <li class="border-(--ink-15)">
-                <a
-                  href={`/tweets/${reply.id}`}
-                  class="block no-underline transition-opacity hover:opacity-60"
-                >
-                  {reply.body && (
-                    <p
-                      class="m-0 whitespace-pre-wrap text-left font-serif text-[15px] leading-[1.8] text-(--ink)"
-                      set:text={reply.body}
-                    />
-                  )}
-                  {reply.images && reply.images.length > 0 && (
-                    <ul class="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">
-                      {reply.images.map((img) => (
-                        <li class="m-0 p-0">
-                          <img
-                            src={`${img.url}?w=96&h=96&fit=crop`}
-                            alt=""
-                            loading="lazy"
-                            class="block h-6 w-6 bg-(--paper-2) object-cover"
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <p class="mt-3 k-label-mini">
-                    {formatPortfolioTimestamp(reply.publishedAt)}
-                  </p>
-                </a>
-              </li>
-            ))}
+            {replies.map((reply) => {
+              const replyBody = localizedBody(reply, locale);
+              return (
+                <li class="border-(--ink-15)">
+                  <a
+                    href={localeUrl(`/tweets/${reply.id}`, locale)}
+                    class="block no-underline transition-opacity hover:opacity-60"
+                  >
+                    {replyBody && (
+                      <p
+                        class="m-0 whitespace-pre-wrap text-left font-serif text-[15px] leading-[1.8] text-(--ink)"
+                        set:text={replyBody}
+                      />
+                    )}
+                    {reply.images && reply.images.length > 0 && (
+                      <ul class="m-0 mt-3 flex list-none flex-wrap gap-2 p-0">
+                        {reply.images.map((img) => (
+                          <li class="m-0 p-0">
+                            <img
+                              src={`${img.url}?w=96&h=96&fit=crop`}
+                              alt=""
+                              loading="lazy"
+                              class="block h-6 w-6 bg-(--paper-2) object-cover"
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <p class="mt-3 k-label-mini">
+                      {formatPortfolioTimestamp(reply.publishedAt)}
+                    </p>
+                  </a>
+                </li>
+              );
+            })}
           </ol>
         </section>
       )
@@ -147,7 +171,7 @@ setEdgeCache(Astro.response);
       class="mt-32 text-[12px] tracking-[0.1em] text-(--ink-50) italic font-serif"
     >
       <a
-        href="/"
+        href={localeUrl("/", locale)}
         class="pb-px no-underline transition-colors hover:text-(--ink)"
       >
         ← (echolog)

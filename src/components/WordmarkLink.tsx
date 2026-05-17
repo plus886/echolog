@@ -1,6 +1,7 @@
 import { type CSSProperties, type MouseEvent } from "react";
 
 import { HOME_SCROLL_KEY } from "@/lib/constants";
+import { defaultLocale, localeUrl, type Locale } from "@/lib/i18n";
 
 import { onRippleEnter, onRippleFocus, RippleLabel } from "./NavRipple";
 
@@ -34,12 +35,14 @@ export function WordmarkLink({
   style,
   "aria-hidden": ariaHidden,
   linkable = true,
+  locale = defaultLocale,
 }: {
   label: string;
   className?: string;
   style?: CSSProperties;
   "aria-hidden"?: boolean | "true" | "false";
   linkable?: boolean;
+  locale?: Locale;
 }) {
   if (!linkable) {
     return (
@@ -49,13 +52,17 @@ export function WordmarkLink({
     );
   }
 
+  // 現 locale のホーム URL。/zh/ の場合 pathname は /zh/。
+  const homeHref = localeUrl("/", locale);
+  const norm = (p: string) => p.replace(/\/$/, "");
+
   const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
     try {
       sessionStorage.removeItem(HOME_SCROLL_KEY);
     } catch {
       // sessionStorage がない / quota 等は無視
     }
-    if (window.location.pathname === "/") {
+    if (norm(window.location.pathname) === norm(homeHref)) {
       e.preventDefault();
       // hash 付き URL (例 /#echolog) から戻る場合、scrollTo だけだと
       // アドレスバーに hash が残るので明示的に hash を落とす。
@@ -79,7 +86,7 @@ export function WordmarkLink({
 
   return (
     <a
-      href="/"
+      href={homeHref}
       className={className}
       style={style}
       aria-hidden={ariaHidden}

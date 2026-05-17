@@ -2,6 +2,15 @@
 import "@/styles/global.css";
 import "@/styles/portfolio.css";
 import { getEnv } from "@/lib/env";
+import {
+  defaultLocale,
+  htmlLang,
+  localeUrl,
+  locales,
+  ogLocale,
+  t,
+  type Locale,
+} from "@/lib/i18n";
 
 // HTML shell + FontPlus loader + .k-shell の design-token スコープを担当
 // する Base レイアウト。
@@ -26,7 +35,6 @@ interface Props {
 }
 
 const SITE_NAME = "echolog";
-const SITE_DESCRIPTION = "echo + log — 自分の発信が積み重なっていく場所";
 const DEFAULT_OG_IMAGE = "/og-default.png";
 
 const {
@@ -37,12 +45,25 @@ const {
   noindex = false,
 } = Astro.props;
 
+// locale / 論理パスは middleware が locals に積む。
+const locale: Locale = Astro.locals.locale ?? defaultLocale;
+const logicalPath = Astro.locals.path ?? Astro.url.pathname;
+
 const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
 const ogTitle = title ?? SITE_NAME;
-const desc = description ?? SITE_DESCRIPTION;
+const desc = description ?? t(locale, "site.description");
 
 const baseUrl = getEnv().PUBLIC_SITE_URL.replace(/\/$/, "");
-const canonical = new URL(Astro.url.pathname, baseUrl).toString();
+// canonical / hreflang は locale 接頭辞込みの絶対 URL で出す。
+const canonical = new URL(localeUrl(logicalPath, locale), baseUrl).toString();
+const alternates = locales.map((loc) => ({
+  hreflang: htmlLang[loc],
+  href: new URL(localeUrl(logicalPath, loc), baseUrl).toString(),
+}));
+const xDefaultHref = new URL(
+  localeUrl(logicalPath, defaultLocale),
+  baseUrl,
+).toString();
 const ogImageUrl = new URL(ogImage ?? DEFAULT_OG_IMAGE, baseUrl).toString();
 
 // FontPlus loader。Next.js では <script src="..." /> をルート layout の
@@ -54,7 +75,7 @@ const FONTPLUS_SRC =
 ---
 
 <!doctype html>
-<html lang="ja">
+<html lang={htmlLang[locale]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
@@ -65,6 +86,14 @@ const FONTPLUS_SRC =
     <meta name="description" content={desc} />
     <link rel="canonical" href={canonical} />
 
+    {/* hreflang — ja / zh 相互 + x-default (ja) */}
+    {
+      alternates.map((alt) => (
+        <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />
+      ))
+    }
+    <link rel="alternate" hreflang="x-default" href={xDefaultHref} />
+
     {noindex && <meta name="robots" content="noindex, nofollow" />}
 
     {/* Open Graph */}
@@ -73,7 +102,7 @@ const FONTPLUS_SRC =
     <meta property="og:title" content={ogTitle} />
     <meta property="og:description" content={desc} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:locale" content={ogLocale[locale]} />
     <meta property="og:image" content={ogImageUrl} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />

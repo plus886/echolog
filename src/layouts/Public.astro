@@ -4,6 +4,13 @@ import NavState from "@/components/NavState.tsx";
 import PortfolioNav from "@/components/PortfolioNav.tsx";
 import SmoothScroll from "@/components/SmoothScroll.tsx";
 import WordmarkLink from "@/components/WordmarkLink.tsx";
+import {
+  defaultLocale,
+  languages,
+  localeUrl,
+  locales,
+  type Locale,
+} from "@/lib/i18n";
 
 // (public) ルート全体の chrome を載せた layout。Base.astro (HTML shell +
 // .k-shell + FontPlus + SEO meta) を内包し、上に PortfolioNav と
@@ -25,15 +32,21 @@ interface Props {
 
 const props = Astro.props;
 const year = new Date().getFullYear();
+
+// locale / 論理パスは middleware が locals に積む。言語切替リンクは
+// 同じ論理パスを各 locale の URL に変換して出す。
+const locale: Locale = Astro.locals.locale ?? defaultLocale;
+const logicalPath = Astro.locals.path ?? Astro.url.pathname;
 ---
 
 <Base {...props}>
   {/* 画面最上部のスクロール進捗インジケーター (CSS scroll-driven) */}
   <div class="k-scroll-progress" aria-hidden="true"></div>
-  <PortfolioNav client:only="react" />
+  <PortfolioNav client:only="react" locale={locale} />
   <WordmarkLink
     client:only="react"
     label="KO KAIJI"
+    locale={locale}
     className="k-wordmark-pin fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light) no-underline"
   />
   <slot />
@@ -63,7 +76,24 @@ const year = new Date().getFullYear();
         <p class="mb-1"><em>© {year} Ko Kaiji.</em></p>
       </div>
       <div class="text-left min-[880px]:text-right">
-        <p class="mb-1">Astro / microCMS / Claude Code</p>
+        <p class="mb-1">
+          {
+            locales.map((loc, i) => (
+              <>
+                {i > 0 && <span class="mx-1.5 text-(--ink-30)">/</span>}
+                {loc === locale ? (
+                  <span class="font-serif text-(--ink)">{languages[loc]}</span>
+                ) : (
+                  <a
+                    href={localeUrl(logicalPath, loc)}
+                    class="font-serif text-(--ink-50) italic transition-colors hover:text-(--ink)"
+                    set:text={languages[loc]}
+                  />
+                )}
+              </>
+            ))
+          }
+        </p>
       </div>
     </div>
   </footer>

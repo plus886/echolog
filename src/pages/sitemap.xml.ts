@@ -1,30 +1,34 @@
 import type { APIRoute } from "astro";
 
 import { getEnv } from "@/lib/env";
+import { localeUrl, locales } from "@/lib/i18n";
 import { listTweets } from "@/lib/microcms";
 
 export const prerender = false;
 
 const SITEMAP_LIMIT = 100;
 
-type Entry = {
-  url: string;
+type ChangeFreq =
+  | "always"
+  | "hourly"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "yearly"
+  | "never";
+
+// locale 中立な論理エントリ。出力時に locale ごとの絶対 URL に展開する。
+type LogicalEntry = {
+  path: string;
   lastModified: Date;
-  changeFrequency:
-    | "always"
-    | "hourly"
-    | "daily"
-    | "weekly"
-    | "monthly"
-    | "yearly"
-    | "never";
+  changeFrequency: ChangeFreq;
   priority: number;
 };
 
-function entryToXml(e: Entry): string {
+function urlToXml(loc: string, e: LogicalEntry): string {
   return [
     "  <url>",
-    `    <loc>${escapeXml(e.url)}</loc>`,
+    `    <loc>${escapeXml(loc)}</loc>`,
     `    <lastmod>${e.lastModified.toISOString()}</lastmod>`,
     `    <changefreq>${e.changeFrequency}</changefreq>`,
     `    <priority>${e.priority.toFixed(1)}</priority>`,
@@ -45,7 +49,7 @@ export const GET: APIRoute = async () => {
   const base = getEnv().PUBLIC_SITE_URL.replace(/\/$/, "");
   const now = new Date();
 
-  let tweetEntries: Entry[] = [];
+  let tweetEntries: LogicalEntry[] = [];
   try {
     const { contents } = await listTweets({
       limit: SITEMAP_LIMIT,
@@ -55,7 +59,7 @@ export const GET: APIRoute = async () => {
     tweetEntries = contents
       .filter((tweet) => Boolean(tweet.publishedAt))
       .map((tweet) => ({
-        url: `${base}/tweets/${tweet.id}`,
+        path: `/tweets/${tweet.id}`,
         lastModified: tweet.revisedAt
           ? new Date(tweet.revisedAt)
           : new Date(tweet.publishedAt),
@@ -66,20 +70,20 @@ export const GET: APIRoute = async () => {
     console.error("sitemap fetch failed", e);
   }
 
-  const entries: Entry[] = [
-    {
-      url: `${base}/`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 1.0,
-    },
+  const logical: LogicalEntry[] = [
+    { path: "/", lastModified: now, changeFrequency: "daily", priority: 1.0 },
     ...tweetEntries,
   ];
+
+  // 各論理エントリを ja / zh 両方の絶対 URL として出力する。
+  const urls = logical.flatMap((e) =>
+    locales.map((loc) => urlToXml(`${base}${localeUrl(e.path, loc)}`, e)),
+  );
 
   const body = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ...entries.map(entryToXml),
+    ...urls,
     "</urlset>",
     "",
   ].join("\n");

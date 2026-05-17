@@ -15,8 +15,11 @@ export type EchologDate = {
 };
 
 // depth=1 で展開された参照ツイート（自身は parent / retweetOf を持たない）
+// i18n: body は日本語、bodyZh は台湾華語。bodyZh が未投入なら表示側
+// (localizedBody) が body にフォールバックする。
 export type TweetReference = {
   body?: string;
+  bodyZh?: string;
   images?: MicroCMSImage[];
   retweetType?: [RetweetType] | [];
 } & MicroCMSContentId &
@@ -24,6 +27,7 @@ export type TweetReference = {
 
 export type TweetFields = {
   body?: string;
+  bodyZh?: string;
   images?: MicroCMSImage[];
   parent?: TweetReference;
   retweetOf?: TweetReference;

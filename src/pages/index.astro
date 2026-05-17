@@ -9,11 +9,21 @@ import WordmarkLink from "@/components/WordmarkLink.tsx";
 import { composeGalleryItems, type GalleryQuote } from "@/lib/gallery-compose";
 import { generateGalleryLayout, type LayoutItem } from "@/lib/gallery-layout";
 import { setEdgeCache } from "@/lib/http";
+import {
+  defaultLocale,
+  localeUrl,
+  localizedBody,
+  pick,
+  t,
+  tLines,
+} from "@/lib/i18n";
 import { listRootTweets, loadGalleryDays } from "@/lib/microcms";
 import { papers, works } from "@/lib/works";
 import type { Day } from "@/types/microcms";
 
 export const prerender = false;
+
+const locale = Astro.locals.locale ?? defaultLocale;
 
 let days: Day[] = [];
 let tweets: GalleryQuote[] = [];
@@ -29,11 +39,11 @@ if (daysResult.status === "fulfilled") {
 }
 if (tweetsResult.status === "fulfilled") {
   tweets = tweetsResult.value.contents
-    .filter((t): t is typeof t & { body: string } =>
-      Boolean(t.body && t.body.trim().length > 0),
+    .filter((tw): tw is typeof tw & { body: string } =>
+      Boolean(tw.body && tw.body.trim().length > 0),
     )
     .slice(0, 10)
-    .map((t) => ({ id: t.id, text: t.body }));
+    .map((tw) => ({ id: tw.id, text: localizedBody(tw, locale) ?? tw.body }));
 } else {
   console.error("[home] listRootTweets failed", tweetsResult.reason);
 }
@@ -82,7 +92,9 @@ setEdgeCache(Astro.response);
       class="k-scroll-cue pointer-events-none absolute bottom-14 left-1/2 flex -translate-x-1/2 flex-col items-center gap-4 text-(--ink-50)"
       aria-hidden="true"
     >
-      <span class="text-[11px] tracking-[0.32em] lowercase">scroll</span>
+      <span class="text-[11px] tracking-[0.32em] lowercase"
+        >{t(locale, "hero.scroll")}</span
+      >
       <span class="block h-11 w-px bg-current animate-scroll-cue"></span>
     </div>
   </section>
@@ -101,15 +113,14 @@ setEdgeCache(Astro.response);
       class="k-parallax m-0 font-serif text-[13px] leading-[1.8] tracking-wider min-[880px]:min-w-[260px] min-[880px]:flex-none"
       data-parallax
     >
-      台湾研究者。<br />
-      日本名は出田康一郎。<br />
-      専門は台湾思想・台湾文化論。<br />
-      1981年東京生まれ。<br />
-      東京芸術大学音楽学部楽理科卒業。<br />
-      國立台灣師範大學台灣語文學系碩士班在籍中。<br />
-      <!-- 國立台灣師範大學台灣語文學系修了。<br />
-      修士（文学）。<br /> -->
-      2011年から台湾在住。<br />
+      {
+        tLines(locale, "about.bio").map((line, i) => (
+          <>
+            {i > 0 && <br />}
+            {line}
+          </>
+        ))
+      }
     </p>
     <figure
       class="m-0 max-w-[120px] min-[880px]:col-5 min-[880px]:ml-auto min-[880px]:max-w-[150px] min-[880px]:translate-y-32 min-[880px]:-translate-x-12"
@@ -169,7 +180,7 @@ setEdgeCache(Astro.response);
           const isVertical = "vertical" in slot && slot.vertical;
           return (
             <a
-              href={`/tweets/${item.id}`}
+              href={localeUrl(`/tweets/${item.id}`, locale)}
               data-parallax={parallax ? "" : undefined}
               class="k-quote-wrap k-pos block no-underline"
               style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: ${slot.top}px; width: ${slot.w}px; height: ${slot.h}px;`}
@@ -197,10 +208,14 @@ setEdgeCache(Astro.response);
     <p
       class="m-0 font-serif text-[13px] leading-[1.8] tracking-wider min-[880px]:min-w-[260px] min-[880px]:flex-none text-(--ink-70)"
     >
-      指先から生まれたものたちは、わたしより長く息をする。<br />
-      わたしが忘れてしまった後も、誰かの本棚で、引き出しの奥で、静かに目を覚ましたままでいる。<br
-      />
-      それを想うと、生み出す手がときどき震える。
+      {
+        tLines(locale, "works.tagline").map((line, i) => (
+          <>
+            {i > 0 && <br />}
+            {line}
+          </>
+        ))
+      }
     </p>
   </section>
 
@@ -229,7 +244,7 @@ setEdgeCache(Astro.response);
       {
         works.map((work) => (
           <a
-            href={`/works/${work.id}`}
+            href={localeUrl(`/works/${work.id}`, locale)}
             data-cat={work.category}
             data-reveal
             class="group flex flex-col gap-3 no-underline"
@@ -241,14 +256,14 @@ setEdgeCache(Astro.response);
                 フィルターをかけ、hover でフィルターを外して発色させる。 */}
               <img
                 src={work.src}
-                alt={work.title}
+                alt={pick(work.title, locale)}
                 loading="lazy"
                 class="block aspect-[3/4] w-full bg-(--paper-2) object-cover opacity-90 [filter:grayscale(85%)_sepia(30%)] transition duration-500 ease-out group-hover:[filter:grayscale(0%)_sepia(0%)]"
               />
             </figure>
             <header class="flex flex-col gap-0.5">
               <p class="m-0 font-serif text-[15px] leading-[1.4] text-(--ink)">
-                {work.title}
+                {pick(work.title, locale)}
               </p>
               <p class="k-label-mini m-0 mt-1">{work.year}</p>
             </header>
@@ -262,7 +277,7 @@ setEdgeCache(Astro.response);
     >
       <ul
         id="works-filter"
-        class="m-0 flex list-none flex-row gap-x-5 p-0 text-[12px] tracking-[0.16em] lowercase min-[880px]:flex-col min-[880px]:gap-y-2"
+        class="font-serif italic m-0 flex list-none flex-row gap-x-5 p-0 text-[12px] tracking-[0.16em] lowercase min-[880px]:flex-col min-[880px]:gap-y-2"
       >
         <li>
           <button
@@ -271,7 +286,7 @@ setEdgeCache(Astro.response);
             data-active
             class="cursor-pointer border-0 bg-transparent p-0 text-(--ink-50) transition-colors hover:text-(--ink) data-[active]:text-(--ink)"
           >
-            all
+            {t(locale, "works.filter.all")}
           </button>
         </li>
         <li>
@@ -280,7 +295,7 @@ setEdgeCache(Astro.response);
             data-filter="text"
             class="cursor-pointer border-0 bg-transparent p-0 text-(--ink-50) transition-colors hover:text-(--ink) data-[active]:text-(--ink)"
           >
-            text
+            {t(locale, "works.filter.text")}
           </button>
         </li>
         <li>
@@ -289,7 +304,7 @@ setEdgeCache(Astro.response);
             data-filter="music"
             class="cursor-pointer border-0 bg-transparent p-0 text-(--ink-50) transition-colors hover:text-(--ink) data-[active]:text-(--ink)"
           >
-            music
+            {t(locale, "works.filter.music")}
           </button>
         </li>
         <li>
@@ -298,7 +313,7 @@ setEdgeCache(Astro.response);
             data-filter="photo"
             class="cursor-pointer border-0 bg-transparent p-0 text-(--ink-50) transition-colors hover:text-(--ink) data-[active]:text-(--ink)"
           >
-            photo
+            {t(locale, "works.filter.photo")}
           </button>
         </li>
       </ul>
@@ -354,7 +369,7 @@ setEdgeCache(Astro.response);
 
   {/* 発表論文リスト — Works グリッドの下。サムネイル無しのテキストのみ。 */}
   <section class="ml-col-2 mt-16 mb-8 min-[880px]:mt-24 min-[880px]:mb-24">
-    <p class="k-label-mini m-0 mb-6">論文</p>
+    <p class="k-label-mini m-0 mb-6">{t(locale, "papers.label")}</p>
     <ul
       data-reveal
       class="m-0 flex list-none flex-col gap-5 p-0 font-serif text-[14px] leading-[1.85] tracking-wide"
@@ -379,13 +394,13 @@ setEdgeCache(Astro.response);
   }
   <section class="flex items-center justify-center-safe h-dvh">
     <p class="m-0 font-serif text-[13px] leading-[1.8] tracking-wider">
-      執筆 / 講演 / 取材のご依頼・協業のお誘いは{" "}
+      {t(locale, "contact.before")}{" "}
       <a
         href="mailto:kokaiji.tw@gmail.com"
         class="font-serif text-(--ink-50) italic transition-colors hover:text-(--ink)"
       >
         kokaiji.tw@gmail.com
-      </a>{" "}まで。
+      </a>{" "}{t(locale, "contact.after")}
     </p>
   </section>
 

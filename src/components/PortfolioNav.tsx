@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { defaultLocale, localeUrl, t, type Locale } from "@/lib/i18n";
+
 import { onRippleEnter, onRippleFocus, RippleLabel } from "./NavRipple";
 
 // Astro Island。リンクは素の <a> で full page nav (phase 5 で
@@ -8,7 +10,9 @@ import { onRippleEnter, onRippleFocus, RippleLabel } from "./NavRipple";
 // 24-col grid に 5 slot (about / echolog / [center spacer] / works /
 // contact)。880px 未満は (menu)/(close) toggle に collapse して
 // full-bleed overlay を出す。Hover/focus で per-char ripple。
-export function PortfolioNav() {
+//
+// i18n: href は locale 接頭辞込み (zh は /zh 配下)、ラベルは t() 経由。
+export function PortfolioNav({ locale = defaultLocale }: { locale?: Locale }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -29,27 +33,29 @@ export function PortfolioNav() {
     return () => mql.removeEventListener("change", handler);
   }, []);
 
+  const href = (path: string) => localeUrl(path, locale);
+
   return (
     <header className="k-nav pointer-events-none fixed inset-x-0 top-0 z-20 mix-blend-difference px-col-1 pt-9 text-(--grey-light)">
       <ul className="k-nav-row pointer-events-auto hidden items-baseline justify-between text-[12px] font-normal uppercase tracking-[0.1em] min-[880px]:flex">
         <li>
           <a
-            href="/#about"
+            href={href("/#about")}
             className="k-nav-link"
             onMouseEnter={onRippleEnter}
             onFocus={onRippleFocus}
           >
-            <RippleLabel>About</RippleLabel>
+            <RippleLabel>{t(locale, "nav.about")}</RippleLabel>
           </a>
         </li>
         <li>
           <a
-            href="/#echolog"
+            href={href("/#echolog")}
             className="k-nav-link"
             onMouseEnter={onRippleEnter}
             onFocus={onRippleFocus}
           >
-            <RippleLabel>Echolog</RippleLabel>
+            <RippleLabel>{t(locale, "nav.echolog")}</RippleLabel>
           </a>
         </li>
         <li className="invisible" aria-hidden="true">
@@ -58,22 +64,22 @@ export function PortfolioNav() {
         </li>
         <li>
           <a
-            href="/#works"
+            href={href("/#works")}
             className="k-nav-link"
             onMouseEnter={onRippleEnter}
             onFocus={onRippleFocus}
           >
-            <RippleLabel>Works</RippleLabel>
+            <RippleLabel>{t(locale, "nav.works")}</RippleLabel>
           </a>
         </li>
         <li>
           <a
-            href="/#contact"
+            href={href("/#contact")}
             className="k-nav-link"
             onMouseEnter={onRippleEnter}
             onFocus={onRippleFocus}
           >
-            <RippleLabel>Contact</RippleLabel>
+            <RippleLabel>{t(locale, "nav.contact")}</RippleLabel>
           </a>
         </li>
       </ul>
@@ -85,7 +91,7 @@ export function PortfolioNav() {
         onClick={() => setMenuOpen((v) => !v)}
         className="pointer-events-auto inline-block cursor-pointer text-[14px] tracking-[0.05em] lowercase text-(--ink) [mix-blend-mode:normal] min-[880px]:hidden"
       >
-        ({menuOpen ? "close" : "menu"})
+        ({menuOpen ? t(locale, "nav.close") : t(locale, "nav.menu")})
       </button>
 
       {menuOpen && (
@@ -95,28 +101,28 @@ export function PortfolioNav() {
         >
           <ul className="flex flex-col gap-7 text-[22px] uppercase tracking-[0.06em]">
             <li>
-              <a href="/#about" onClick={() => setMenuOpen(false)}>
-                About
+              <a href={href("/#about")} onClick={() => setMenuOpen(false)}>
+                {t(locale, "nav.about")}
               </a>
             </li>
             <li>
-              <a href="/#echolog" onClick={() => setMenuOpen(false)}>
-                Echolog
+              <a href={href("/#echolog")} onClick={() => setMenuOpen(false)}>
+                {t(locale, "nav.echolog")}
               </a>
             </li>
             <li>
-              <a href="/" onClick={() => setMenuOpen(false)}>
+              <a href={href("/")} onClick={() => setMenuOpen(false)}>
                 Ko Kaiji
               </a>
             </li>
             <li>
-              <a href="/#works" onClick={() => setMenuOpen(false)}>
-                Works
+              <a href={href("/#works")} onClick={() => setMenuOpen(false)}>
+                {t(locale, "nav.works")}
               </a>
             </li>
             <li>
-              <a href="/#contact" onClick={() => setMenuOpen(false)}>
-                Contact
+              <a href={href("/#contact")} onClick={() => setMenuOpen(false)}>
+                {t(locale, "nav.contact")}
               </a>
             </li>
           </ul>

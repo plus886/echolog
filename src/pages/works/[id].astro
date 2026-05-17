@@ -2,6 +2,7 @@
 import Public from "@/layouts/Public.astro";
 import ScrollReveal from "@/components/ScrollReveal.tsx";
 import { setEdgeCache } from "@/lib/http";
+import { defaultLocale, localeUrl, pick, t } from "@/lib/i18n";
 import { getWork, type WorkCat } from "@/lib/works";
 
 // (works) detail page。Home の thumbnail grid から /works/[id] で遷移。
@@ -25,19 +26,24 @@ if (!work) {
   return new Response(null, { status: 404 });
 }
 
+// title / description は locale で出し分け (zh 未記入なら ja)。
+const locale = Astro.locals.locale ?? defaultLocale;
+const title = pick(work.title, locale);
+const description = pick(work.description, locale);
+
 // 右カラムの控えめなメタデータ用。category → 表示ラベル、
 // 外部参考 URL は host だけ抜いて表示する (www. は落とす)。
 const CATEGORY_LABEL: Record<WorkCat, string> = {
-  text: "執筆",
-  photo: "撮影",
-  music: "音楽",
+  text: t(locale, "works.cat.text"),
+  photo: t(locale, "works.cat.photo"),
+  music: t(locale, "works.cat.music"),
 };
 const refHost = new URL(work.url).hostname.replace(/^www\./, "");
 
 setEdgeCache(Astro.response);
 ---
 
-<Public title={work.title} description={work.description.slice(0, 120)}>
+<Public title={title} description={description.slice(0, 120)}>
   <article class="flex min-h-screen flex-col">
     <section class="flex flex-1 items-center py-32">
       {
@@ -62,7 +68,7 @@ setEdgeCache(Astro.response);
         <figure data-reveal class="group m-0 w-full min-[880px]:mt-[12vh]">
           <img
             src={work.src}
-            alt={work.title}
+            alt={title}
             class="block aspect-video w-full bg-(--paper-2) object-cover [filter:grayscale(1)] transition-[filter] delay-[1400ms] duration-[1800ms] ease-out group-[.is-revealed]:[filter:grayscale(0.3)]"
           />
         </figure>
@@ -72,7 +78,7 @@ setEdgeCache(Astro.response);
           data-reveal
           class="m-0 w-full px-col-2 font-serif text-[14px] leading-[2.1] tracking-[0.08em] text-(--ink-70) min-[880px]:mt-[20vh] min-[880px]:h-[clamp(260px,48vh,480px)] min-[880px]:w-auto min-[880px]:justify-self-center min-[880px]:px-0 min-[880px]:[writing-mode:vertical-rl] [font-feature-settings:initial]"
         >
-          {work.description}
+          {description}
         </p>
 
         {
@@ -89,7 +95,7 @@ setEdgeCache(Astro.response);
           <h1
             class="m-0 font-serif text-[17px] leading-[1.9] font-normal tracking-[0.12em] text-(--ink) min-[880px]:[writing-mode:vertical-rl] [font-feature-settings:initial]"
           >
-            {work.title}
+            {title}
           </h1>
 
           {
@@ -120,7 +126,7 @@ setEdgeCache(Astro.response);
       class="px-col-2 pb-12 mb-6 text-[12px] tracking-[0.1em] text-(--ink-50) italic font-serif"
     >
       <a
-        href="/#works"
+        href={localeUrl("/#works", locale)}
         class="pb-px no-underline transition-colors hover:text-(--ink)"
       >
         ← (works)
