@@ -9,6 +9,7 @@ import {
   updateTweet,
   type TweetWriteFields,
 } from "@/lib/microcms-management";
+import { translateToZh } from "@/lib/translate";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
 // `accept: "form"` 経由の入力は Astro が FormData → zod を自動でやってくれる。
@@ -37,13 +38,31 @@ function assertWithinLimit(body: string) {
   }
 }
 
+// 本文があれば台湾繁體中文へ翻訳する。翻訳が失敗したら ActionError を
+// throw し、呼び出し側の createTweet には到達させない (= 投稿しない)。
+// 本文が空 (画像のみ投稿) のときは翻訳をスキップして undefined を返す。
+async function translateForPost(body: string): Promise<string | undefined> {
+  if (body.trim().length === 0) return undefined;
+  try {
+    return await translateToZh(body);
+  } catch (e) {
+    console.error("[translate] failed", e);
+    throw new ActionError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "翻訳に失敗しました。時間をおいて再投稿してください",
+    });
+  }
+}
+
 function buildContent(input: {
   body: string;
+  bodyZh?: string;
   parent?: string;
   retweetOf?: string;
   images?: { url: string }[];
 }): TweetWriteFields {
   const content: TweetWriteFields = { body: input.body };
+  if (input.bodyZh) content.bodyZh = input.bodyZh;
   if (input.parent) content.parent = input.parent;
   if (input.retweetOf) {
     content.retweetOf = input.retweetOf;
@@ -95,8 +114,10 @@ export const server = {
       }
       assertWithinLimit(body);
 
+      const bodyZh = await translateForPost(body);
+
       const { id } = await createTweet(
-        buildContent({ body, parent, retweetOf, images }),
+        buildContent({ body, bodyZh, parent, retweetOf, images }),
       );
       return { id };
     },
@@ -117,8 +138,10 @@ export const server = {
       }
       assertWithinLimit(body);
 
+      const bodyZh = await translateForPost(body);
+
       const { id } = await createTweet(
-        buildContent({ body, parent, retweetOf, images }),
+        buildContent({ body, bodyZh, parent, retweetOf, images }),
         { isDraft: true },
       );
       return { id };

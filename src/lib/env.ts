@@ -15,6 +15,9 @@ const ServerEnvSchema = z.object({
   FORMOSA_MICROCMS_SERVICE_DOMAIN: z.string().min(1),
   FORMOSA_MICROCMS_API_KEY: z.string().min(1),
   FORMOSA_MICROCMS_WEBHOOK_SECRET: z.string().min(1),
+  // Claude API — 日本語投稿を台湾繁體中文へ自動翻訳する (lib/translate.ts)。
+  // 未設定でもサイトは動く。その場合は投稿時の翻訳のみ失敗する。
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
   CF_ACCESS_TEAM_DOMAIN: z.string().min(1).optional(),
   CF_ACCESS_AUD: z.string().min(1).optional(),
   // Astro 流の公開変数 prefix。旧 NEXT_PUBLIC_SITE_URL から改名。

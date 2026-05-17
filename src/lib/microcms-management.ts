@@ -64,7 +64,7 @@ const noStoreInit: RequestInit = { cache: "no-store" };
 
 export type TweetWriteFields = Pick<
   TweetFields,
-  "body" | "images" | "retweetType"
+  "body" | "bodyZh" | "images" | "retweetType"
 > & {
   parent?: string;
   retweetOf?: string;
