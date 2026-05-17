@@ -73,10 +73,15 @@ setEdgeCache(Astro.response);
           />
         </figure>
 
-        {/* 中央カラム — 縦組み description */}
+        {
+          /* 中央カラム — 縦組み description。justify-self-start でセル左端に
+            固定し、文字数が多いときは右 (タイトル側の gap) へ伸びていく
+            ようにする (vertical-rl は行が左へ進むが、box は左端固定なので
+            content 増加分は box 右端 = 右の gap 側へはみ出す)。 */
+        }
         <p
           data-reveal
-          class="m-0 w-full px-col-2 font-serif text-[14px] leading-[2.1] tracking-[0.08em] text-(--ink-70) min-[880px]:mt-[20vh] min-[880px]:h-[clamp(260px,48vh,480px)] min-[880px]:w-auto min-[880px]:justify-self-center min-[880px]:px-0 min-[880px]:[writing-mode:vertical-rl] [font-feature-settings:initial]"
+          class="m-0 w-full px-col-2 font-serif text-[14px] leading-[2.1] tracking-[0.08em] text-(--ink-70) min-[880px]:mt-[20vh] min-[880px]:h-[clamp(260px,48vh,480px)] min-[880px]:w-auto min-[880px]:justify-self-start min-[880px]:px-0 min-[880px]:[writing-mode:vertical-rl] [font-feature-settings:initial]"
         >
           {description}
         </p>
