@@ -57,6 +57,15 @@ export function WordmarkLink({
     }
     if (window.location.pathname === "/") {
       e.preventDefault();
+      // hash 付き URL (例 /#echolog) から戻る場合、scrollTo だけだと
+      // アドレスバーに hash が残るので明示的に hash を落とす。
+      if (window.location.hash) {
+        history.pushState(
+          null,
+          "",
+          window.location.pathname + window.location.search,
+        );
+      }
       // Lenis が動いている時は Lenis に scrollTo を任せて慣性で戻す。
       // reduced-motion / Lenis 未マウントの環境では native smooth scroll
       // にフォールバック。
