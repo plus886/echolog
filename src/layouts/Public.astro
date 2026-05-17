@@ -50,8 +50,11 @@ const logicalPath = Astro.locals.path ?? Astro.url.pathname;
     className="k-wordmark-pin fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light) no-underline"
   />
   <slot />
-  {/* credits footer — 全 (public) ルート共通 */}
-  <footer id="contact" class="px-col-2 pb-15 text-[12px] leading-[1.7]">
+  {
+    /* credits footer — 全 (public) ルート共通。body は flex-col + min-h-screen
+      なので mt-auto で短いページでもフッターを最下部に張り付ける。 */
+  }
+  <footer id="contact" class="mt-auto px-col-2 pb-15 text-[12px] leading-[1.7]">
     <div
       class="grid grid-cols-1 items-end gap-4.5 pt-7 text-[11px] text-(--ink-70) min-[880px]:grid-cols-3 min-[880px]:gap-0"
     >
