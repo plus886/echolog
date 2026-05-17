@@ -3,28 +3,66 @@ import { useCallback, useRef, useState } from "react";
 import { AdminTweetRow } from "@/components/admin/AdminTweetRow";
 import ComposeForm, { type ComposeMode } from "@/components/admin/ComposeForm";
 import { cx } from "@/components/admin/ui";
+import type { ThreadNode } from "@/lib/thread";
 import type { AdminTweet } from "@/types/microcms";
 
 // /admin・/admin/drafts の単一 island。投稿フォームとライブ一覧を束ね、
 // 投稿 / 削除 / RT 後に /api/admin/tweets を再フェッチして一覧を最新化する。
+// 投稿一覧は親子関係をスレッド化して表示する。
 
 type Filter = "posts" | "drafts";
 type ListState = "ready" | "loading" | "error";
 
 type Props = {
-  initialTweets: AdminTweet[];
+  initialThreads: ThreadNode[];
   initialRetweetedTargetIds?: string[];
   initialMode?: ComposeMode;
   initialFilter?: Filter;
 };
 
+type RowHandlers = {
+  retweetedIds: string[];
+  onMutated: () => void;
+  onReply: (t: AdminTweet) => void;
+  onQuote: (t: AdminTweet) => void;
+};
+
+// スレッド1ノードとその子孫を、深さに応じてインデントして描画する。
+function ThreadRows({ node, h }: { node: ThreadNode; h: RowHandlers }) {
+  return (
+    <>
+      <div
+        style={
+          node.depth > 0
+            ? { marginInlineStart: Math.min(node.depth, 4) * 16 }
+            : undefined
+        }
+        className={
+          node.depth > 0 ? "border-l-2 border-(--ink-15) pl-2" : undefined
+        }
+      >
+        <AdminTweetRow
+          tweet={node.tweet}
+          retweetedTargetIds={h.retweetedIds}
+          onMutated={h.onMutated}
+          onReply={h.onReply}
+          onQuote={h.onQuote}
+        />
+      </div>
+      {node.children.map((c) => (
+        <ThreadRows key={c.tweet.id} node={c} h={h} />
+      ))}
+    </>
+  );
+}
+
 export function AdminDashboard({
-  initialTweets,
+  initialThreads,
   initialRetweetedTargetIds = [],
   initialMode = { kind: "new" },
   initialFilter = "posts",
 }: Props) {
-  const [tweets, setTweets] = useState(initialTweets);
+  const [threads, setThreads] = useState(initialThreads);
   const [retweetedIds, setRetweetedIds] = useState(initialRetweetedTargetIds);
   const [filter, setFilter] = useState<Filter>(initialFilter);
   const [mode, setMode] = useState<ComposeMode>(initialMode);
@@ -46,10 +84,10 @@ export function AdminDashboard({
       );
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as {
-        tweets: AdminTweet[];
+        threads: ThreadNode[];
         retweetedTargetIds: string[];
       };
-      setTweets(data.tweets);
+      setThreads(data.threads);
       setRetweetedIds(data.retweetedTargetIds ?? []);
       setListState("ready");
     } catch {
@@ -82,6 +120,13 @@ export function AdminDashboard({
       : mode.kind === "quote"
         ? "引用"
         : "新規投稿";
+
+  const rowHandlers: RowHandlers = {
+    retweetedIds,
+    onMutated: () => void refetch(filter),
+    onReply: (t) => startReplyQuote("reply", t),
+    onQuote: (t) => startReplyQuote("quote", t),
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -135,23 +180,17 @@ export function AdminDashboard({
               再試行
             </button>
           </div>
-        ) : tweets.length === 0 ? (
+        ) : threads.length === 0 ? (
           <p className="m-0 rounded-lg border border-(--ink-15) bg-(--paper) p-6 text-center text-sm text-(--ink-50)">
             {filter === "drafts"
               ? "下書きはありません。"
               : "まだ投稿がありません。"}
           </p>
         ) : (
-          <ol className="m-0 flex list-none flex-col gap-3 p-0">
-            {tweets.map((tweet) => (
-              <li key={tweet.id}>
-                <AdminTweetRow
-                  tweet={tweet}
-                  retweetedTargetIds={retweetedIds}
-                  onMutated={() => void refetch(filter)}
-                  onReply={(t) => startReplyQuote("reply", t)}
-                  onQuote={(t) => startReplyQuote("quote", t)}
-                />
+          <ol className="m-0 flex list-none flex-col gap-4 p-0">
+            {threads.map((root) => (
+              <li key={root.tweet.id} className="flex flex-col gap-2">
+                <ThreadRows node={root} h={rowHandlers} />
               </li>
             ))}
           </ol>

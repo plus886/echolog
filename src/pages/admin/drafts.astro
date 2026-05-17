@@ -2,8 +2,10 @@
 import Admin from "@/layouts/Admin.astro";
 import AdminDashboard from "@/components/admin/AdminDashboard.tsx";
 import { listAdminTweets } from "@/lib/microcms-management";
+import { flatThreads } from "@/lib/thread";
 
 // 下書き一覧。AdminDashboard を drafts フィルタ初期値で再利用する。
+// 下書きはスレッド化せず単独ノードで渡す。
 
 export const prerender = false;
 
@@ -16,7 +18,7 @@ const { contents } = await listAdminTweets({
 
 <Admin title="Drafts">
   <AdminDashboard
-    initialTweets={contents}
+    initialThreads={flatThreads(contents)}
     initialFilter="drafts"
     client:only="react"
   />

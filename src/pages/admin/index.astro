@@ -7,6 +7,7 @@ import {
   listAdminTweets,
   listMyRetweetTargetIds,
 } from "@/lib/microcms-management";
+import { buildThreads } from "@/lib/thread";
 
 // searchParams (mode=reply|quote, target=<id>) で reply/quote の初期状態を
 // 受ける。一覧のライブ更新は AdminDashboard が担う。
@@ -35,11 +36,12 @@ const [composeMode, listResponse, retweetedTargetIdsSet] = await Promise.all([
   listAdminTweets({ limit: 30, orders: "-publishedAt" }),
   listMyRetweetTargetIds(),
 ]);
+const initialThreads = await buildThreads(listResponse.contents);
 ---
 
 <Admin title="Admin">
   <AdminDashboard
-    initialTweets={listResponse.contents}
+    initialThreads={initialThreads}
     initialRetweetedTargetIds={Array.from(retweetedTargetIdsSet)}
     initialMode={composeMode}
     initialFilter="posts"
