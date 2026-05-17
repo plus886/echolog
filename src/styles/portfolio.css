@@ -120,11 +120,14 @@ html.lenis body {
      serif. Cormorant Garamond (@fontsource) and the system serif chain
      stand in while FontPlus fetches the face. _MinchoDigits は U+0030-0039
      にだけ反応する virtual font なので、数字だけ system mincho の和文
-     ベースラインに合わせた半角数字に差し変わる。 */
+     ベースラインに合わせた半角数字に差し変わる。
+     末尾の繁体字フォント (宋體/明體系) は、日本語明朝に無い稀用の
+     繁体字 (例: 雧 U+96E7) が system gothic に落ちないための保険。 */
   --serif:
     "_MinchoDigits", "FOT-筑紫Cオールド明朝 Pr6N R", var(--k-font-serif),
     ui-serif, "Iowan Old Style", "Times New Roman", "YuMincho",
-    "Hiragino Mincho ProN", serif;
+    "Hiragino Mincho ProN", "Songti TC", "Songti SC", "Source Han Serif TC",
+    "Noto Serif CJK TC", PMingLiU, MingLiU, serif;
   --sans:
     "GillSansMTPro-Book", var(--k-font-sans), "Helvetica Neue", "HelveticaNeue",
     Helvetica, Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
