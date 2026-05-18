@@ -248,7 +248,7 @@ export default defineConfig({
 
 ```bash
 cd _astro
-npm run dev   # Astro デフォルトページが localhost:4321 で開く
+npm run dev   # Astro デフォルトページが localhost:5432 で開く
 ```
 
 開けることを確認 → ユーザー報告 → 承認を受けて次へ。

@@ -7,7 +7,7 @@ phase 6-2 以降の preview / 本番デプロイに進む前に、`_astro/` の 
 
 | モード              | 用途               | コマンド                            | URL                   | admin             | HMR |
 | ------------------- | ------------------ | ----------------------------------- | --------------------- | ----------------- | --- |
-| **A. Astro dev**    | 日常の開発/UI 調整 | `npm run dev`                       | http://localhost:4321 | ✅ bypass 可      | ✅  |
+| **A. Astro dev**    | 日常の開発/UI 調整 | `npm run dev`                       | http://localhost:5432 | ✅ bypass 可      | ✅  |
 | **B. Wrangler dev** | 本番ランタイム検証 | `npm run build && npx wrangler dev` | http://localhost:8787 | ❌ 401 (期待動作) | ❌  |
 
 両方を最低 1 回ずつ通すこと。A だけだと "本番ビルドでだけ落ちる" 系のバグ
@@ -70,7 +70,7 @@ cd _astro
 npm run dev
 ```
 
-→ http://localhost:4321 が立ち上がる。
+→ http://localhost:5432 が立ち上がる。
 
 ### ブラウザで目視確認するページ
 
@@ -88,18 +88,18 @@ npm run dev
 
 ```bash
 # HOME — Island 11 個分の hydrate marker を確認
-curl -s http://localhost:4321/ | grep -c astro-island
+curl -s http://localhost:5432/ | grep -c astro-island
 # 期待: 11
 
 # tweet 詳細 — k-label-mini class が当たっていること
-curl -s http://localhost:4321/tweets/<実 id> | grep -c k-label-mini
+curl -s http://localhost:5432/tweets/<実 id> | grep -c k-label-mini
 # 期待: 2 以上
 
 # sitemap.xml — 実 tweet URL を含む
-curl -s http://localhost:4321/sitemap.xml | grep -c '/tweets/'
+curl -s http://localhost:5432/sitemap.xml | grep -c '/tweets/'
 
 # admin が 401 を返さないこと (= bypass が効いている)
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:4321/admin
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:5432/admin
 # 期待: 200
 ```
 
@@ -178,7 +178,7 @@ curl -s http://localhost:8787/sitemap.xml | head -3
 では `BYPASS_AUTH=true` が効かない (= 本番と同じ挙動)。admin を試したい
 場合は次の選択肢:
 
-- **モード A に切り替える** (推奨): `npm run dev` で 4321 番ポートで普通に
+- **モード A に切り替える** (推奨): `npm run dev` で 5432 番ポートで普通に
   試せる。
 - **本物の Cloudflare Access JWT を手で渡す** (高難度): `Cf-Access-Jwt-Assertion`
   ヘッダに有効な JWT を付けて curl すれば middleware を通過できる。phase
@@ -212,7 +212,7 @@ pnpm dev                  # http://localhost:3000
 
 # ターミナル2: Astro 新版
 cd /Users/.../echolog/_astro
-npm run dev               # http://localhost:4321
+npm run dev               # http://localhost:5432
 ```
 
 同じ tweet を `/tweets/<id>` で開き、レンダリングが視覚的に一致するか比較。
