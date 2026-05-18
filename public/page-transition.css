@@ -1,0 +1,31 @@
+/* ページ遷移トランジション (cross-document View Transitions)。
+
+   このファイルは public/ 配下に置き、ビルド処理を通さず素のまま <link>
+   で配信する。理由: Tailwind v4 (Lightning CSS) の CSS パイプラインが
+   ターゲットブラウザ基準で未対応扱いの view-transition 系ルール
+   (@view-transition / ::view-transition-*) を丸ごと drop するため、
+   global.css / portfolio.css に書くとバンドルから消える。
+
+   <ClientRouter /> は使わない (FontPlus 不整合で撤回済み)。素の MPA の
+   まま、ブラウザネイティブの cross-document VT で同一オリジンの全ページ
+   遷移にソフトなクロスフェードを掛ける。full reload は維持されるので
+   FontPlus / inline style / chrome 再 mount は従来どおり。未対応ブラウザ
+   は通常の即時遷移にフォールバックする。 */
+
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 360ms;
+  animation-timing-function: ease;
+}
+
+/* reduced-motion: クロスフェードは無効化 (遷移自体は即時に成立する)。 */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}

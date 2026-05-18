@@ -82,6 +82,13 @@ const FONTPLUS_SRC =
     <meta name="application-name" content={SITE_NAME} />
     <meta name="generator" content={Astro.generator} />
 
+    {
+      /* ページ遷移のクロスフェード。public/ の素の CSS を直リンクする
+        (理由はファイル冒頭のコメント参照: ビルドの CSS 最適化が
+        view-transition ルールを落とすため)。 */
+    }
+    <link rel="stylesheet" href="/page-transition.css" />
+
     <title>{fullTitle}</title>
     <meta name="description" content={desc} />
     <link rel="canonical" href={canonical} />
