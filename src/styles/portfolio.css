@@ -147,7 +147,16 @@ html.lenis body {
   line-height: 1;
 }
 
-/* ─── 24-column grid helpers */
+/* ─── 横方向インセット helpers。
+   モバイル (< 880px) は viewport 幅に依存しない固定 px ガター
+   (--k-gutter) を左右に取り、content が画面端に張り付かない
+   ようにする (狭い端末でも余白が一定)。min-[880px] 以上は desktop
+   の 24-col grid に切替: ml-col-2 は左 2-col インデント (右端は
+   フラット)、px-col-* は左右に col 基準の % パディング。
+   注: モバイルでは ml-col-2 も margin-inline (左右) になる。 */
+.k-shell {
+  --k-gutter: 24px;
+}
 .k-shell .col-1 {
   width: calc(1 / 24 * 100%);
 }
@@ -158,13 +167,26 @@ html.lenis body {
   width: calc(5 / 24 * 100%);
 }
 .k-shell .ml-col-2 {
-  margin-left: calc(2 / 24 * 100%);
+  margin-inline: var(--k-gutter);
 }
 .k-shell .px-col-1 {
-  padding-inline: calc(1 / 24 * 100%);
+  padding-inline: var(--k-gutter);
 }
 .k-shell .px-col-2 {
-  padding-inline: calc(2 / 24 * 100%);
+  padding-inline: var(--k-gutter);
+}
+
+@media (min-width: 880px) {
+  .k-shell .ml-col-2 {
+    margin-inline: 0;
+    margin-left: calc(2 / 24 * 100%);
+  }
+  .k-shell .px-col-1 {
+    padding-inline: calc(1 / 24 * 100%);
+  }
+  .k-shell .px-col-2 {
+    padding-inline: calc(2 / 24 * 100%);
+  }
 }
 
 /* ─── Mini label */
@@ -384,17 +406,15 @@ html.lenis body {
    - --gallery-scale: index.astro の slot inline style (top/w/h/section
      高さ) が calc() で消費。一律スケールなので衝突は崩れない。
    - --side-margin: 左右の最小マージンを詰め、zone が画面幅を使い切る。
-   - 横書き quote は画面幅を超えないよう max-width で上限。縦書き
-     (.k-quote-v) は幅 = 列数なので cap すると列が削れる → 除外。 */
+   quote の幅上限は index.astro 側で --w を min(slot幅, 100vw - 左右
+   ガター) に clamp して与える。--w は .k-pos の left clamp と width の
+   両方が参照するので、ここで別途 max-width を足すと位置計算とズレる。 */
 @media (max-width: 879.98px) {
   .k-shell #echolog {
     --gallery-scale: 1.25;
   }
   .k-shell .k-pos {
     --side-margin: 16px;
-  }
-  .k-shell .k-quote-wrap:not(:has(.k-quote-v)) {
-    max-width: calc(100vw - 32px);
   }
 }
 

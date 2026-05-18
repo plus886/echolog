@@ -183,7 +183,7 @@ setEdgeCache(Astro.response);
               href={localeUrl(`/tweets/${item.id}`, locale)}
               data-parallax={parallax ? "" : undefined}
               class="k-quote-wrap k-pos block no-underline"
-              style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: calc(var(--gallery-scale, 1) * ${slot.top}px); width: var(--w);${isVertical ? ` height: ${slot.h}px;` : ""}`}
+              style={`--w: min(${slot.w}px, 100% - 2 * var(--k-gutter)); --ideal-left: ${slot.leftPct}; top: calc(var(--gallery-scale, 1) * ${slot.top}px); width: var(--w);${isVertical ? ` height: ${slot.h}px;` : ""}`}
             >
               <blockquote
                 data-reveal
