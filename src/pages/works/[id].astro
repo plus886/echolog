@@ -11,7 +11,9 @@ import { getWork, type WorkCat } from "@/lib/works";
 //   中央 — 縦組み description (14px)
 //   右   — 縦組みタイトル (16px)
 // カラム間 gap は大きめ。縦組みは min-[880px] 以上のみで、モバイルは
-// 1 カラムに縦積み + 横組みに戻す。
+// 1 カラムに縦積み + 横組みに戻す。モバイルの積み順は order で
+// 画像 → タイトル → 説明 に並べ替える (DOM 順は desktop グリッドの
+// 都合で 画像 → 説明 → タイトル)。order は min-[880px] で解除。
 // データは @/lib/works に集約、route は SSR (prerender = false)。
 
 export const prerender = false;
@@ -81,7 +83,7 @@ setEdgeCache(Astro.response);
         }
         <p
           data-reveal
-          class="m-0 w-full px-col-2 font-serif text-[14px] leading-[2.1] tracking-[0.08em] text-(--ink-70) min-[880px]:mt-[20vh] min-[880px]:h-[clamp(260px,48vh,480px)] min-[880px]:w-auto min-[880px]:justify-self-start min-[880px]:px-0 min-[880px]:[writing-mode:vertical-rl] [font-feature-settings:initial]"
+          class="order-3 m-0 w-full px-col-2 font-serif text-[14px] leading-[2.1] tracking-[0.08em] text-(--ink-70) min-[880px]:order-none min-[880px]:mt-[20vh] min-[880px]:h-[clamp(260px,48vh,480px)] min-[880px]:w-auto min-[880px]:justify-self-start min-[880px]:px-0 min-[880px]:[writing-mode:vertical-rl] [font-feature-settings:initial]"
         >
           {description}
         </p>
@@ -95,7 +97,7 @@ setEdgeCache(Astro.response);
         }
         <div
           data-reveal
-          class="flex flex-col items-center gap-6 justify-self-center min-[880px]:mr-[6vw] min-[880px]:flex-row-reverse min-[880px]:items-start min-[880px]:justify-self-end min-[880px]:gap-7"
+          class="order-2 flex flex-col items-center gap-6 justify-self-center min-[880px]:order-none min-[880px]:mr-[6vw] min-[880px]:flex-row-reverse min-[880px]:items-start min-[880px]:justify-self-end min-[880px]:gap-7"
         >
           <h1
             class="m-0 font-serif text-[17px] leading-[1.9] font-normal tracking-[0.12em] text-(--ink) min-[880px]:[writing-mode:vertical-rl] [font-feature-settings:initial]"
