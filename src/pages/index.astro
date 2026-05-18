@@ -85,7 +85,7 @@ setEdgeCache(Astro.response);
         client:only="react"
         label="KO KAIJI"
         linkable={false}
-        className="k-wordmark tracking-[0.16em] text-[12px] no-underline text-(--ink)"
+        className="k-wordmark tracking-[0.16em] indent-[0.16em] text-[12px] no-underline text-(--ink)"
       />
     </h1>
     <div
@@ -123,7 +123,7 @@ setEdgeCache(Astro.response);
       }
     </p>
     <figure
-      class="m-0 max-w-[120px] min-[880px]:col-5 min-[880px]:ml-auto min-[880px]:max-w-[150px] min-[880px]:translate-y-32 min-[880px]:-translate-x-12"
+      class="m-0 max-w-[160px] self-end min-[880px]:col-5 min-[880px]:ml-auto min-[880px]:max-w-[150px] min-[880px]:translate-y-32 min-[880px]:-translate-x-12 min-[880px]:self-start"
       aria-hidden="true"
     >
       <img
@@ -141,7 +141,7 @@ setEdgeCache(Astro.response);
       <section
         id="echolog"
         class="relative mt-16 w-full min-[880px]:mt-30"
-        style={`height: ${totalHeight}px;`}
+        style={`height: calc(var(--gallery-scale, 1) * ${totalHeight}px);`}
       >
         {items.map((item, i) => {
           const slot = slots[i];
@@ -166,7 +166,7 @@ setEdgeCache(Astro.response);
                   "k-pos absolute m-0 -translate-x-1/2 cursor-zoom-in bg-(--paper-2)",
                   parallax && "k-parallax",
                 ]}
-                style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: ${slot.top}px; width: ${slot.w}px; height: ${slot.h}px;`}
+                style={`--w: calc(var(--gallery-scale, 1) * ${slot.w}px); --ideal-left: ${slot.leftPct}; top: calc(var(--gallery-scale, 1) * ${slot.top}px); width: var(--w); height: calc(var(--gallery-scale, 1) * ${slot.h}px);`}
               >
                 <img
                   src={`${item.day.image.url}?w=400`}
@@ -183,7 +183,7 @@ setEdgeCache(Astro.response);
               href={localeUrl(`/tweets/${item.id}`, locale)}
               data-parallax={parallax ? "" : undefined}
               class="k-quote-wrap k-pos block no-underline"
-              style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: ${slot.top}px; width: ${slot.w}px; height: ${slot.h}px;`}
+              style={`--w: ${slot.w}px; --ideal-left: ${slot.leftPct}; top: calc(var(--gallery-scale, 1) * ${slot.top}px); width: var(--w);${isVertical ? ` height: ${slot.h}px;` : ""}`}
             >
               <blockquote
                 data-reveal
@@ -221,7 +221,7 @@ setEdgeCache(Astro.response);
 
   {
     /* (works) — Gallery との境目を horizontal divider で明示。
-      左カラム: 2-col thumbnail grid。各 thumb は /works/[id] の detail page
+      左カラム: thumbnail grid (モバイル2列 / min-[880px] 3列)。各 thumb は /works/[id] の detail page
       へリンク (route 未実装、後で作る前提)。category attribute (data-cat)
       で filter から visibility が切り替えられる。
       右カラム: filter (ALL / TEXT / MUSIC / PHOTO)。position: sticky で
@@ -239,7 +239,7 @@ setEdgeCache(Astro.response);
   >
     <div
       id="works-grid"
-      class="grid grid-cols-3 gap-x-24 gap-y-12 transition-opacity duration-[250ms] ease-out min-[880px]:flex-1 min-[880px]:gap-x-col-1 min-[880px]:gap-y-20"
+      class="grid grid-cols-2 gap-x-5 gap-y-12 transition-opacity duration-[250ms] ease-out min-[880px]:grid-cols-3 min-[880px]:flex-1 min-[880px]:gap-x-col-1 min-[880px]:gap-y-20"
     >
       {
         works.map((work) => (
@@ -392,7 +392,7 @@ setEdgeCache(Astro.response);
     /* contact — full-viewport の連絡先セクション。credits footer は
       Public.astro 側に全ルート共通で配置した。 */
   }
-  <section class="flex items-center justify-center-safe h-dvh">
+  <section class="flex h-dvh items-center justify-center-safe px-col-2">
     <p class="m-0 font-serif text-[13px] leading-[1.8] tracking-wider">
       {t(locale, "contact.before")}{" "}
       <a

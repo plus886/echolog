@@ -380,6 +380,24 @@ html.lenis body {
   );
 }
 
+/* ─── Gallery: モバイルでは散らしを画面幅に合わせて拡大 / 調整。
+   - --gallery-scale: index.astro の slot inline style (top/w/h/section
+     高さ) が calc() で消費。一律スケールなので衝突は崩れない。
+   - --side-margin: 左右の最小マージンを詰め、zone が画面幅を使い切る。
+   - 横書き quote は画面幅を超えないよう max-width で上限。縦書き
+     (.k-quote-v) は幅 = 列数なので cap すると列が削れる → 除外。 */
+@media (max-width: 879.98px) {
+  .k-shell #echolog {
+    --gallery-scale: 1.25;
+  }
+  .k-shell .k-pos {
+    --side-margin: 16px;
+  }
+  .k-shell .k-quote-wrap:not(:has(.k-quote-v)) {
+    max-width: calc(100vw - 32px);
+  }
+}
+
 /* Gallery 内 quote ラッパー。CSS プロパティを 1関心事=1プロパティで分離:
    - translate : 中央寄せ (-50%)。静的。
    - transform : scroll parallax の translateY。GalleryParallax が
