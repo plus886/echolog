@@ -11,6 +11,9 @@ import { useIsoLayoutEffect } from "@/lib/use-iso-layout-effect";
 //
 // 例外: URL に hash がある場合 (詳細ページの nav リンク / 直打ち) は、
 // 保存位置の復元ではなく該当アンカーへスクロールする。
+// ただし browser back/forward での復帰は、たとえ戻り先 URL に hash が
+// 付いていても hash を無視し、保存スクロール位置を復元する (詳細ページ
+// へ移動する直前にいた正確な位置へ戻すため)。
 //
 // 復元処理は useLayoutEffect で paint 前に同期実行。Astro でも同じ理由で
 // 必要 ((a) phase 5 で View Transitions API を有効化したときに "after"
@@ -21,10 +24,19 @@ export function ScrollMemory() {
     const shell = document.querySelector<HTMLElement>(".k-shell");
     if (!shell) return;
 
+    const nav = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    const navType = nav?.type;
+    // browser back/forward での復帰判定。これに該当する間は hash を無視
+    // して保存スクロール位置の復元へ回す。
+    const isBackForward = navType === "back_forward";
+
     // hash 付きの来訪 (詳細ページの nav リンククリック / URL 直打ち) は、
-    // 保存済みスクロール位置の復元より アンカー位置を優先する。
+    // 保存済みスクロール位置の復元より アンカー位置を優先する。ただし
+    // back/forward 復帰時は hash を無視する (保存位置を優先)。
     const hashTarget =
-      window.location.hash.length > 1
+      !isBackForward && window.location.hash.length > 1
         ? document.getElementById(window.location.hash.slice(1))
         : null;
     if (hashTarget) {
@@ -69,11 +81,7 @@ export function ScrollMemory() {
       };
     }
 
-    const nav = performance.getEntriesByType("navigation")[0] as
-      | PerformanceNavigationTiming
-      | undefined;
-    const isReload = nav?.type === "reload";
-    if (isReload) return;
+    if (navType === "reload") return;
 
     const saved = sessionStorage.getItem(HOME_SCROLL_KEY);
     if (!saved) return;
