@@ -12,6 +12,8 @@ MICROCMS_WEBHOOK_SECRET=
 FORMOSA_MICROCMS_SERVICE_DOMAIN=
 FORMOSA_MICROCMS_API_KEY=
 FORMOSA_MICROCMS_WEBHOOK_SECRET=
+# admin の写真投稿用（days 書き込み + メディアアップロード + スキーマ API）
+FORMOSA_MICROCMS_MANAGEMENT_API_KEY=
 
 # Claude API (日本語投稿の台湾繁體中文 自動翻訳)
 ANTHROPIC_API_KEY=
@@ -21,7 +23,7 @@ CF_ACCESS_TEAM_DOMAIN=
 CF_ACCESS_AUD=
 
 # Public site URL — Astro では PUBLIC_ prefix (旧 NEXT_PUBLIC_)
-PUBLIC_SITE_URL=http://localhost:4321
+PUBLIC_SITE_URL=http://localhost:5432
 
 # Dev だけで使う。NODE_ENV=production では絶対にセットしないこと。
 BYPASS_AUTH=true

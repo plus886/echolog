@@ -15,6 +15,10 @@ const ServerEnvSchema = z.object({
   FORMOSA_MICROCMS_SERVICE_DOMAIN: z.string().min(1),
   FORMOSA_MICROCMS_API_KEY: z.string().min(1),
   FORMOSA_MICROCMS_WEBHOOK_SECRET: z.string().min(1),
+  // formosa 側への写真投稿 (days への書き込み + メディアアップロード +
+  // スキーマ API) に使う Management API キー。未設定でもサイト・閲覧は
+  // 動き、admin の写真投稿のみ失敗する。
+  FORMOSA_MICROCMS_MANAGEMENT_API_KEY: z.string().min(1).optional(),
   // Claude API — 日本語投稿を台湾繁體中文へ自動翻訳する (lib/translate.ts)。
   // 未設定でもサイトは動く。その場合は投稿時の翻訳のみ失敗する。
   ANTHROPIC_API_KEY: z.string().min(1).optional(),

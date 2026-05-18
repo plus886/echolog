@@ -65,9 +65,16 @@ export function getRetweetKind(
 
 // ---- Portfolio gallery (formosa-chiaroscuro / days) ----
 
+// microCMS の days API。select フィールド (camera / lens) は読み取り時
+// 値文字列の配列で返る。passage* は ja / zh の 2 言語キャプション。
 export type DayFields = {
   image: MicroCMSImage;
   date: string;
+  camera?: string[];
+  lens?: string[];
+  featured?: boolean;
+  passageJa?: string;
+  passageZh?: string;
 };
 
 export type Day = DayFields & MicroCMSContentId & EchologDate;
@@ -77,4 +84,17 @@ export type DayListResponse = Omit<
   "contents"
 > & {
   contents: Day[];
+};
+
+// days への書き込み入力。microCMS の非対称仕様に合わせ、image は URL
+// 文字列、select は単一でも値文字列の配列で POST する (変換は
+// formosa-management.ts の toDaysPayload が担当)。
+export type DayWriteFields = {
+  imageUrl: string;
+  camera: string;
+  lens?: string;
+  featured?: boolean;
+  passageJa?: string;
+  passageZh?: string;
+  date?: string;
 };

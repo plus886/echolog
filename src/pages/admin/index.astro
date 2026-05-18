@@ -1,6 +1,6 @@
 ---
 import Admin from "@/layouts/Admin.astro";
-import AdminDashboard from "@/components/admin/AdminDashboard.tsx";
+import AdminTabs from "@/components/admin/AdminTabs.tsx";
 import type { ComposeMode } from "@/components/admin/ComposeForm.tsx";
 import {
   getAdminTweet,
@@ -40,7 +40,7 @@ const initialThreads = await buildThreads(listResponse.contents);
 ---
 
 <Admin title="Admin">
-  <AdminDashboard
+  <AdminTabs
     initialThreads={initialThreads}
     initialRetweetedTargetIds={Array.from(retweetedTargetIdsSet)}
     initialMode={composeMode}
