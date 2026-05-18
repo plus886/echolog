@@ -75,6 +75,40 @@ const SNAP_THRESHOLD = 80;
 // Carousel slide 演出時間。CSS transition と navigation cooldown の両方で参照。
 const SLIDE_DURATION_MS = 600;
 
+// モバイルのコーナー操作 (close / gallery) 用の細線アイコン。デスクトップ
+// は余白の縦組みテキストを使うので、アイコンは sm:hidden で出し分ける。
+// PortfolioNav の toggle と同じく stroke-width 1 のミニマル line icon。
+const ICON_PROPS = {
+  width: 18,
+  height: 18,
+  viewBox: "0 0 18 18",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1,
+  strokeLinecap: "round" as const,
+  "aria-hidden": true,
+};
+
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg {...ICON_PROPS} className={className}>
+      <line x1="4" y1="4" x2="14" y2="14" />
+      <line x1="14" y1="4" x2="4" y2="14" />
+    </svg>
+  );
+}
+
+function GalleryIcon({ className }: { className?: string }) {
+  return (
+    <svg {...ICON_PROPS} className={className}>
+      <rect x="3" y="3" width="5" height="5" />
+      <rect x="10" y="3" width="5" height="5" />
+      <rect x="3" y="10" width="5" height="5" />
+      <rect x="10" y="10" width="5" height="5" />
+    </svg>
+  );
+}
+
 export function GalleryLightbox() {
   const [session, setSession] = useState<Session | null>(null);
   // Slide animation 中フラグ。scroll cue の opacity を制御するためだけに
@@ -391,32 +425,40 @@ export function GalleryLightbox() {
         </div>
       )}
 
-      {/* 右余白の gallery 外部リンク。現 item に id があれば
-          https://photo.kokaiji.tw/days/:id/ に飛ばす。縦書きで right edge に
-          固定し、scroll cue と同様 slide 中は opacity 0、止まったら fade in。
-          target=_blank + noreferrer (外部ドメイン)。 */}
+      {/* gallery 外部リンク。現 item に id があれば
+          https://photo.kokaiji.tw/days/:id/ に飛ばす。デスクトップは右余白に
+          縦組みテキスト、モバイルは左右余白が無いので左上コーナーに細線
+          アイコン (grid) で置く。scroll cue と同様 slide 中は opacity 0、
+          止まったら fade in。target=_blank + noreferrer (外部ドメイン)。 */}
       {items[currentIdx]?.id && (
         <a
           href={`${GALLERY_BASE}/${items[currentIdx].id}/`}
           target="_blank"
           rel="noreferrer"
-          className="absolute top-1/2 right-6 -translate-y-1/2 text-[11px] tracking-[0.3em] text-(--ink-30) uppercase no-underline [writing-mode:vertical-rl] hover:scale-105 hover:text-(--ink-50)"
+          aria-label="Open gallery"
+          className="absolute top-2 left-2 z-10 inline-flex p-3 text-[11px] tracking-[0.3em] text-(--ink-50) uppercase no-underline hover:scale-105 hover:text-(--ink-50) sm:top-1/2 sm:left-auto sm:right-6 sm:-translate-y-1/2 sm:p-0 sm:text-(--ink-30) sm:[writing-mode:vertical-rl]"
           style={cueStyle}
         >
-          (gallery / {items[currentIdx].id})
+          {/* モバイルは grid アイコン、デスクトップは右余白の縦組みなので
+              id 込みのフルラベル。 */}
+          <GalleryIcon className="sm:hidden" />
+          <span className="hidden sm:inline">
+            (gallery / {items[currentIdx].id})
+          </span>
         </a>
       )}
 
-      {/* 左余白の close ボタン。右の外部リンクと対称配置で sideways-lr
-          (テキスト全体を -90° 回転)。スタイルは右側に揃える。 */}
+      {/* close ボタン。デスクトップは左余白に縦組みテキスト (sideways-lr)、
+          モバイルは左右余白が無いので右上コーナーに細線アイコン (X) で置く。 */}
       <button
         type="button"
         onClick={close}
-        className="absolute top-1/2 left-6 -translate-y-1/2 cursor-pointer border-0 bg-transparent p-0 text-[11px] tracking-[0.3em] text-(--ink-30) uppercase [writing-mode:sideways-lr] hover:scale-105 hover:text-(--ink-50)"
+        className="absolute top-2 right-2 z-10 inline-flex cursor-pointer border-0 bg-transparent p-3 text-[11px] tracking-[0.3em] text-(--ink-50) uppercase hover:scale-105 hover:text-(--ink-50) sm:top-1/2 sm:right-auto sm:left-6 sm:-translate-y-1/2 sm:p-0 sm:text-(--ink-30) sm:[writing-mode:sideways-lr]"
         aria-label="Close lightbox"
         style={cueStyle}
       >
-        (close)
+        <CloseIcon className="sm:hidden" />
+        <span className="hidden sm:inline">(close)</span>
       </button>
     </div>
   );
