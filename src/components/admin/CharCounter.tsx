@@ -8,10 +8,10 @@ type Props = {
 
 export function CharCounter({ status }: Props) {
   const tone = status.isOver
-    ? "text-red-700"
+    ? "text-error"
     : status.isWarning
-      ? "text-amber-600"
-      : "text-(--ink-50)";
+      ? "text-warning"
+      : "text-base-content/50";
   return (
     <span className={`text-sm tabular-nums ${tone}`}>{status.remaining}</span>
   );

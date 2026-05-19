@@ -17,8 +17,8 @@ type Props = {
   onQuote?: (tweet: AdminTweet) => void;
 };
 
-const actionCls =
-  "rounded px-2 py-1 text-[13px] text-(--ink-70) transition-colors hover:bg-(--paper-2) hover:text-(--ink) disabled:cursor-not-allowed disabled:opacity-40";
+// 行アクションは DaisyUI の ghost ボタン。
+const actionCls = "btn btn-ghost btn-sm";
 
 function BodyCell({
   label,
@@ -31,15 +31,15 @@ function BodyCell({
 }) {
   return (
     <div className="min-w-0">
-      <p className="m-0 mb-1 text-[10px] font-medium tracking-wide text-(--ink-50) uppercase">
+      <p className="m-0 mb-1 text-[10px] font-medium tracking-wide text-base-content/50 uppercase">
         {label}
       </p>
       {text ? (
-        <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap text-(--ink)">
+        <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap">
           {text}
         </p>
       ) : (
-        <p className="m-0 text-sm text-(--ink-50) italic">{muted}</p>
+        <p className="m-0 text-sm text-base-content/50 italic">{muted}</p>
       )}
     </div>
   );
@@ -93,26 +93,20 @@ export function AdminTweetRow({
   };
 
   return (
-    <article className="rounded-lg border border-(--ink-15) bg-(--paper) p-4">
+    <article className="rounded-lg border border-base-300 bg-base-100 p-4">
       <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
         {isDraft && (
-          <span className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-700">
-            下書き
-          </span>
+          <span className="badge badge-warning badge-sm">下書き</span>
         )}
-        {isRetweet && (
-          <span className="rounded bg-(--paper-2) px-1.5 py-0.5 font-medium text-(--ink-70)">
-            リツイート
-          </span>
-        )}
+        {isRetweet && <span className="badge badge-sm">リツイート</span>}
         {isDraft ? (
-          <span className="text-(--ink-50)">
+          <span className="text-base-content/50">
             {formatPortfolioTimestamp(timestamp)}
           </span>
         ) : (
           <a
             href={`/tweets/${tweet.id}`}
-            className="text-(--ink-50) transition-opacity hover:opacity-60"
+            className="text-base-content/50 transition-opacity hover:opacity-60"
           >
             {formatPortfolioTimestamp(timestamp)}
           </a>
@@ -120,14 +114,16 @@ export function AdminTweetRow({
       </div>
 
       {isRetweet ? (
-        <p className="m-0 text-sm text-(--ink-50)">↻ コメントなしリツイート</p>
+        <p className="m-0 text-sm text-base-content/50">
+          ↻ コメントなしリツイート
+        </p>
       ) : hasText ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <BodyCell label="日本語" text={tweet.body} muted="(本文なし)" />
           <BodyCell label="台湾華語" text={tweet.bodyZh} muted="(未翻訳)" />
         </div>
       ) : (
-        <p className="m-0 text-sm text-(--ink-50) italic">(本文なし)</p>
+        <p className="m-0 text-sm text-base-content/50 italic">(本文なし)</p>
       )}
 
       {images.length > 0 && (
@@ -138,14 +134,14 @@ export function AdminTweetRow({
                 src={`${img.url}?w=120&h=120&fit=crop`}
                 alt=""
                 loading="lazy"
-                className="h-14 w-14 rounded bg-(--paper-2) object-cover"
+                className="h-14 w-14 rounded bg-base-200 object-cover"
               />
             </li>
           ))}
         </ul>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-1 border-t border-(--ink-15) pt-2">
+      <div className="mt-3 flex flex-wrap items-center gap-1 border-t border-base-300 pt-2">
         {!isDraft && !isRetweet && (
           <>
             <button
@@ -183,10 +179,7 @@ export function AdminTweetRow({
           type="button"
           onClick={handleDelete}
           disabled={isDeleting}
-          className={cx(
-            actionCls,
-            "ml-auto text-red-700 hover:bg-red-50 hover:text-red-800",
-          )}
+          className={cx(actionCls, "ml-auto text-error")}
         >
           {isDeleting ? "削除中…" : "削除"}
         </button>

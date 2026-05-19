@@ -21,16 +21,10 @@ const isDraft = !tweet.publishedAt;
 <Admin title="Edit">
   <div class="flex flex-col gap-4">
     <div class="flex items-center gap-2">
-      <h1 class="m-0 text-base font-semibold text-(--ink)">投稿を編集</h1>
-      {
-        isDraft && (
-          <span class="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">
-            下書き
-          </span>
-        )
-      }
+      <h1 class="m-0 text-base font-semibold">投稿を編集</h1>
+      {isDraft && <span class="badge badge-warning badge-sm">下書き</span>}
     </div>
-    <div class="rounded-lg border border-(--ink-15) bg-(--paper) p-4 sm:p-5">
+    <div class="rounded-lg border border-base-300 bg-base-100 p-4 sm:p-5">
       <EditForm
         id={tweet.id}
         defaultBody={tweet.body ?? ""}

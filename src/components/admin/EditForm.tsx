@@ -43,40 +43,37 @@ export function EditForm({ id, defaultBody, defaultBodyZh, isDraft }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <span className="text-[11px] font-medium tracking-wide text-(--ink-50) uppercase">
+        <span className="text-[11px] font-medium tracking-wide text-base-content/50 uppercase">
           日本語
         </span>
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={6}
-          className="w-full resize-y rounded-md border border-(--ink-15) bg-(--paper) p-3 text-base leading-relaxed text-(--ink) focus-visible:border-(--ink-30) focus-visible:ring-2 focus-visible:ring-(--ink-15) focus-visible:outline-none"
+          className="textarea textarea-bordered w-full resize-y p-3 text-base leading-relaxed"
           suppressHydrationWarning
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <span className="text-[11px] font-medium tracking-wide text-(--ink-50) uppercase">
+        <span className="text-[11px] font-medium tracking-wide text-base-content/50 uppercase">
           台湾華語訳（参考・編集時は再翻訳されません）
         </span>
-        <p className="m-0 rounded-md border border-(--ink-15) bg-(--paper-2) p-3 text-sm leading-relaxed whitespace-pre-wrap text-(--ink-70)">
+        <p className="m-0 rounded-md border border-base-300 bg-base-200 p-3 text-sm leading-relaxed whitespace-pre-wrap text-base-content/70">
           {defaultBodyZh || "(未翻訳)"}
         </p>
       </div>
 
       {error && (
-        <p className="m-0 rounded-md bg-red-50 px-3 py-2 text-[13px] text-red-700">
-          {error}
-        </p>
+        <div className="alert alert-error text-sm">
+          <span>{error}</span>
+        </div>
       )}
 
       <div className="flex items-center justify-between gap-3">
         <CharCounter status={status} />
         <div className="flex items-center gap-2">
-          <a
-            href="/admin"
-            className="rounded-md px-3 py-2 text-sm text-(--ink-50) transition-opacity hover:opacity-60"
-          >
+          <a href="/admin" className="btn btn-ghost btn-sm">
             キャンセル
           </a>
           <Button

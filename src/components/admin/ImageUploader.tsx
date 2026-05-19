@@ -65,7 +65,7 @@ export function ImageUploader({ value, onChange }: Props) {
           {value.map((image, index) => (
             <li
               key={image.url}
-              className="relative aspect-square overflow-hidden rounded-md bg-(--paper-2)"
+              className="relative aspect-square overflow-hidden rounded-md bg-base-200"
             >
               <img
                 src={image.url}
@@ -76,7 +76,7 @@ export function ImageUploader({ value, onChange }: Props) {
                 type="button"
                 onClick={() => handleRemove(index)}
                 aria-label="画像を削除"
-                className="absolute top-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-(--ink)/85 text-base leading-none text-(--paper) transition-opacity hover:opacity-80"
+                className="btn btn-circle btn-xs btn-neutral absolute top-1.5 right-1.5"
               >
                 ×
               </button>
@@ -99,21 +99,21 @@ export function ImageUploader({ value, onChange }: Props) {
           }}
           className={`flex flex-col items-center gap-1 rounded-md border border-dashed px-4 py-5 text-center text-[13px] transition-colors ${
             isDragOver
-              ? "border-(--ink-50) bg-(--paper-2)"
-              : "border-(--ink-30)"
+              ? "border-base-content/50 bg-base-200"
+              : "border-base-300"
           }`}
         >
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={isUploading}
-            className="font-medium text-(--ink-70) transition-opacity hover:opacity-60 disabled:cursor-not-allowed disabled:opacity-40"
+            className="btn btn-ghost btn-sm"
           >
             {isUploading
               ? "アップロード中…"
               : `画像を追加（残り ${remaining}/${MAX_IMAGES}）`}
           </button>
-          <span className="text-(--ink-50)">またはここにドロップ</span>
+          <span className="text-base-content/50">またはここにドロップ</span>
           <input
             ref={inputRef}
             type="file"
@@ -125,7 +125,7 @@ export function ImageUploader({ value, onChange }: Props) {
         </div>
       )}
 
-      {error && <p className="m-0 text-[13px] text-red-700">{error}</p>}
+      {error && <p className="m-0 text-[13px] text-error">{error}</p>}
     </div>
   );
 }

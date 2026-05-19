@@ -119,21 +119,21 @@ export function PhotoBackfillPanel({
 
   if (phase === "loading") {
     return (
-      <section className="rounded-lg border border-(--ink-15) bg-(--paper) p-4 text-sm text-(--ink-50) sm:p-5">
+      <section className="rounded-lg border border-base-300 bg-base-100 p-4 text-sm text-base-content/50 sm:p-5">
         件数を確認中…
       </section>
     );
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-(--ink-15) bg-(--paper) p-4 sm:p-5">
-      <h2 className="m-0 text-sm font-semibold text-(--ink)">{heading}</h2>
+    <section className="flex flex-col gap-3 rounded-lg border border-base-300 bg-base-100 p-4 sm:p-5">
+      <h2 className="m-0 text-sm font-semibold">{heading}</h2>
 
       {phase === "error" && (
         <>
-          <p className="m-0 rounded-md bg-red-50 px-3 py-2 text-[13px] text-red-700">
-            {error}
-          </p>
+          <div className="alert alert-error text-sm">
+            <span>{error}</span>
+          </div>
           <div className="flex justify-end">
             <Button
               variant="outline"
@@ -150,12 +150,12 @@ export function PhotoBackfillPanel({
 
       {phase === "running" && progress && (
         <>
-          <p className="m-0 text-[13px] text-(--ink-70)">
+          <p className="m-0 text-[13px] text-base-content/70">
             {only === "clear" ? "文章を削除中…" : "文章を生成中…"} 完了{" "}
             {progress.done} / {progress.total}
             {progress.failed > 0 && `（失敗 ${progress.failed}）`}
           </p>
-          <p className="m-0 text-[12px] text-(--ink-50)">
+          <p className="m-0 text-[12px] text-base-content/50">
             このタブを閉じると中断します。
           </p>
           <div className="flex justify-end">
@@ -174,12 +174,12 @@ export function PhotoBackfillPanel({
       {phase === "idle" && (
         <>
           {notice && (
-            <p className="m-0 text-[13px] text-(--ink-70)">{notice}</p>
+            <p className="m-0 text-[13px] text-base-content/70">{notice}</p>
           )}
 
           {only === "missing" ? (
             <>
-              <p className="m-0 text-[13px] text-(--ink-70)">
+              <p className="m-0 text-[13px] text-base-content/70">
                 {remaining === 0
                   ? "未生成の写真はありません。"
                   : `文章が未生成の写真: ${remaining} 件`}
@@ -192,10 +192,10 @@ export function PhotoBackfillPanel({
             </>
           ) : (
             <>
-              <p className="m-0 text-[13px] text-(--ink-70)">
+              <p className="m-0 text-[13px] text-base-content/70">
                 全 {total} 件の文章を削除する。
               </p>
-              <p className="m-0 text-[12px] text-(--ink-50)">
+              <p className="m-0 text-[12px] text-base-content/50">
                 passageJa / passageZh を空にします。取り消せません。
               </p>
               <div className="flex justify-end">

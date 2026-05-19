@@ -5,7 +5,7 @@ import {
   ModelRadio,
   type PassageModelChoice,
 } from "@/components/admin/ModelRadio";
-import { Button, cx } from "@/components/admin/ui";
+import { Button } from "@/components/admin/ui";
 import { readPhotoExif, type PhotoExif } from "@/lib/exif";
 
 // 写真投稿タブの本体。formosa-chiaroscuro の days エンドポイントへ写真を
@@ -154,23 +154,23 @@ export function PhotoComposer() {
   return (
     <div className="flex flex-col gap-6">
       {/* 文章生成モデル — この単発投稿で使うモデル */}
-      <div className="rounded-lg border border-(--ink-15) bg-(--paper) px-4 py-3 sm:px-5">
+      <div className="rounded-lg border border-base-300 bg-base-100 px-4 py-3 sm:px-5">
         <ModelRadio value={model} onChange={setModel} />
       </div>
 
-      <section className="flex flex-col gap-4 rounded-lg border border-(--ink-15) bg-(--paper) p-4 sm:p-5">
-        <h2 className="m-0 text-sm font-semibold text-(--ink)">写真を投稿</h2>
+      <section className="flex flex-col gap-4 rounded-lg border border-base-300 bg-base-100 p-4 sm:p-5">
+        <h2 className="m-0 text-sm font-semibold">写真を投稿</h2>
 
         {/* 画像ピッカー */}
         <div className="flex flex-col gap-2">
-          <label className="text-[13px] font-medium text-(--ink-70)">
+          <label className="text-[13px] font-medium text-base-content/70">
             写真
           </label>
           {previewUrl && (
             <img
               src={previewUrl}
               alt=""
-              className="max-h-72 w-full rounded-md border border-(--ink-15) object-contain"
+              className="max-h-72 w-full rounded-md border border-base-300 object-contain"
             />
           )}
           <input
@@ -178,7 +178,7 @@ export function PhotoComposer() {
             type="file"
             accept={ACCEPT_MIME}
             onChange={(e) => void handleFile(e.target.files?.[0] ?? null)}
-            className="text-sm text-(--ink-70) file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-(--ink-30) file:bg-(--paper-2) file:px-3 file:py-1.5 file:text-sm file:text-(--ink-70)"
+            className="file-input file-input-bordered w-full"
           />
         </div>
 
@@ -192,35 +192,29 @@ export function PhotoComposer() {
             {isDetecting ? "判定中…" : "EXIF 検出"}
           </Button>
           {detectNotice && (
-            <p className="m-0 text-[13px] text-(--ink-50)">{detectNotice}</p>
+            <p className="m-0 text-[13px] text-base-content/50">
+              {detectNotice}
+            </p>
           )}
         </div>
 
         {/* camera / lens */}
         {schemaState === "error" ? (
-          <div className="rounded-md border border-red-200 bg-red-50 p-3 text-[13px] text-red-700">
-            フィールド情報の取得に失敗しました。
-            <button
-              type="button"
-              onClick={loadSchema}
-              className="ml-2 underline"
-            >
+          <div className="alert alert-error text-[13px]">
+            <span>フィールド情報の取得に失敗しました。</span>
+            <button type="button" className="btn btn-sm" onClick={loadSchema}>
               再試行
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1.5 text-[13px] font-medium text-(--ink-70)">
+            <label className="flex flex-col gap-1.5 text-[13px] font-medium text-base-content/70">
               カメラ
               <select
                 value={camera}
                 onChange={(e) => setCamera(e.target.value)}
                 disabled={selectsDisabled}
-                className={cx(
-                  "w-full rounded-md border border-(--ink-15) bg-(--paper) p-2.5 text-sm text-(--ink)",
-                  "focus-visible:border-(--ink-30) focus-visible:outline-none",
-                  "disabled:opacity-50",
-                )}
+                className="select select-bordered w-full"
               >
                 <option value="">
                   {schemaState === "loading"
@@ -235,17 +229,13 @@ export function PhotoComposer() {
               </select>
             </label>
 
-            <label className="flex flex-col gap-1.5 text-[13px] font-medium text-(--ink-70)">
+            <label className="flex flex-col gap-1.5 text-[13px] font-medium text-base-content/70">
               レンズ（任意）
               <select
                 value={lens}
                 onChange={(e) => setLens(e.target.value)}
                 disabled={selectsDisabled}
-                className={cx(
-                  "w-full rounded-md border border-(--ink-15) bg-(--paper) p-2.5 text-sm text-(--ink)",
-                  "focus-visible:border-(--ink-30) focus-visible:outline-none",
-                  "disabled:opacity-50",
-                )}
+                className="select select-bordered w-full"
               >
                 <option value="">なし</option>
                 {schema?.lens.map((l) => (
@@ -259,24 +249,24 @@ export function PhotoComposer() {
         )}
 
         {/* 留意事項 — 文章生成時に Claude へ渡す補足 (任意) */}
-        <label className="flex flex-col gap-1.5 text-[13px] font-medium text-(--ink-70)">
+        <label className="flex flex-col gap-1.5 text-[13px] font-medium text-base-content/70">
           留意事項（任意）
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
             placeholder="例: 写っているのは私の妻と義母。それを前提に書いてほしい。"
-            className="w-full resize-y rounded-md border border-(--ink-15) bg-(--paper) p-2.5 text-sm leading-relaxed text-(--ink) placeholder:text-(--ink-50) focus-visible:border-(--ink-30) focus-visible:outline-none"
+            className="textarea textarea-bordered w-full resize-y"
           />
-          <span className="text-[12px] font-normal text-(--ink-50)">
+          <span className="text-[12px] font-normal text-base-content/50">
             文章生成時に Claude へ渡されます。
           </span>
         </label>
 
         {error && (
-          <p className="m-0 rounded-md bg-red-50 px-3 py-2 text-[13px] text-red-700">
-            {error}
-          </p>
+          <div className="alert alert-error text-sm">
+            <span>{error}</span>
+          </div>
         )}
 
         <div className="flex justify-end">
@@ -287,18 +277,18 @@ export function PhotoComposer() {
       </section>
 
       {result && (
-        <section className="flex flex-col gap-2 rounded-lg border border-(--ink-15) bg-(--paper) p-4 text-[13px] sm:p-5">
-          <p className="m-0 rounded-md bg-(--ink) px-3 py-2 text-sm text-(--paper)">
-            写真を投稿しました。
-          </p>
-          <p className="m-0 text-[12px] tracking-wide text-(--ink-50)">
+        <section className="flex flex-col gap-2 rounded-lg border border-base-300 bg-base-100 p-4 text-[13px] sm:p-5">
+          <div className="alert alert-success text-sm">
+            <span>写真を投稿しました。</span>
+          </div>
+          <p className="m-0 text-[12px] tracking-wide text-base-content/50">
             生成された文章（microCMS で確認・手直しできます）
           </p>
-          <p className="m-0 whitespace-pre-wrap text-(--ink-70)">
-            <span className="text-(--ink-50)">JA</span> {result.passageJa}
+          <p className="m-0 whitespace-pre-wrap text-base-content/70">
+            <span className="text-base-content/50">JA</span> {result.passageJa}
           </p>
-          <p className="m-0 whitespace-pre-wrap text-(--ink-70)">
-            <span className="text-(--ink-50)">ZH</span> {result.passageZh}
+          <p className="m-0 whitespace-pre-wrap text-base-content/70">
+            <span className="text-base-content/50">ZH</span> {result.passageZh}
           </p>
         </section>
       )}

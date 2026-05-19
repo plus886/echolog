@@ -3,7 +3,7 @@ import AdminBase from "@/layouts/AdminBase.astro";
 
 // admin の shell。公開サイトとは独立した AdminBase (admin.css / DaisyUI、
 // FontPlus・portfolio.css なし) の上に、実用本位・モバイルファーストの
-// レイアウトを載せる。配色は admin.css の --ink / --paper トークン。
+// レイアウトを載せる。配色・コンポーネントは DaisyUI。
 // ユーザの bypass 判定は middleware が Astro.locals.user に詰めた値を使う。
 
 interface Props {
@@ -21,27 +21,25 @@ const navItems = [
 ---
 
 <AdminBase title={title ?? "Admin"}>
-  <div class="flex min-h-screen flex-col bg-(--paper-2)">
-    <header class="sticky top-0 z-10 border-b border-(--ink-15) bg-(--paper)">
+  <div class="flex min-h-screen flex-col bg-base-200">
+    <header class="sticky top-0 z-10 border-b border-base-300 bg-base-100">
       <div
         class="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6"
       >
         <a
           href="/admin"
-          class="mr-auto text-[15px] font-semibold tracking-tight text-(--ink) no-underline"
+          class="mr-auto text-[15px] font-semibold tracking-tight no-underline"
         >
-          echolog<span class="font-normal text-(--ink-50)"> admin</span>
+          echolog<span class="font-normal text-base-content/50"> admin</span>
         </a>
-        <nav class="flex items-center gap-1 text-sm">
+        <nav class="flex items-center gap-1">
           {
             navItems.map((item) => (
               <a
                 href={item.href}
                 class:list={[
-                  "rounded-md px-2.5 py-1.5 no-underline transition-colors hover:bg-(--paper-2)",
-                  path === item.href
-                    ? "font-medium text-(--ink)"
-                    : "text-(--ink-50)",
+                  "btn btn-ghost btn-sm",
+                  path !== item.href && "text-base-content/60",
                 ]}
               >
                 {item.label}
@@ -51,9 +49,7 @@ const navItems = [
         </nav>
         {
           user?.bypassed && (
-            <span class="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-700 uppercase">
-              bypass
-            </span>
+            <span class="badge badge-warning badge-sm uppercase">bypass</span>
           )
         }
       </div>

@@ -65,14 +65,14 @@ export function LinkPreview({ url }: Props) {
 
   if (state.status === "loading") {
     return (
-      <div className="rounded-md border border-(--ink-15) px-3 py-2 text-[13px] text-(--ink-50)">
+      <div className="rounded-md border border-base-300 px-3 py-2 text-[13px] text-base-content/50">
         リンクプレビューを取得中…
       </div>
     );
   }
   if (state.status === "error") {
     return (
-      <div className="rounded-md border border-(--ink-15) px-3 py-2 text-[13px] text-(--ink-50)">
+      <div className="rounded-md border border-base-300 px-3 py-2 text-[13px] text-base-content/50">
         プレビューを取得できませんでした（{state.message}）
       </div>
     );
@@ -83,28 +83,28 @@ export function LinkPreview({ url }: Props) {
       href={data.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex gap-3 overflow-hidden rounded-md border border-(--ink-15) no-underline transition-colors hover:bg-(--paper-2)"
+      className="card card-side card-border overflow-hidden bg-base-100 no-underline transition-colors hover:bg-base-200"
     >
       {data.image && (
         <img
           src={data.image}
           alt=""
-          className="h-20 w-28 shrink-0 bg-(--paper-2) object-cover"
+          className="h-20 w-28 shrink-0 bg-base-200 object-cover"
         />
       )}
       <div className="flex min-w-0 flex-col justify-center gap-0.5 py-2 pr-3">
         {data.siteName && (
-          <p className="m-0 text-[11px] tracking-wide text-(--ink-50) uppercase">
+          <p className="m-0 text-[11px] tracking-wide text-base-content/50 uppercase">
             {data.siteName}
           </p>
         )}
         {data.title && (
-          <p className="m-0 line-clamp-2 text-sm leading-snug font-medium text-(--ink)">
+          <p className="m-0 line-clamp-2 text-sm leading-snug font-medium">
             {data.title}
           </p>
         )}
         {data.description && (
-          <p className="m-0 line-clamp-2 text-[13px] leading-snug text-(--ink-70)">
+          <p className="m-0 line-clamp-2 text-[13px] leading-snug text-base-content/70">
             {data.description}
           </p>
         )}

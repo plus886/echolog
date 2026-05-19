@@ -7,18 +7,17 @@
   themes: light --default;
 }
 
-/* 既存 admin 自前 UI (ui.tsx の Button 等) がまだ使う design token。
-   admin は portfolio.css を読まなくなったため、必要分を portfolio.css の
-   .k-shell からコピーして :root に置く。次スコープで admin UI を DaisyUI
-   へ置き換えたら除去予定。 */
+/* echolog のクリーム/チャコール配色を DaisyUI のテーマ変数に反映する。
+   light テーマをベースに base 系・primary 系だけ上書きし、admin の
+   見た目 (paper #f9f8f1 / ink #383838) を維持する。@plugin の出力より
+   後に置くので :root への上書きが効く。 */
 :root {
-  --paper: #f9f8f1;
-  --paper-2: #f1ede2;
-  --ink: #383838;
-  --ink-70: rgba(56, 56, 56, 0.72);
-  --ink-50: rgba(56, 56, 56, 0.5);
-  --ink-30: rgba(56, 56, 56, 0.32);
-  --ink-15: rgba(56, 56, 56, 0.15);
+  --color-base-100: #f9f8f1; /* 旧 --paper      : 主背景 */
+  --color-base-200: #f1ede2; /* 旧 --paper-2    : 一段沈んだ背景 */
+  --color-base-300: #e6e1d2; /* さらに沈んだ境界色 */
+  --color-base-content: #383838; /* 旧 --ink    : 本文色 */
+  --color-primary: #383838; /* 旧 --ink        : primary ボタン地 */
+  --color-primary-content: #f9f8f1; /* 旧 --paper: primary ボタン文字 */
 }
 
 body {

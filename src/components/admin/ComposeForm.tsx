@@ -114,7 +114,7 @@ export function ComposeForm({
         }
         rows={5}
         autoFocus={mode.kind !== "new"}
-        className="w-full resize-y rounded-md border border-(--ink-15) bg-(--paper) p-3 text-base leading-relaxed text-(--ink) placeholder:text-(--ink-50) focus-visible:border-(--ink-30) focus-visible:ring-2 focus-visible:ring-(--ink-15) focus-visible:outline-none"
+        className="textarea textarea-bordered w-full resize-y p-3 text-base leading-relaxed"
         // FontPlus が hydration 前に inline font-family を注入するため、
         // controlled textarea の attribute mismatch 警告をこの要素のみ抑止。
         suppressHydrationWarning
@@ -125,9 +125,9 @@ export function ComposeForm({
       <LinkPreview url={previewUrl} />
 
       {error && (
-        <p className="m-0 rounded-md bg-red-50 px-3 py-2 text-[13px] text-red-700">
-          {error}
-        </p>
+        <div className="alert alert-error text-sm">
+          <span>{error}</span>
+        </div>
       )}
 
       <div className="flex items-center justify-between gap-3">
@@ -158,20 +158,20 @@ function ModeBanner({
 }) {
   const label = mode.kind === "reply" ? "返信先" : "引用元";
   return (
-    <div className="rounded-md border border-(--ink-15) bg-(--paper-2) p-3">
+    <div className="rounded-md border border-base-300 bg-base-200 p-3">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[11px] font-medium tracking-wide text-(--ink-50) uppercase">
+        <span className="text-[11px] font-medium tracking-wide text-base-content/50 uppercase">
           {label}
         </span>
         <button
           type="button"
           onClick={onCancel}
-          className="text-[13px] text-(--ink-50) transition-opacity hover:opacity-60"
+          className="btn btn-ghost btn-xs"
         >
           解除
         </button>
       </div>
-      <p className="m-0 mt-1.5 line-clamp-3 text-[13px] leading-relaxed whitespace-pre-wrap text-(--ink-70)">
+      <p className="m-0 mt-1.5 line-clamp-3 text-[13px] leading-relaxed whitespace-pre-wrap text-base-content/70">
         {mode.target.body || "(本文なし)"}
       </p>
     </div>

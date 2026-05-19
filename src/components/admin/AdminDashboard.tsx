@@ -38,7 +38,7 @@ function ThreadRows({ node, h }: { node: ThreadNode; h: RowHandlers }) {
             : undefined
         }
         className={
-          node.depth > 0 ? "border-l-2 border-(--ink-15) pl-2" : undefined
+          node.depth > 0 ? "border-l-2 border-base-300 pl-2" : undefined
         }
       >
         <AdminTweetRow
@@ -130,10 +130,8 @@ export function AdminDashboard({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="rounded-lg border border-(--ink-15) bg-(--paper) p-4 sm:p-5">
-        <h2 className="mb-3 text-sm font-semibold text-(--ink)">
-          {composeHeading}
-        </h2>
+      <section className="rounded-lg border border-base-300 bg-base-100 p-4 sm:p-5">
+        <h2 className="mb-3 text-sm font-semibold">{composeHeading}</h2>
         <ComposeForm
           mode={mode}
           onPosted={handlePosted}
@@ -142,9 +140,9 @@ export function AdminDashboard({
       </section>
 
       {notice && (
-        <p className="m-0 rounded-md bg-(--ink) px-3 py-2 text-sm text-(--paper)">
-          {notice}
-        </p>
+        <div className="alert alert-success text-sm">
+          <span>{notice}</span>
+        </div>
       )}
 
       <section className="flex flex-col gap-3">
@@ -155,33 +153,33 @@ export function AdminDashboard({
               type="button"
               onClick={() => changeFilter(f)}
               className={cx(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                filter === f
-                  ? "bg-(--ink) text-(--paper)"
-                  : "text-(--ink-50) hover:bg-(--paper-2)",
+                "btn btn-sm",
+                filter === f ? "btn-primary" : "btn-ghost",
               )}
             >
               {f === "posts" ? "投稿" : "下書き"}
             </button>
           ))}
           {listState === "loading" && (
-            <span className="ml-2 text-[13px] text-(--ink-50)">更新中…</span>
+            <span className="ml-2 text-[13px] text-base-content/50">
+              更新中…
+            </span>
           )}
         </div>
 
         {listState === "error" ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            一覧の取得に失敗しました。
+          <div className="alert alert-error text-sm">
+            <span>一覧の取得に失敗しました。</span>
             <button
               type="button"
+              className="btn btn-sm"
               onClick={() => void refetch(filter)}
-              className="ml-2 underline"
             >
               再試行
             </button>
           </div>
         ) : threads.length === 0 ? (
-          <p className="m-0 rounded-lg border border-(--ink-15) bg-(--paper) p-6 text-center text-sm text-(--ink-50)">
+          <p className="m-0 rounded-lg border border-base-300 bg-base-100 p-6 text-center text-sm text-base-content/50">
             {filter === "drafts"
               ? "下書きはありません。"
               : "まだ投稿がありません。"}
