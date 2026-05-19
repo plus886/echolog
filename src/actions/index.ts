@@ -573,28 +573,37 @@ export const server = {
   // ---- days 一覧管理 (文章管理タブ) ----
 
   // days を 1 ページ分取得する。一覧表示用。favorite でお気に入り
-  // (featured) 状態の絞り込みができる。
+  // (featured) 状態の絞り込みができる。id を渡すとその ID 1 件だけを
+  // 引く (favorite / ページングは無視。完全一致)。
   listDaysPage: defineAction({
     input: z.object({
       offset: z.number().int().min(0).default(0),
       limit: z.number().int().min(1).max(100).default(30),
       favorite: z.enum(["all", "featured", "unfeatured"]).default("all"),
+      id: z.string().max(200).optional(),
     }),
-    handler: async ({ offset, limit, favorite }) => {
-      // featured は boolean。未設定エントリも「未featured」に含めたいので
-      // unfeatured は [not_equals]true で表現する。
-      const filters =
-        favorite === "featured"
-          ? "featured[equals]true"
-          : favorite === "unfeatured"
-            ? "featured[not_equals]true"
-            : undefined;
+    handler: async ({ offset, limit, favorite, id }) => {
+      const fields = "id,image,passageJa,passageZh,featured,date";
+      const searchId = id?.trim();
       try {
+        if (searchId) {
+          // ID 検索: ids クエリで完全一致 1 件を引く (見つからなければ空)。
+          const page = await listDays({ ids: searchId, fields, limit: 1 });
+          return { days: page.contents, total: page.totalCount };
+        }
+        // featured は boolean。未設定エントリも「未featured」に含めたいので
+        // unfeatured は [not_equals]true で表現する。
+        const filters =
+          favorite === "featured"
+            ? "featured[equals]true"
+            : favorite === "unfeatured"
+              ? "featured[not_equals]true"
+              : undefined;
         const page = await listDays({
           offset,
           limit,
           orders: "-date",
-          fields: "id,image,passageJa,passageZh,featured,date",
+          fields,
           ...(filters ? { filters } : {}),
         });
         return { days: page.contents, total: page.totalCount };
