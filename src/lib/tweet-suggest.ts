@@ -1,20 +1,14 @@
-import { getEnv } from "@/lib/env";
+import { callAnthropic, cachedSystem } from "@/lib/anthropic";
 import { TWEET_SUGGEST_SYSTEM_PROMPT } from "@/lib/tweet-suggest-prompt";
 
 // 過去のツイートをサンプルに、新しいツイートの下書きを 1 件生成する
-// server 専用モジュール。Anthropic Messages API を raw fetch で叩く。
-// モデルは Sonnet 固定。
+// server 専用モジュール。Anthropic 呼び出しは lib/anthropic.ts の共通
+// クライアントに委譲する。モデルは Sonnet 固定。
 //
 // 注意: ANTHROPIC_API_KEY を読むため actions / SSR からのみ import する。
 // client component には絶対にバンドルしない。
 
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-6";
-const TIMEOUT_MS = 20_000;
-
-type AnthropicResponse = {
-  content?: { type: string; text?: string }[];
-};
 
 export type SuggestTweetInput = {
   // 文体参考にする過去のツイート本文 (新しい順)。
@@ -84,48 +78,13 @@ function stripWrappingQuotes(text: string): string {
 // 過去ツイートのサンプルから新しいツイートの下書きを 1 件生成して返す。
 // HTTP エラー・タイムアウト・空応答はいずれも例外を throw する。
 export async function suggestTweet(input: SuggestTweetInput): Promise<string> {
-  const apiKey = getEnv().ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error("tweet-suggest failed: ANTHROPIC_API_KEY is not set");
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    const res = await fetch(ANTHROPIC_API_URL, {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1024,
-        system: [
-          {
-            type: "text",
-            text: TWEET_SUGGEST_SYSTEM_PROMPT,
-            cache_control: { type: "ephemeral" },
-          },
-        ],
-        messages: [{ role: "user", content: buildUserMessage(input) }],
-      }),
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      throw new Error(`tweet-suggest failed: ${res.status} ${detail}`);
-    }
-
-    const data = (await res.json()) as AnthropicResponse;
-    const text = data.content?.find((b) => b.type === "text")?.text?.trim();
-    if (!text) {
-      throw new Error("tweet-suggest failed: empty response");
-    }
-    return stripWrappingQuotes(text);
-  } finally {
-    clearTimeout(timeout);
-  }
+  const text = await callAnthropic({
+    model: MODEL,
+    system: cachedSystem(TWEET_SUGGEST_SYSTEM_PROMPT),
+    messages: [{ role: "user", content: buildUserMessage(input) }],
+    maxTokens: 1024,
+    timeoutMs: 20_000,
+    errorLabel: "tweet-suggest failed",
+  });
+  return stripWrappingQuotes(text);
 }

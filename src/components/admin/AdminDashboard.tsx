@@ -6,7 +6,7 @@ import ComposeForm, {
   type SeededBody,
 } from "@/components/admin/ComposeForm";
 import TweetSuggestDialog from "@/components/admin/TweetSuggestDialog";
-import { cx } from "@/components/admin/ui";
+import { Card, cx } from "@/components/admin/ui";
 import type { ThreadNode } from "@/lib/thread";
 import type { AdminTweet } from "@/types/microcms";
 
@@ -136,7 +136,7 @@ export function AdminDashboard({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="rounded-lg border border-base-300 bg-base-100 p-4 sm:p-5">
+      <Card>
         <div className="mb-3 flex items-center justify-between gap-2">
           <h2 className="m-0 text-sm font-semibold">{composeHeading}</h2>
           <button
@@ -153,7 +153,7 @@ export function AdminDashboard({
           onCancelMode={() => setMode({ kind: "new" })}
           seededBody={seededBody}
         />
-      </section>
+      </Card>
 
       {notice && (
         <div className="alert alert-success text-sm">

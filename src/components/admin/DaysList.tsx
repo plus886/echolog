@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { DayRow } from "@/components/admin/DayRow";
 import type { PassageModelChoice } from "@/components/admin/ModelRadio";
+import { Button } from "@/components/admin/ui";
 import type { Day } from "@/types/microcms";
 
 // days のページング一覧。文章管理タブの主要部。
@@ -104,9 +105,9 @@ export function DaysList({ model }: { model: PassageModelChoice }) {
       {state === "error" ? (
         <div className="alert alert-error text-sm">
           <span>一覧の取得に失敗しました。</span>
-          <button type="button" className="btn btn-sm" onClick={refetch}>
+          <Button variant="neutral" className="btn-sm" onClick={refetch}>
             再試行
-          </button>
+          </Button>
         </div>
       ) : state === "loading" ? (
         <p className="m-0 py-6 text-center text-sm opacity-60">読み込み中…</p>
@@ -123,25 +124,25 @@ export function DaysList({ model }: { model: PassageModelChoice }) {
       )}
 
       <div className="flex items-center justify-between gap-2">
-        <button
-          type="button"
-          className="btn btn-sm"
+        <Button
+          variant="neutral"
+          className="btn-sm"
           disabled={page <= 0 || state === "loading"}
           onClick={() => setPage((p) => Math.max(0, p - 1))}
         >
           ← 前
-        </button>
+        </Button>
         <span className="text-sm opacity-60">
           {page + 1} / {lastPage + 1}
         </span>
-        <button
-          type="button"
-          className="btn btn-sm"
+        <Button
+          variant="neutral"
+          className="btn-sm"
           disabled={page >= lastPage || state === "loading"}
           onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
         >
           次 →
-        </button>
+        </Button>
       </div>
     </section>
   );

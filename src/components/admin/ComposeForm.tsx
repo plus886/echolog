@@ -10,7 +10,7 @@ import {
 import { CharCounter } from "@/components/admin/CharCounter";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { LinkPreview } from "@/components/admin/LinkPreview";
-import { Button } from "@/components/admin/ui";
+import { Button, ErrorAlert } from "@/components/admin/ui";
 import { evaluateTweetText } from "@/lib/tweet-text";
 import { extractFirstUrl } from "@/lib/url-detect";
 
@@ -147,11 +147,7 @@ export function ComposeForm({
 
       <LinkPreview url={previewUrl} />
 
-      {error && (
-        <div className="alert alert-error text-sm">
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <div className="flex items-center justify-between gap-3">
         <CharCounter status={status} />

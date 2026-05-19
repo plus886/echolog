@@ -5,7 +5,7 @@ import {
   ModelRadio,
   type PassageModelChoice,
 } from "@/components/admin/ModelRadio";
-import { Button } from "@/components/admin/ui";
+import { Button, Card, ErrorAlert } from "@/components/admin/ui";
 import { readPhotoExif, type PhotoExif } from "@/lib/exif";
 
 // 写真投稿タブの本体。formosa-chiaroscuro の days エンドポイントへ写真を
@@ -154,11 +154,11 @@ export function PhotoComposer() {
   return (
     <div className="flex flex-col gap-6">
       {/* 文章生成モデル — この単発投稿で使うモデル */}
-      <div className="rounded-lg border border-base-300 bg-base-100 px-4 py-3 sm:px-5">
+      <Card tight>
         <ModelRadio value={model} onChange={setModel} />
-      </div>
+      </Card>
 
-      <section className="flex flex-col gap-4 rounded-lg border border-base-300 bg-base-100 p-4 sm:p-5">
+      <Card className="flex flex-col gap-4">
         <h2 className="m-0 text-sm font-semibold">写真を投稿</h2>
 
         {/* 画像ピッカー */}
@@ -263,21 +263,17 @@ export function PhotoComposer() {
           </span>
         </label>
 
-        {error && (
-          <div className="alert alert-error text-sm">
-            <span>{error}</span>
-          </div>
-        )}
+        {error && <ErrorAlert>{error}</ErrorAlert>}
 
         <div className="flex justify-end">
           <Button onClick={handlePublish} disabled={publishDisabled}>
             {isPublishing ? "アップロード中…" : "アップロード"}
           </Button>
         </div>
-      </section>
+      </Card>
 
       {result && (
-        <section className="flex flex-col gap-2 rounded-lg border border-base-300 bg-base-100 p-4 text-[13px] sm:p-5">
+        <Card className="flex flex-col gap-2 text-[13px]">
           <div className="alert alert-success text-sm">
             <span>写真を投稿しました。</span>
           </div>
@@ -290,7 +286,7 @@ export function PhotoComposer() {
           <p className="m-0 whitespace-pre-wrap text-base-content/70">
             <span className="text-base-content/50">ZH</span> {result.passageZh}
           </p>
-        </section>
+        </Card>
       )}
     </div>
   );

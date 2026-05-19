@@ -2,7 +2,7 @@ import { actions } from "astro:actions";
 import { useState, useTransition } from "react";
 
 import { CharCounter } from "@/components/admin/CharCounter";
-import { Button } from "@/components/admin/ui";
+import { Button, ErrorAlert } from "@/components/admin/ui";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
 // 編集フォーム。日本語本文のみ編集可能。台湾華語訳は編集時に再翻訳され
@@ -64,11 +64,7 @@ export function EditForm({ id, defaultBody, defaultBodyZh, isDraft }: Props) {
         </p>
       </div>
 
-      {error && (
-        <div className="alert alert-error text-sm">
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <ErrorAlert>{error}</ErrorAlert>}
 
       <div className="flex items-center justify-between gap-3">
         <CharCounter status={status} />

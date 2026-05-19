@@ -2,7 +2,7 @@ import { actions } from "astro:actions";
 import { useEffect, useRef, useState } from "react";
 
 import type { PassageModelChoice } from "@/components/admin/ModelRadio";
-import { Button } from "@/components/admin/ui";
+import { Button, Card } from "@/components/admin/ui";
 
 // 文章管理タブのバルク操作パネル。only で 1 操作だけを担当する:
 //  - only="missing": passageJa が空の days だけに文章を後付け生成する。
@@ -119,14 +119,12 @@ export function PhotoBackfillPanel({
 
   if (phase === "loading") {
     return (
-      <section className="rounded-lg border border-base-300 bg-base-100 p-4 text-sm text-base-content/50 sm:p-5">
-        件数を確認中…
-      </section>
+      <Card className="text-sm text-base-content/50">件数を確認中…</Card>
     );
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border border-base-300 bg-base-100 p-4 sm:p-5">
+    <Card className="flex flex-col gap-3">
       <h2 className="m-0 text-sm font-semibold">{heading}</h2>
 
       {phase === "error" && (
@@ -207,7 +205,7 @@ export function PhotoBackfillPanel({
           )}
         </>
       )}
-    </section>
+    </Card>
   );
 }
 

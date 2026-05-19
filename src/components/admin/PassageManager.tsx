@@ -6,6 +6,7 @@ import {
   type PassageModelChoice,
 } from "@/components/admin/ModelRadio";
 import { PhotoBackfillPanel } from "@/components/admin/PhotoBackfillPanel";
+import { Card } from "@/components/admin/ui";
 
 // admin「文章管理」タブの root。縦に:
 //  ① モデル選択 (バックフィルと個別再生成が共用)
@@ -19,9 +20,9 @@ export function PassageManager() {
   return (
     <div className="flex flex-col gap-6">
       {/* モデル選択の見た目は写真投稿タブ (PhotoComposer) に揃える */}
-      <div className="rounded-lg border border-base-300 bg-base-100 px-4 py-3 sm:px-5">
+      <Card tight>
         <ModelRadio value={model} onChange={setModel} />
-      </div>
+      </Card>
       <DaysList model={model} />
       <PhotoBackfillPanel only="missing" model={model} />
       <PhotoBackfillPanel only="clear" model={model} />
