@@ -1,5 +1,6 @@
 ---
 import Public from "@/layouts/Public.astro";
+import OgpCard from "@/components/OgpCard.astro";
 import QuoteImages from "@/components/QuoteImages.tsx";
 import ReferenceCard from "@/components/ReferenceCard.astro";
 import { formatPortfolioTimestamp } from "@/lib/format";
@@ -7,7 +8,10 @@ import { generateQuoteImagesLayout } from "@/lib/gallery-layout";
 import { setEdgeCache } from "@/lib/http";
 import { defaultLocale, localeUrl, localizedBody, t } from "@/lib/i18n";
 import { getTweet, listThreadReplies } from "@/lib/microcms";
+import { fetchOgp } from "@/lib/og-fetch";
+import type { OgpData } from "@/lib/og-parse";
 import { hashStringToSeed } from "@/lib/prng";
+import { extractFirstUrl, splitByUrls } from "@/lib/url-detect";
 import { getRetweetKind, type Tweet } from "@/types/microcms";
 
 // QuoteImages は client:only="react" で SSR をスキップする — flushSync
@@ -47,6 +51,13 @@ const retweetBody = tweet.retweetOf
   ? localizedBody(tweet.retweetOf, locale)
   : undefined;
 
+// 本文中の URL を自動リンクするためのセグメント分解と、先頭 URL の OGP
+// カード。OGP は SSR 時に取得する (ページは setEdgeCache で 1h キャッシュ
+// されるので取得はキャッシュミス時のみ。失敗時は null でカード非表示)。
+const bodySegments = body ? splitByUrls(body) : [];
+const firstUrl = body ? extractFirstUrl(body) : null;
+const ogp: OgpData | null = firstUrl ? await fetchOgp(firstUrl) : null;
+
 // 画像 scatter のレイアウトを server-side で決定論的に計算する。seed は
 // tweet.id から生成するので、同じ tweet を何度開いても同じ配置に。images
 // の数 / aspect ratio が変われば自然に再配置される。QuoteImages 自体は
@@ -79,12 +90,26 @@ setEdgeCache(Astro.response);
 
       {
         body && (
-          <p
-            class="m-0 whitespace-pre-wrap font-serif text-[20px] leading-[1.75] text-(--ink)"
-            set:text={body}
-          />
+          <p class="m-0 whitespace-pre-wrap font-serif text-[20px] leading-[1.75] text-(--ink)">
+            {bodySegments.map((seg) =>
+              seg.type === "url" ? (
+                <a
+                  href={seg.value}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="break-words underline decoration-(--ink-30) underline-offset-2 transition-colors hover:decoration-(--ink)"
+                >
+                  {seg.value}
+                </a>
+              ) : (
+                seg.value
+              ),
+            )}
+          </p>
         )
       }
+
+      {ogp && (ogp.title || ogp.image) && <OgpCard data={ogp} class="mt-6" />}
 
       {
         tweet.retweetOf && retweetBody && (

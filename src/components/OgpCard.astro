@@ -1,0 +1,58 @@
+---
+import type { OgpData } from "@/lib/og-parse";
+
+// 本文中の URL の OGP カード。SSR 時に取得済みの OgpData を受け取り、
+// サーバ描画する (クライアント fetch なし)。公開サイトの配色トークンで
+// 描く (admin の LinkPreview は DaisyUI なので別物)。
+
+interface Props {
+  data: OgpData;
+  class?: string;
+}
+
+const { data, class: className } = Astro.props;
+---
+
+<a
+  href={data.url}
+  target="_blank"
+  rel="noopener noreferrer"
+  class:list={[
+    "flex overflow-hidden border border-(--ink-15) no-underline transition-colors hover:border-(--ink-30)",
+    className,
+  ]}
+>
+  {
+    data.image && (
+      <img
+        src={data.image}
+        alt=""
+        loading="lazy"
+        class="h-24 w-32 shrink-0 bg-(--paper-2) object-cover min-[880px]:h-28 min-[880px]:w-40"
+      />
+    )
+  }
+  <div class="flex min-w-0 flex-col justify-center gap-1 px-4 py-3">
+    {
+      data.siteName && (
+        <p class="m-0 text-[11px] tracking-[0.08em] text-(--ink-50) uppercase">
+          {data.siteName}
+        </p>
+      )
+    }
+    {
+      data.title && (
+        <p class="m-0 line-clamp-2 text-[14px] leading-snug text-(--ink)">
+          {data.title}
+        </p>
+      )
+    }
+    {
+      data.description && (
+        <p class="m-0 line-clamp-2 text-[12px] leading-snug text-(--ink-50)">
+          {data.description}
+        </p>
+      )
+    }
+  </div>
+</a>
