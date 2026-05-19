@@ -229,6 +229,9 @@ export const server = {
     input: z.object({
       id: z.string().min(1),
       body: z.string().max(10_000),
+      // 台湾華語訳。admin の手編集で日本語とは独立に書き換えられる
+      // (編集時の自動再翻訳はしない)。
+      bodyZh: z.string().max(10_000).optional().default(""),
       publish: z.string().optional(), // form は string、後で boolean 化
     }),
     handler: async (input) => {
@@ -242,7 +245,7 @@ export const server = {
       const publish = input.publish === "true";
       await updateTweet(
         input.id,
-        { body: input.body },
+        { body: input.body, bodyZh: input.bodyZh },
         publish ? { isDraft: false } : undefined,
       );
       return { id: input.id };
