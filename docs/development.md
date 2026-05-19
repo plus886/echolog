@@ -45,10 +45,10 @@ pnpm dev
 
 ## 認証（Cloudflare Access）
 
-- 本番では `/admin/*`, `/api/tweets/*`, `/api/og-preview` を Cloudflare Access で保護する
-- ローカルは `BYPASS_AUTH=true` かつ `NODE_ENV=development` のときに `proxy.ts` が認証を素通り
+- 本番では `/admin/*`, `/api/admin/*`, `/api/og-preview`, `/api/uploads` を Cloudflare Access で保護する（`middleware.ts` の `requiresAuth` と一致）
+- ローカルは `BYPASS_AUTH=true` かつ `import.meta.env.DEV` のときに `middleware.ts` が認証を素通り
 - 本番デプロイ時は Workers Secrets に `CF_ACCESS_TEAM_DOMAIN` と `CF_ACCESS_AUD` を登録
-- `/api/revalidate` は Cloudflare Access の Bypass Policy 対象にする（HMAC 署名で検証）
+- 上記パスだけを Access のパス指定で登録すれば、公開パスは対象外のままで Bypass ポリシー不要
 
 ## Cloudflare Workers ローカル実行（本番に近い環境）
 
@@ -118,12 +118,20 @@ pnpm cf:deploy
 
 ## Cloudflare Access の設定（本番のみ）
 
-Zero Trust ダッシュボード → Access → Applications で以下を設定:
+Zero Trust ダッシュボード → Access → Applications で Self-hosted application
+を 1 つ作成する。対象は本番ドメイン `kokaiji.tw`。
 
-- Self-hosted application: 対象ドメイン（例: `echolog.<account>.workers.dev`）
+認証が必要なパス（`middleware.ts` の `requiresAuth` が見ているパス）だけを
+パス指定でアプリに登録する。こうすれば公開ページは Access の対象外のまま
+なので、公開パスを 1 つずつ Bypass する必要がない。
+
+- Application domain（1 アプリに 4 つ追加）:
+  - `kokaiji.tw` / path `admin`
+  - `kokaiji.tw` / path `api/admin`
+  - `kokaiji.tw` / path `api/og-preview`
+  - `kokaiji.tw` / path `api/uploads`
 - Identity provider: One-time PIN またはお好みの IdP
-- Policy 1（保護対象）: Allow / 自分のメールのみ
-- Policy 2（公開パスは Bypass）: `/`, `/feed`, `/tweets/*`, `/api/revalidate`
+- Policy: Allow / 自分のメールのみ
 
 Application Audience (AUD) Tag を `CF_ACCESS_AUD` に、team domain を
 `CF_ACCESS_TEAM_DOMAIN` に登録すれば、`middleware.ts` が JWT 検証で活用する。
