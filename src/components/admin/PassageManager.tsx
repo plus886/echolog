@@ -25,7 +25,8 @@ export function PassageManager() {
       </Card>
       <DaysList model={model} />
       <PhotoBackfillPanel only="missing" model={model} />
-      <PhotoBackfillPanel only="clear" model={model} />
+      {/* 全文章削除パネル — 今後使わないため一旦コメントアウト */}
+      {/* <PhotoBackfillPanel only="clear" model={model} /> */}
     </div>
   );
 }
