@@ -1,12 +1,12 @@
 import { actions } from "astro:actions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { PassageModelChoice } from "@/components/admin/ModelRadio";
 import { RegenerateDialog } from "@/components/admin/RegenerateDialog";
 import type { Day } from "@/types/microcms";
 
 // days 一覧の 1 行 (DaisyUI card)。サムネイル + passageJa/Zh +
-// お気に入りトグル + 再生成ボタン。
+// お気に入りトグル + 文章の手編集 + 再生成。
 
 type Props = {
   day: Day;
@@ -20,6 +20,23 @@ export function DayRow({ day, model, onChanged }: Props) {
   const [favBusy, setFavBusy] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // 表示中の文章。再生成 (onChanged → 親が再取得) で day prop が
+  // 更新されたら同期する。
+  const [passages, setPassages] = useState({
+    ja: day.passageJa ?? "",
+    zh: day.passageZh ?? "",
+  });
+  useEffect(() => {
+    setPassages({ ja: day.passageJa ?? "", zh: day.passageZh ?? "" });
+  }, [day.passageJa, day.passageZh]);
+
+  // 手編集モード。draft* は編集中のバッファ。
+  const [editing, setEditing] = useState(false);
+  const [draftJa, setDraftJa] = useState("");
+  const [draftZh, setDraftZh] = useState("");
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const toggleFavorite = async () => {
     if (favBusy) return;
     const next = !featured;
@@ -30,6 +47,37 @@ export function DayRow({ day, model, onChanged }: Props) {
     if (res.error) {
       setFeatured(!next); // 失敗 → 元に戻す
     }
+  };
+
+  const startEdit = () => {
+    setDraftJa(passages.ja);
+    setDraftZh(passages.zh);
+    setSaveError(null);
+    setEditing(true);
+  };
+
+  const cancelEdit = () => {
+    if (saveBusy) return;
+    setEditing(false);
+    setSaveError(null);
+  };
+
+  const save = async () => {
+    if (saveBusy) return;
+    setSaveBusy(true);
+    setSaveError(null);
+    const res = await actions.updateDayPassages({
+      id: day.id,
+      passageJa: draftJa,
+      passageZh: draftZh,
+    });
+    setSaveBusy(false);
+    if (res.error || !res.data) {
+      setSaveError(res.error?.message ?? "文章の保存に失敗しました");
+      return;
+    }
+    setPassages({ ja: res.data.passageJa, zh: res.data.passageZh });
+    setEditing(false);
   };
 
   return (
@@ -68,20 +116,77 @@ export function DayRow({ day, model, onChanged }: Props) {
           <button
             type="button"
             className="btn btn-sm"
+            onClick={startEdit}
+            disabled={editing}
+          >
+            編集
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm"
             onClick={() => setDialogOpen(true)}
+            disabled={editing}
           >
             再生成
           </button>
         </div>
 
-        <p className="m-0 text-sm whitespace-pre-wrap">
-          <span className="opacity-50">JA</span>{" "}
-          {day.passageJa || <span className="opacity-50">（未生成）</span>}
-        </p>
-        <p className="m-0 text-sm whitespace-pre-wrap">
-          <span className="opacity-50">ZH</span>{" "}
-          {day.passageZh || <span className="opacity-50">（未生成）</span>}
-        </p>
+        {editing ? (
+          <div className="flex flex-col gap-2">
+            <label className="flex flex-col gap-1 text-xs font-medium opacity-60">
+              JA
+              <textarea
+                className="textarea textarea-bordered w-full text-sm"
+                rows={2}
+                value={draftJa}
+                onChange={(e) => setDraftJa(e.target.value)}
+                disabled={saveBusy}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-medium opacity-60">
+              ZH
+              <textarea
+                className="textarea textarea-bordered w-full text-sm"
+                rows={4}
+                value={draftZh}
+                onChange={(e) => setDraftZh(e.target.value)}
+                disabled={saveBusy}
+              />
+            </label>
+            {saveError && (
+              <p className="m-0 text-sm text-error">{saveError}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost"
+                onClick={cancelEdit}
+                disabled={saveBusy}
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={() => void save()}
+                disabled={saveBusy}
+              >
+                {saveBusy ? "保存中…" : "保存"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="m-0 text-sm whitespace-pre-wrap">
+              <span className="opacity-50">JA</span>{" "}
+              {passages.ja || <span className="opacity-50">（未生成）</span>}
+            </p>
+            <p className="m-0 text-sm whitespace-pre-wrap">
+              <span className="opacity-50">ZH</span>{" "}
+              {passages.zh || <span className="opacity-50">（未生成）</span>}
+            </p>
+          </>
+        )}
       </div>
 
       {dialogOpen && (

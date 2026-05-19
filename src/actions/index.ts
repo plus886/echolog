@@ -622,6 +622,29 @@ export const server = {
     },
   }),
 
+  // 1 件の写真の文章 (passageJa / passageZh) を手入力で上書き保存する。
+  // Claude 呼び出し無し。空文字も許可する (一覧で「（未生成）」になる)。
+  updateDayPassages: defineAction({
+    input: z.object({
+      id: z.string().min(1),
+      passageJa: z.string().max(2000),
+      passageZh: z.string().max(2000),
+    }),
+    handler: async ({ id, passageJa, passageZh }) => {
+      const next = { passageJa: passageJa.trim(), passageZh: passageZh.trim() };
+      try {
+        await updateDayWithRetry(id, next);
+        return next;
+      } catch (e) {
+        console.error("[days] update passages failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "文章の保存に失敗しました",
+        });
+      }
+    },
+  }),
+
   // 1 件の写真の文章を再生成して上書きする。生成文を返してフロントで
   // フィードバック表示する。生成失敗時は ActionError (既存文章は不変)。
   regenerateDayPassage: defineAction({
