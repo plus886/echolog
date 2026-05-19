@@ -194,7 +194,7 @@ export function DayRow({ day, model, onChanged }: Props) {
           day={{ id: day.id, imageUrl: day.image.url }}
           model={model}
           onClose={() => setDialogOpen(false)}
-          onRegenerated={onChanged}
+          onAdopted={onChanged}
         />
       )}
     </div>

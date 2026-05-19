@@ -657,36 +657,24 @@ export const server = {
     },
   }),
 
-  // 1 件の写真の文章を再生成して上書きする。生成文を返してフロントで
-  // フィードバック表示する。生成失敗時は ActionError (既存文章は不変)。
-  regenerateDayPassage: defineAction({
+  // 1 件の写真の文章を生成する。プレビュー用で microCMS には保存しない
+  // (保存は採用時に updateDayPassages で別途行う)。生成失敗時は ActionError。
+  generateDayPassage: defineAction({
     input: z.object({
-      id: z.string().min(1),
       imageUrl: z.string().url(),
       notes: z.string().max(2000).optional(),
       model: PassageModelInput,
     }),
-    handler: async ({ id, imageUrl, notes, model }) => {
-      let passages: { passageJa: string; passageZh: string };
+    handler: async ({ imageUrl, notes, model }) => {
       try {
-        passages = await generatePassages(imageUrl, model, notes);
+        return await generatePassages(imageUrl, model, notes);
       } catch (e) {
-        console.error("[days] regenerate: passage generation failed", e);
+        console.error("[days] generate passage failed", e);
         throw new ActionError({
           code: "INTERNAL_SERVER_ERROR",
           message: "文章の生成に失敗しました。時間をおいて再試行してください",
         });
       }
-      try {
-        await updateDayWithRetry(id, passages);
-      } catch (e) {
-        console.error("[days] regenerate: update failed", e);
-        throw new ActionError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "文章の保存に失敗しました",
-        });
-      }
-      return passages;
     },
   }),
 };
