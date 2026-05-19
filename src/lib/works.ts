@@ -1,9 +1,9 @@
 // (works) セクションのモックデータ。Home の thumbnail grid + 論文リスト、
 // /works/[id] の detail page が参照する単一ソース。
 //
-// 画像 src は kokaiji.tw の asset URL を仮置き (後で public/works/ に
-// 移植予定)。category は Home の filter (ALL / TEXT / MUSIC / PHOTO) の
-// 出し分けキー。detail page では description / url も使う。
+// 画像は public/works/ に置いた静的ファイルを参照する。category は Home の
+// filter (ALL / TEXT / MUSIC / PHOTO) の出し分けキー。detail page では
+// description / url も使う。
 // papers は Works グリッド下に並べるテキストのみの発表論文リスト。
 //
 // i18n: title / description は { ja, zh } 構造。zh は未記入なら pick() が
@@ -24,13 +24,13 @@ export type Work = {
   url: string; // 外部参考 URL
 };
 
-// 仮画像 (kokaiji.tw asset)。
+// public/works/ の静的画像。ビルドのハッシュに依存しない安定パス。
 const IMG = {
-  taiwan: "https://kokaiji.tw/_astro/taiwan.jleloxE5_gGKlp.webp",
-  fluonika: "https://kokaiji.tw/_astro/fluonika.CAJuWOQX_Z2wT6uW.webp",
-  gardener: "https://kokaiji.tw/_astro/gardener.Bu3MoHOv_TkyES.webp",
-  retrotica: "https://kokaiji.tw/_astro/retrotica.B2Sx7-yf_1VJ1de.webp",
-  threeflowers: "https://kokaiji.tw/_astro/threeflowers.CIOSeB1O_1PFhf0.webp",
+  taiwan: "/works/taiwan.jpg",
+  fluonika: "/works/fluonika.jpg",
+  gardener: "/works/gardener.jpg",
+  retrotica: "/works/retrotica.jpg",
+  threeflowers: "/works/threeflowers.jpg",
 } as const;
 
 export const works: Work[] = [
