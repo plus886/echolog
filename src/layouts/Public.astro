@@ -89,6 +89,7 @@ const logicalPath = Astro.locals.path ?? Astro.url.pathname;
                 ) : (
                   <a
                     href={localeUrl(logicalPath, loc)}
+                    data-locale={loc}
                     class="font-serif text-(--ink-50) italic transition-colors hover:text-(--ink)"
                     set:text={languages[loc]}
                   />
@@ -102,4 +103,19 @@ const logicalPath = Astro.locals.path ?? Astro.url.pathname;
   </footer>
   <SmoothScroll client:only="react" />
   <NavState client:load />
+  <script>
+    // 言語切替リンクのクリックで選択を locale クッキーに記憶する
+    // (1 年保持)。middleware がこのクッキーを Accept-Language より
+    // 優先して読み、次回以降の既定言語にする。
+    for (const a of document.querySelectorAll<HTMLAnchorElement>(
+      "a[data-locale]",
+    )) {
+      a.addEventListener("click", () => {
+        const loc = a.dataset.locale;
+        if (loc) {
+          document.cookie = `locale=${loc}; path=/; max-age=31536000; samesite=lax`;
+        }
+      });
+    }
+  </script>
 </Base>

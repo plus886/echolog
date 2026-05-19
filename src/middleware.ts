@@ -5,7 +5,13 @@ import {
   ACCESS_JWT_HEADER,
   verifyAccess,
 } from "@/lib/access";
-import { defaultLocale, type Locale } from "@/lib/i18n";
+import {
+  defaultLocale,
+  detectLocale,
+  isLocale,
+  type Locale,
+  LOCALE_COOKIE,
+} from "@/lib/i18n";
 
 // 認証ゲート + i18n ロケール解決を担う middleware。
 //
@@ -13,6 +19,11 @@ import { defaultLocale, type Locale } from "@/lib/i18n";
 // リクエストは接頭辞を剥がした論理パスへ rewrite し、全ページファイルを
 // 単一に保つ (locale 別のページ複製はしない)。/admin・/api は接頭辞を
 // 持たない (公開ページのみ2言語)。
+//
+// 言語ネゴシエーション: /zh 接頭辞なしの公開パスでは、訪問者の好む言語が
+// zh なら /zh へ 302 する。優先度は locale クッキー (明示選択) >
+// Accept-Language (OS/ブラウザ言語) > 既定 ja。/zh URL は明示的なので
+// そのまま (zh→ja の自動リダイレクトはしない)。
 //
 // 旧 matcher: ["/admin", "/admin/:path*", "/api/og-preview", "/api/uploads"]
 function requiresAuth(pathname: string): boolean {
@@ -30,6 +41,22 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (!isReentry) {
     const { pathname } = context.url;
+
+    const isZhPath = pathname === "/zh" || pathname.startsWith("/zh/");
+    const isAdminOrApi =
+      pathname.startsWith("/admin") || pathname.startsWith("/api");
+
+    // 接頭辞なしの公開パスは、好む言語が zh なら /zh へリダイレクトする。
+    if (!isZhPath && !isAdminOrApi) {
+      const saved = context.cookies.get(LOCALE_COOKIE)?.value;
+      const preferred = isLocale(saved)
+        ? saved
+        : detectLocale(context.request.headers.get("accept-language"));
+      if (preferred === "zh") {
+        return context.redirect(`/zh${pathname}${context.url.search}`, 302);
+      }
+    }
+
     let locale: Locale = defaultLocale;
     let logicalPath = pathname;
 

@@ -12,6 +12,10 @@ export const locales = ["ja", "zh"] as const;
 export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = "ja";
 
+// 言語の選択を記憶するクッキー名。フッターの言語切替で書き込み、
+// middleware が最優先で読む。
+export const LOCALE_COOKIE = "locale";
+
 // フッターの言語切替リンクに出すラベル。
 export const languages: Record<Locale, string> = {
   ja: "日",
@@ -32,6 +36,27 @@ export const ogLocale: Record<Locale, string> = {
 
 export function isLocale(value: string | undefined): value is Locale {
   return value !== undefined && (locales as readonly string[]).includes(value);
+}
+
+// Accept-Language ヘッダ (= 訪問者の OS/ブラウザ言語) から locale を推定する。
+// 優先度 (q 値) 順に走査し、最初に現れた zh* / ja* で決める。どちらも
+// 無ければ既定 (ja)。
+export function detectLocale(
+  acceptLanguage: string | null | undefined,
+): Locale {
+  if (!acceptLanguage) return defaultLocale;
+  const tags = acceptLanguage
+    .split(",")
+    .map((part) => {
+      const [tag, q] = part.trim().split(";q=");
+      return { tag: tag.toLowerCase(), q: q ? Number.parseFloat(q) : 1 };
+    })
+    .sort((a, b) => b.q - a.q);
+  for (const { tag } of tags) {
+    if (tag.startsWith("zh")) return "zh";
+    if (tag.startsWith("ja")) return "ja";
+  }
+  return defaultLocale;
 }
 
 // locale 中立なパス (先頭 "/") を、その locale の実 URL に変換する。
