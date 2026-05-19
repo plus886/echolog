@@ -17,8 +17,9 @@ type Props = {
   day: { id: string; imageUrl: string };
   model: PassageModelChoice;
   onClose: () => void;
-  // 採用 (保存) 成功時に一覧を再取得させる。
-  onAdopted: () => void;
+  // 採用 (保存) 成功時に、保存された文章を呼び出し側へ渡す
+  // (呼び出し側はその行だけを書き換える。一覧の再取得はしない)。
+  onAdopted: (passages: Passages) => void;
 };
 
 export function RegenerateDialog({ day, model, onClose, onAdopted }: Props) {
@@ -57,11 +58,11 @@ export function RegenerateDialog({ day, model, onClose, onAdopted }: Props) {
       passageZh: result.passageZh,
     });
     setAdopting(false);
-    if (res.error) {
-      setError(res.error.message ?? "採用に失敗しました");
+    if (res.error || !res.data) {
+      setError(res.error?.message ?? "採用に失敗しました");
       return;
     }
-    onAdopted();
+    onAdopted(res.data);
     onClose();
   };
 

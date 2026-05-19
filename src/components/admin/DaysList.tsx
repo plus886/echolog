@@ -8,7 +8,8 @@ import type { Day } from "@/types/microcms";
 
 // days のページング一覧。文章管理タブの主要部。
 // ページサイズ 30 / 50 / 100、お気に入り (featured) 状態での絞り込み、
-// ID での完全一致検索。再生成後はそのページを再取得して反映する。
+// ID での完全一致検索。各行 (DayRow) の編集・再生成は行内で完結し、
+// 一覧の再取得は伴わない (ページ送り・フィルタ・検索・再試行時のみ取得)。
 
 const PAGE_SIZES = [30, 50, 100] as const;
 type ListState = "loading" | "ready" | "error";
@@ -159,7 +160,7 @@ export function DaysList({ model }: { model: PassageModelChoice }) {
       ) : (
         <div className="flex flex-col gap-2">
           {days.map((day) => (
-            <DayRow key={day.id} day={day} model={model} onChanged={refetch} />
+            <DayRow key={day.id} day={day} model={model} />
           ))}
         </div>
       )}

@@ -11,11 +11,9 @@ import type { Day } from "@/types/microcms";
 type Props = {
   day: Day;
   model: PassageModelChoice;
-  // 再生成成功時に一覧を再取得させるためのコールバック。
-  onChanged: () => void;
 };
 
-export function DayRow({ day, model, onChanged }: Props) {
+export function DayRow({ day, model }: Props) {
   const [featured, setFeatured] = useState(Boolean(day.featured));
   const [favBusy, setFavBusy] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -194,7 +192,9 @@ export function DayRow({ day, model, onChanged }: Props) {
           day={{ id: day.id, imageUrl: day.image.url }}
           model={model}
           onClose={() => setDialogOpen(false)}
-          onAdopted={onChanged}
+          onAdopted={(p) =>
+            setPassages({ ja: p.passageJa, zh: p.passageZh })
+          }
         />
       )}
     </div>
