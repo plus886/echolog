@@ -16,7 +16,7 @@
     // 参照される唯一の "公開" 変数 (`PUBLIC_` prefix で client にも露出)。
     // その他 (microCMS / Cloudflare Access 等) は secrets で投入する
     // (本 README とコメント末尾の手順を参照)。
-    "PUBLIC_SITE_URL": "https://echolog.cubicberry.workers.dev",
+    "PUBLIC_SITE_URL": "https://kokaiji.tw",
   },
   // Bindings:
   //   このアプリ (echolog) は D1 / R2 / KV にアプリデータを持たない。
