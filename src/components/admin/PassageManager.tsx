@@ -18,7 +18,10 @@ export function PassageManager() {
 
   return (
     <div className="flex flex-col gap-6">
-      <ModelRadio value={model} onChange={setModel} />
+      {/* モデル選択の見た目は写真投稿タブ (PhotoComposer) に揃える */}
+      <div className="rounded-lg border border-base-300 bg-base-100 px-4 py-3 sm:px-5">
+        <ModelRadio value={model} onChange={setModel} />
+      </div>
       <DaysList model={model} />
       <PhotoBackfillPanel only="missing" model={model} />
       <PhotoBackfillPanel only="clear" model={model} />
