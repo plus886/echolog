@@ -71,7 +71,7 @@ export function localeUrl(path: string, locale: Locale): string {
 // 複数行の文言は "\n" 区切りで持ち、呼び出し側で split("\n") する。
 
 const uiJa = {
-  "site.description": "echo + log — 自分の発信が積み重なっていく場所",
+  "site.description": "台湾研究者 康凱爾のポートフォリオ・雑記帳・実験場。",
   "nav.about": "About",
   "nav.echolog": "Echolog",
   "nav.works": "Works",
