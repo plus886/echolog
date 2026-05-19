@@ -1,7 +1,10 @@
 import { actions } from "astro:actions";
 import { useEffect, useRef, useState, useTransition } from "react";
 
-import { PhotoBackfillPanel } from "@/components/admin/PhotoBackfillPanel";
+import {
+  ModelRadio,
+  type PassageModelChoice,
+} from "@/components/admin/ModelRadio";
 import { Button, cx } from "@/components/admin/ui";
 import { readPhotoExif, type PhotoExif } from "@/lib/exif";
 
@@ -13,8 +16,6 @@ import { readPhotoExif, type PhotoExif } from "@/lib/exif";
 type Schema = { camera: string[]; lens: string[] };
 type SchemaState = "loading" | "ready" | "error";
 type PublishResult = { id: string; passageJa: string; passageZh: string };
-// 文章生成に使うモデル。写真タブ全体で共通 (単発投稿・バックフィル/刷新)。
-export type PassageModelChoice = "opus" | "sonnet";
 
 const ACCEPT_MIME = "image/jpeg,image/png,image/webp";
 
@@ -152,27 +153,9 @@ export function PhotoComposer() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* 文章生成モデル — 写真タブ全体 (単発投稿・バックフィル/刷新) 共通 */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-(--ink-15) bg-(--paper) px-4 py-3 sm:px-5">
-        <span className="text-[13px] font-medium text-(--ink-70)">
-          文章生成モデル
-        </span>
-        {(["opus", "sonnet"] as const).map((m) => (
-          <label
-            key={m}
-            className="flex cursor-pointer items-center gap-1.5 text-[13px] text-(--ink-70)"
-          >
-            <input
-              type="radio"
-              name="passage-model"
-              value={m}
-              checked={model === m}
-              onChange={() => setModel(m)}
-              className="accent-(--ink)"
-            />
-            {m === "opus" ? "Opus" : "Sonnet"}
-          </label>
-        ))}
+      {/* 文章生成モデル — この単発投稿で使うモデル */}
+      <div className="rounded-lg border border-(--ink-15) bg-(--paper) px-4 py-3 sm:px-5">
+        <ModelRadio value={model} onChange={setModel} />
       </div>
 
       <section className="flex flex-col gap-4 rounded-lg border border-(--ink-15) bg-(--paper) p-4 sm:p-5">
@@ -319,8 +302,6 @@ export function PhotoComposer() {
           </p>
         </section>
       )}
-
-      <PhotoBackfillPanel model={model} />
     </div>
   );
 }

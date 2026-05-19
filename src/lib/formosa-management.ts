@@ -132,10 +132,10 @@ export async function createDay(
 
 // 既存 days エントリの部分更新 (PATCH)。microcms-js-sdk の update() は
 // 部分更新なので、渡したフィールドだけ書き換わり他は不変。passage の
-// 後付けバックフィルで使う。
+// 後付け・再生成、お気に入り (featured) トグルで使う。
 export async function updateDay(
   contentId: string,
-  content: { passageJa?: string; passageZh?: string },
+  content: { passageJa?: string; passageZh?: string; featured?: boolean },
 ): Promise<{ id: string }> {
   return getFormosaWriteClient().update({
     endpoint: DAYS_ENDPOINT,

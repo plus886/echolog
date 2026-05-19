@@ -1,0 +1,26 @@
+@import "tailwindcss";
+@import "@fontsource/inter-tight/400.css";
+
+/* admin 専用スタイル。公開サイトの global.css / portfolio.css とは独立。
+   DaisyUI はここにだけ載るので公開ページには漏れない。 */
+@plugin "daisyui" {
+  themes: light --default;
+}
+
+/* 既存 admin 自前 UI (ui.tsx の Button 等) がまだ使う design token。
+   admin は portfolio.css を読まなくなったため、必要分を portfolio.css の
+   .k-shell からコピーして :root に置く。次スコープで admin UI を DaisyUI
+   へ置き換えたら除去予定。 */
+:root {
+  --paper: #f9f8f1;
+  --paper-2: #f1ede2;
+  --ink: #383838;
+  --ink-70: rgba(56, 56, 56, 0.72);
+  --ink-50: rgba(56, 56, 56, 0.5);
+  --ink-30: rgba(56, 56, 56, 0.32);
+  --ink-15: rgba(56, 56, 56, 0.15);
+}
+
+body {
+  font-family: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+}

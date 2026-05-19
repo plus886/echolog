@@ -1,8 +1,9 @@
 ---
-import Base from "@/layouts/Base.astro";
+import AdminBase from "@/layouts/AdminBase.astro";
 
-// admin の shell。公開サイトの装飾は継承せず、実用本位・モバイル
-// ファーストのレイアウトにする。配色は既存の --ink / --paper トークン流用。
+// admin の shell。公開サイトとは独立した AdminBase (admin.css / DaisyUI、
+// FontPlus・portfolio.css なし) の上に、実用本位・モバイルファーストの
+// レイアウトを載せる。配色は admin.css の --ink / --paper トークン。
 // ユーザの bypass 判定は middleware が Astro.locals.user に詰めた値を使う。
 
 interface Props {
@@ -19,8 +20,7 @@ const navItems = [
 ];
 ---
 
-{/* noindex: 検索結果に admin route が出ないよう保険 */}
-<Base title={title ?? "Admin"} noindex>
+<AdminBase title={title ?? "Admin"}>
   <div class="flex min-h-screen flex-col bg-(--paper-2)">
     <header class="sticky top-0 z-10 border-b border-(--ink-15) bg-(--paper)">
       <div
@@ -63,4 +63,4 @@ const navItems = [
       <slot />
     </main>
   </div>
-</Base>
+</AdminBase>

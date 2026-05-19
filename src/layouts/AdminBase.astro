@@ -1,0 +1,29 @@
+---
+import "@/styles/admin.css";
+
+// admin 専用の最小 HTML shell。公開サイトの Base.astro とは独立させる:
+//  - admin.css のみ読み込む (global.css / portfolio.css は読まない)。
+//  - FontPlus スクリプト・page-transition.css・OGP/canonical/hreflang は
+//    載せない (admin に不要。FontPlus は PV 課金がかかるため特に外す)。
+//  - 常に noindex。UI は DaisyUI (テーマ light 固定)。
+
+interface Props {
+  title?: string;
+}
+const { title } = Astro.props;
+const fullTitle = title ? `${title} | echolog admin` : "echolog admin";
+---
+
+<!doctype html>
+<html lang="ja" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{fullTitle}</title>
+  </head>
+  <body class="min-h-screen text-[15px] leading-[1.45] antialiased">
+    <slot />
+  </body>
+</html>

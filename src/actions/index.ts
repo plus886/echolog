@@ -155,7 +155,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // それ以外のエラーは即 throw する。
 async function updateDayWithRetry(
   contentId: string,
-  content: { passageJa?: string; passageZh?: string },
+  content: { passageJa?: string; passageZh?: string; featured?: boolean },
 ): Promise<void> {
   const MAX_RETRY = 5;
   for (let attempt = 0; ; attempt++) {
@@ -504,6 +504,94 @@ export const server = {
         total,
         done: offset + chunk.length >= total,
       };
+    },
+  }),
+
+  // ---- days 一覧管理 (文章管理タブ) ----
+
+  // days を 1 ページ分取得する。一覧表示用。favorite でお気に入り
+  // (featured) 状態の絞り込みができる。
+  listDaysPage: defineAction({
+    input: z.object({
+      offset: z.number().int().min(0).default(0),
+      limit: z.number().int().min(1).max(100).default(30),
+      favorite: z.enum(["all", "featured", "unfeatured"]).default("all"),
+    }),
+    handler: async ({ offset, limit, favorite }) => {
+      // featured は boolean。未設定エントリも「未featured」に含めたいので
+      // unfeatured は [not_equals]true で表現する。
+      const filters =
+        favorite === "featured"
+          ? "featured[equals]true"
+          : favorite === "unfeatured"
+            ? "featured[not_equals]true"
+            : undefined;
+      try {
+        const page = await listDays({
+          offset,
+          limit,
+          orders: "-date",
+          fields: "id,image,passageJa,passageZh,featured,date",
+          ...(filters ? { filters } : {}),
+        });
+        return { days: page.contents, total: page.totalCount };
+      } catch (e) {
+        console.error("[days] list page failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "一覧の取得に失敗しました",
+        });
+      }
+    },
+  }),
+
+  // お気に入り (featured) トグルの保存。
+  setDayFeatured: defineAction({
+    input: z.object({ id: z.string().min(1), featured: z.boolean() }),
+    handler: async ({ id, featured }) => {
+      try {
+        await updateDayWithRetry(id, { featured });
+        return { id, featured };
+      } catch (e) {
+        console.error("[days] setFeatured failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "お気に入りの更新に失敗しました",
+        });
+      }
+    },
+  }),
+
+  // 1 件の写真の文章を再生成して上書きする。生成文を返してフロントで
+  // フィードバック表示する。生成失敗時は ActionError (既存文章は不変)。
+  regenerateDayPassage: defineAction({
+    input: z.object({
+      id: z.string().min(1),
+      imageUrl: z.string().url(),
+      notes: z.string().max(2000).optional(),
+      model: PassageModelInput,
+    }),
+    handler: async ({ id, imageUrl, notes, model }) => {
+      let passages: { passageJa: string; passageZh: string };
+      try {
+        passages = await generatePassages(imageUrl, model, notes);
+      } catch (e) {
+        console.error("[days] regenerate: passage generation failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "文章の生成に失敗しました。時間をおいて再試行してください",
+        });
+      }
+      try {
+        await updateDayWithRetry(id, passages);
+      } catch (e) {
+        console.error("[days] regenerate: update failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "文章の保存に失敗しました",
+        });
+      }
+      return passages;
     },
   }),
 };
