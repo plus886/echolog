@@ -8,7 +8,7 @@ import {
   updateDay,
   uploadFormosaMedia,
 } from "@/lib/formosa-management";
-import { listDays } from "@/lib/microcms";
+import { listDays, listTweets } from "@/lib/microcms";
 import {
   createTweet,
   deleteTweet,
@@ -19,6 +19,7 @@ import {
 import { matchCameraAndLens } from "@/lib/photo-match";
 import { generatePassages } from "@/lib/photo-passage";
 import { translateToZh } from "@/lib/translate";
+import { suggestTweet as generateTweetSuggestion } from "@/lib/tweet-suggest";
 import { evaluateTweetText } from "@/lib/tweet-text";
 
 // `accept: "form"` 経由の入力は Astro が FormData → zod を自動でやってくれる。
@@ -106,6 +107,9 @@ function normalizeCompose(input: ReturnType<typeof ComposeFormInput.parse>) {
   }
   return { body, parent, retweetOf, images };
 }
+
+// ツイート提案で文体サンプルとして読む過去ツイートの件数。
+const TWEET_SAMPLE_COUNT = 40;
 
 // ---- 写真投稿 (formosa / days) ----
 
@@ -270,6 +274,62 @@ export const server = {
         retweetType: ["retweet"],
       });
       return { id };
+    },
+  }),
+
+  // 過去ツイートをサンプルに、新しいツイートの下書きを 1 件提案する。
+  // mood: 初回は「今の気分」、再生成時は前回下書きへの調整指示 (任意)。
+  // previousDraft: 直前に生成した下書き。あれば調整モードで生成する。
+  // モデルは Sonnet 固定。投稿はしない (下書き文字列を返すだけ)。
+  suggestTweet: defineAction({
+    input: z.object({
+      mood: z.string().max(2000).optional(),
+      previousDraft: z.string().max(10_000).optional(),
+    }),
+    handler: async ({ mood, previousDraft }) => {
+      let samples: string[];
+      try {
+        // RT / 引用 RT は声のサンプルにならないので除外し、本文のある
+        // 自分のツイートだけを新しい順に集める。
+        const page = await listTweets({
+          filters: "retweetOf[not_exists]",
+          orders: "-publishedAt",
+          fields: "body",
+          limit: TWEET_SAMPLE_COUNT,
+        });
+        samples = page.contents
+          .map((t) => t.body?.trim())
+          .filter((b): b is string => Boolean(b));
+      } catch (e) {
+        console.error("[tweet-suggest] sample fetch failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "過去のツイートの取得に失敗しました",
+        });
+      }
+
+      if (samples.length === 0) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "文体の参考にできる過去のツイートがありません",
+        });
+      }
+
+      try {
+        const text = await generateTweetSuggestion({
+          samples,
+          mood: mood?.trim() || undefined,
+          previousDraft: previousDraft?.trim() || undefined,
+        });
+        return { text };
+      } catch (e) {
+        console.error("[tweet-suggest] generation failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "ツイートの生成に失敗しました。時間をおいて再試行してください",
+        });
+      }
     },
   }),
 

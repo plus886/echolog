@@ -1,7 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 
 import { AdminTweetRow } from "@/components/admin/AdminTweetRow";
-import ComposeForm, { type ComposeMode } from "@/components/admin/ComposeForm";
+import ComposeForm, {
+  type ComposeMode,
+  type SeededBody,
+} from "@/components/admin/ComposeForm";
+import TweetSuggestDialog from "@/components/admin/TweetSuggestDialog";
 import { cx } from "@/components/admin/ui";
 import type { ThreadNode } from "@/lib/thread";
 import type { AdminTweet } from "@/types/microcms";
@@ -68,6 +72,8 @@ export function AdminDashboard({
   const [mode, setMode] = useState<ComposeMode>(initialMode);
   const [listState, setListState] = useState<ListState>("ready");
   const [notice, setNotice] = useState<string | null>(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [seededBody, setSeededBody] = useState<SeededBody>();
   const noticeTimer = useRef<number | undefined>(undefined);
 
   const showNotice = (msg: string) => {
@@ -131,11 +137,21 @@ export function AdminDashboard({
   return (
     <div className="flex flex-col gap-6">
       <section className="rounded-lg border border-base-300 bg-base-100 p-4 sm:p-5">
-        <h2 className="mb-3 text-sm font-semibold">{composeHeading}</h2>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="m-0 text-sm font-semibold">{composeHeading}</h2>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => setSuggestOpen(true)}
+          >
+            AI で提案
+          </button>
+        </div>
         <ComposeForm
           mode={mode}
           onPosted={handlePosted}
           onCancelMode={() => setMode({ kind: "new" })}
+          seededBody={seededBody}
         />
       </section>
 
@@ -194,6 +210,13 @@ export function AdminDashboard({
           </ol>
         )}
       </section>
+
+      {suggestOpen && (
+        <TweetSuggestDialog
+          onClose={() => setSuggestOpen(false)}
+          onAdopt={(text) => setSeededBody({ text, nonce: Date.now() })}
+        />
+      )}
     </div>
   );
 }

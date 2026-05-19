@@ -1,5 +1,11 @@
 import { actions } from "astro:actions";
-import { type FormEvent, useMemo, useState, useTransition } from "react";
+import {
+  type FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 
 import { CharCounter } from "@/components/admin/CharCounter";
 import { ImageUploader } from "@/components/admin/ImageUploader";
@@ -19,18 +25,35 @@ export type ComposeMode =
   | { kind: "reply"; target: ComposeTarget }
   | { kind: "quote"; target: ComposeTarget };
 
+// AI 提案を採用したとき、本文欄へ流し込む下書き。nonce は同じ文字列を
+// 続けて採用しても再注入できるよう、毎回ユニークにする。
+export type SeededBody = { text: string; nonce: number };
+
 type Props = {
   mode?: ComposeMode;
   onPosted?: (kind: "publish" | "draft") => void;
   onCancelMode?: () => void;
+  seededBody?: SeededBody;
 };
 
 export function ComposeForm({
   mode = { kind: "new" },
   onPosted,
   onCancelMode,
+  seededBody,
 }: Props) {
   const [body, setBody] = useState("");
+
+  // AI 提案の採用時に本文欄へ反映する。nonce 変化時のみ実行する
+  // (採用後はユーザーが自由に編集できる)。
+  const seedNonce = seededBody?.nonce;
+  const seedText = seededBody?.text;
+  useEffect(() => {
+    if (seedNonce !== undefined && seedText !== undefined) {
+      setBody(seedText);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seedNonce]);
   const [images, setImages] = useState<{ url: string }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPublishing, startPublish] = useTransition();
