@@ -72,7 +72,7 @@ export const works: Work[] = [
   },
   {
     id: "formosa-chiaroscuro",
-    url: "https://kokaiji.tw/works/formosa-chiaroscuro",
+    url: "https://photo.kokaiji.tw/",
     title: { ja: "翳光臺灣" },
     year: "2024 —",
     category: "photo",
@@ -84,7 +84,7 @@ export const works: Work[] = [
   },
   {
     id: "three-flowers",
-    url: "https://kokaiji.tw/works/three-flowers",
+    url: "https://www.youtube.com/@formosaandthreeflowers8476",
     title: { ja: "台湾と三つの花", zh: "台灣與三朵花" },
     year: "2020",
     category: "photo",
