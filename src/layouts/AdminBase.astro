@@ -18,10 +18,24 @@ const fullTitle = title ? `${title} | echolog admin` : "echolog admin";
 <html lang="ja" data-theme="light">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    {/* iPhone で Home Screen 追加 → standalone 起動するための PWA メタ。
+        manifest と apple-* メタはこの admin shell でだけ宣言し、公開サイト
+        (Base.astro) には影響させない。色は admin.css の --color-base-100。 */}
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+    <meta name="theme-color" content="#f9f8f1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="echolog" />
+
     <title>{fullTitle}</title>
   </head>
   <body class="min-h-screen text-[15px] leading-[1.45] antialiased">
