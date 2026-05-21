@@ -7,6 +7,7 @@ import {
 } from "@/components/admin/ModelRadio";
 import { Button, Card, ErrorAlert } from "@/components/admin/ui";
 import { readPhotoExif, type PhotoExif } from "@/lib/exif";
+import { resizeImageForUpload } from "@/lib/image-resize";
 
 // 写真投稿タブの本体。formosa-chiaroscuro の days エンドポイントへ写真を
 // POST する。camera / lens の選択肢は写真タブ初回表示時に microCMS の
@@ -116,14 +117,25 @@ export function PhotoComposer() {
   const handlePublish = () => {
     if (!file || !camera || isPublishing) return;
     setError(null);
-    const fd = new FormData();
-    fd.set("image", file);
-    fd.set("camera", camera);
-    if (lens) fd.set("lens", lens);
-    if (exif?.dateOriginal) fd.set("date", exif.dateOriginal);
-    fd.set("model", model);
-    if (notes.trim()) fd.set("notes", notes.trim());
     startPublish(async () => {
+      // iPhone のライブラリ写真は数十 MB ある場合がありサーバ上限を超える。
+      // microCMS は配信時に ?w=N で変換するので、長辺 2048px に縮小して送る。
+      // EXIF は handleFile 時点で原本から取得済みなので影響なし。
+      let uploadFile: File;
+      try {
+        uploadFile = await resizeImageForUpload(file);
+      } catch (e) {
+        console.error("[photo] resize failed", e);
+        setError("画像の前処理に失敗しました");
+        return;
+      }
+      const fd = new FormData();
+      fd.set("image", uploadFile);
+      fd.set("camera", camera);
+      if (lens) fd.set("lens", lens);
+      if (exif?.dateOriginal) fd.set("date", exif.dateOriginal);
+      fd.set("model", model);
+      if (notes.trim()) fd.set("notes", notes.trim());
       const res = await actions.publishPhoto(fd);
       if (res.error || !res.data) {
         setError(res.error?.message ?? "投稿に失敗しました");
