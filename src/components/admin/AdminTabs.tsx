@@ -43,6 +43,8 @@ export function AdminTabs(props: Props) {
   });
   const [photoMounted, setPhotoMounted] = useState(tab === "photo");
   const [passagesMounted, setPassagesMounted] = useState(tab === "passages");
+  // インクリメントで DaysList を remount させ、最新データで再取得させる。
+  const [daysRefreshKey, setDaysRefreshKey] = useState(0);
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -53,6 +55,13 @@ export function AdminTabs(props: Props) {
     } catch {
       // LocalStorage 不可 (プライベートモード等) は無視
     }
+  };
+
+  // 写真投稿の成功時: 文章管理タブへ移り、一覧を最新化 (DaysList を remount)
+  // して投稿済みデータ (最新が先頭) を確認できるようにする。
+  const handlePhotoPublished = () => {
+    setDaysRefreshKey((k) => k + 1);
+    selectTab("passages");
   };
 
   return (
@@ -79,12 +88,12 @@ export function AdminTabs(props: Props) {
       </div>
       {photoMounted && (
         <div hidden={tab !== "photo"}>
-          <PhotoComposer />
+          <PhotoComposer onPublished={handlePhotoPublished} />
         </div>
       )}
       {passagesMounted && (
         <div hidden={tab !== "passages"}>
-          <PassageManager />
+          <PassageManager refreshKey={daysRefreshKey} />
         </div>
       )}
     </div>

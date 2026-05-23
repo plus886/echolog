@@ -20,7 +20,12 @@ type PublishResult = { id: string; passageJa: string; passageZh: string };
 
 const ACCEPT_MIME = "image/jpeg,image/png,image/webp";
 
-export function PhotoComposer() {
+export function PhotoComposer({
+  onPublished,
+}: {
+  // 投稿成功時に親へ通知する (文章管理タブへ自動遷移させる)。
+  onPublished?: () => void;
+}) {
   const [schema, setSchema] = useState<Schema | null>(null);
   const [schemaState, setSchemaState] = useState<SchemaState>("loading");
 
@@ -155,6 +160,8 @@ export function PhotoComposer() {
       setNotes("");
       setDetectNotice(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      // 投稿成功 → 親が文章管理タブへ切り替え、一覧を最新化する。
+      onPublished?.();
     });
   };
 

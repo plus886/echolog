@@ -14,7 +14,9 @@ import { Card } from "@/components/admin/ui";
 //  ③ 未生成生成パネル (バルク操作は一覧の下にまとめる)
 //  ④ 全文章削除パネル — 破壊的操作なので末尾に置く
 
-export function PassageManager() {
+// refreshKey が変わると DaysList を remount し、既定ビュー (最新が先頭) で
+// 再取得させる。写真投稿成功後に最新データを確認させるために使う。
+export function PassageManager({ refreshKey = 0 }: { refreshKey?: number }) {
   const [model, setModel] = useState<PassageModelChoice>("opus");
 
   return (
@@ -23,7 +25,7 @@ export function PassageManager() {
       <Card tight>
         <ModelRadio value={model} onChange={setModel} />
       </Card>
-      <DaysList model={model} />
+      <DaysList key={refreshKey} model={model} />
       <PhotoBackfillPanel only="missing" model={model} />
       {/* 全文章削除パネル — 今後使わないため一旦コメントアウト */}
       {/* <PhotoBackfillPanel only="clear" model={model} /> */}
