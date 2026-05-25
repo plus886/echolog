@@ -118,6 +118,9 @@ const uiZh: Partial<Record<UIKey, string>> = {
   "works.cat.text": "寫作",
   "works.cat.music": "音樂",
   "works.cat.photo": "攝影",
+  // contact.before + メールリンク + contact.after の順で描画される。
+  "contact.before": "撰稿、演講、採訪與合作邀約，歡迎來信至",
+  "contact.after": "。",
 };
 
 const ui: Record<Locale, Partial<Record<UIKey, string>>> = {
