@@ -602,7 +602,10 @@ export const server = {
         const page = await listDays({
           offset,
           limit,
-          orders: "-date",
+          // アップロード順 (新しい投稿が先頭)。date フィールド (EXIF 撮影
+          // 日時) で並べると、過去日付の写真を後から投稿したときに先頭に
+          // 来ないので、ここでは投稿時刻 (publishedAt) を基準にする。
+          orders: "-publishedAt",
           fields,
           ...(filters ? { filters } : {}),
         });

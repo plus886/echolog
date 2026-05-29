@@ -100,15 +100,16 @@ export async function listDays(
   return response as DayListResponse;
 }
 
-// Portfolio gallery 用：最新25件 + 全件からランダム25件 (重複なし) を
-// インタリーブして返す。
+// Portfolio gallery 用：投稿時点の新しい順 25 件 + それ以外からランダム
+// 25 件 (重複なし) をインタリーブして返す。並びは公開ギャラリー
+// (photo.kokaiji.tw) に合わせて投稿日時 (publishedAt) 基準。
 export async function loadGalleryDays(): Promise<Day[]> {
   const LATEST_SIZE = 25;
   const RANDOM_SIZE = 25;
 
   const latestRes = await listDays({
     limit: LATEST_SIZE,
-    orders: "-date",
+    orders: "-publishedAt",
   });
   const latest = latestRes.contents;
   const total = latestRes.totalCount;
@@ -119,7 +120,7 @@ export async function loadGalleryDays(): Promise<Day[]> {
   const offsets = pickUniqueOffsets(LATEST_SIZE, total, sampleSize);
   const sampled = await Promise.all(
     offsets.map((offset) =>
-      listDays({ limit: 1, offset, orders: "-date" })
+      listDays({ limit: 1, offset, orders: "-publishedAt" })
         .then((r) => r.contents[0])
         .catch(() => undefined),
     ),
