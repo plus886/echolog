@@ -116,7 +116,14 @@ export function AdminDashboard({
   };
 
   const startReplyQuote = (kind: "reply" | "quote", t: AdminTweet) => {
-    setMode({ kind, target: { id: t.id, body: t.body } });
+    // 返信は常に root (1階層目) に対して行う。クリックしたツイートが既に
+    // 返信ならその parent を対象にし、3階層目以降を作らないようにする。
+    // (引用は別ツイートとして紐付くので flatten は不要。)
+    const target =
+      kind === "reply" && t.parent
+        ? { id: t.parent.id, body: t.parent.body }
+        : { id: t.id, body: t.body };
+    setMode({ kind, target });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 

@@ -12,6 +12,7 @@ import { listDays, listTweets } from "@/lib/microcms";
 import {
   createTweet,
   deleteTweet,
+  getAdminTweet,
   hasExistingRetweet,
   updateTweet,
   type TweetWriteFields,
@@ -108,6 +109,22 @@ function normalizeCompose(input: ReturnType<typeof ComposeFormInput.parse>) {
   return { body, parent, retweetOf, images };
 }
 
+// 返信スレッドを 2 階層に抑えるため、parent が既に「返信」のとき (= parent
+// 自体に parent がある) は、その親 (= root) を返す。fetch 失敗時は元の
+// parent をそのまま使う (送信元を信用する側に倒す)。
+async function resolveRootParent(
+  parentId: string | undefined,
+): Promise<string | undefined> {
+  if (!parentId) return undefined;
+  try {
+    const parentTweet = await getAdminTweet(parentId);
+    return parentTweet.parent?.id ?? parentId;
+  } catch (e) {
+    console.error("[reply-flatten] failed to resolve root parent", e);
+    return parentId;
+  }
+}
+
 // ツイート提案で文体サンプルとして読む過去ツイートの件数。
 const TWEET_SAMPLE_COUNT = 40;
 
@@ -191,9 +208,16 @@ export const server = {
       assertWithinLimit(body);
 
       const bodyZh = await translateForPost(body);
+      const rootParent = await resolveRootParent(parent);
 
       const { id } = await createTweet(
-        buildContent({ body, bodyZh, parent, retweetOf, images }),
+        buildContent({
+          body,
+          bodyZh,
+          parent: rootParent,
+          retweetOf,
+          images,
+        }),
       );
       return { id };
     },
@@ -215,9 +239,16 @@ export const server = {
       assertWithinLimit(body);
 
       const bodyZh = await translateForPost(body);
+      const rootParent = await resolveRootParent(parent);
 
       const { id } = await createTweet(
-        buildContent({ body, bodyZh, parent, retweetOf, images }),
+        buildContent({
+          body,
+          bodyZh,
+          parent: rootParent,
+          retweetOf,
+          images,
+        }),
         { isDraft: true },
       );
       return { id };
