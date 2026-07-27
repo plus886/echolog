@@ -17,9 +17,12 @@ const MODELS: readonly [PassageModelChoice, string][] = [
 export function ModelRadio({
   value,
   onChange,
+  disabled = false,
 }: {
   value: PassageModelChoice;
   onChange: (model: PassageModelChoice) => void;
+  // 生成中は切り替えさせない (走っているモデルと表示が食い違うため)。
+  disabled?: boolean;
 }) {
   // インスタンスごとに一意な name。複数の ModelRadio が同時マウントされても
   // ラジオグループが混線しないようにする。
@@ -36,6 +39,7 @@ export function ModelRadio({
             value={key}
             checked={value === key}
             onChange={() => onChange(key)}
+            disabled={disabled}
           />
           <span className="text-sm">{label}</span>
         </label>

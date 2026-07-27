@@ -21,7 +21,13 @@ const FAVORITE_OPTIONS: readonly [FavoriteFilter, string][] = [
   ["unfeatured", "未お気に入りのみ"],
 ];
 
-export function DaysList({ model }: { model: PassageModelChoice }) {
+export function DaysList({
+  model,
+  onModelChange,
+}: {
+  model: PassageModelChoice;
+  onModelChange: (model: PassageModelChoice) => void;
+}) {
   const [pageSize, setPageSize] = useState<number>(30);
   const [page, setPage] = useState(0); // 0 始まり
   const [favorite, setFavorite] = useState<FavoriteFilter>("all");
@@ -160,7 +166,12 @@ export function DaysList({ model }: { model: PassageModelChoice }) {
       ) : (
         <div className="flex flex-col gap-2">
           {days.map((day) => (
-            <DayRow key={day.id} day={day} model={model} />
+            <DayRow
+              key={day.id}
+              day={day}
+              model={model}
+              onModelChange={onModelChange}
+            />
           ))}
         </div>
       )}

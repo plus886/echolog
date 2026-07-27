@@ -302,6 +302,7 @@ export function PhotoComposer({
           title="写真を投稿"
           imageUrl={prepared.imageUrl}
           model={model}
+          onModelChange={setModel}
           initialPassages={{
             passageJa: prepared.passageJa,
             passageZh: prepared.passageZh,

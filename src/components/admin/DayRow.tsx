@@ -11,9 +11,11 @@ import type { Day } from "@/types/microcms";
 type Props = {
   day: Day;
   model: PassageModelChoice;
+  // 再生成ダイアログでモデルを変えたらタブ上部の選択にも反映する。
+  onModelChange: (model: PassageModelChoice) => void;
 };
 
-export function DayRow({ day, model }: Props) {
+export function DayRow({ day, model, onModelChange }: Props) {
   const [featured, setFeatured] = useState(Boolean(day.featured));
   const [favBusy, setFavBusy] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -192,6 +194,7 @@ export function DayRow({ day, model }: Props) {
           title="文章を再生成"
           imageUrl={day.image.url}
           model={model}
+          onModelChange={onModelChange}
           adoptLabel="採用"
           onAdopt={async (p) => {
             const res = await actions.updateDayPassages({

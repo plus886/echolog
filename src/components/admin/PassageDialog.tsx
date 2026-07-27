@@ -2,7 +2,10 @@ import { actions } from "astro:actions";
 import { useState } from "react";
 
 import { Modal } from "@/components/admin/Modal";
-import type { PassageModelChoice } from "@/components/admin/ModelRadio";
+import {
+  ModelRadio,
+  type PassageModelChoice,
+} from "@/components/admin/ModelRadio";
 import { Button } from "@/components/admin/ui";
 
 // 写真の文章 (passageJa / passageZh) を生成 → 確認 → 採用するモーダル。
@@ -19,7 +22,10 @@ export type Passages = { passageJa: string; passageZh: string };
 type Props = {
   title: string;
   imageUrl: string;
+  // モデルは呼び出し側 (タブ) が持つ state をそのまま出し入れする。ここで
+  // 変えた選択はタブ上部のラジオにも反映され、次回以降も維持される。
   model: PassageModelChoice;
+  onModelChange: (model: PassageModelChoice) => void;
   // アップロード時に生成済みの文章があれば初期表示する。既存写真の再生成は
   // 未指定 (空の状態から「再生成」で 1 案目を作る)。
   initialPassages?: Passages;
@@ -35,6 +41,7 @@ export function PassageDialog({
   title,
   imageUrl,
   model,
+  onModelChange,
   initialPassages,
   initialNotes = "",
   adoptLabel,
@@ -91,6 +98,9 @@ export function PassageDialog({
         alt=""
         className="max-h-40 w-full rounded-md object-contain"
       />
+
+      {/* 再生成に使うモデル。タブ上部のラジオと同じ state を共有する。 */}
+      <ModelRadio value={model} onChange={onModelChange} disabled={working} />
 
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         留意事項（任意）

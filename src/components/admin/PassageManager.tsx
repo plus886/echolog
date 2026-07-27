@@ -25,7 +25,7 @@ export function PassageManager({ refreshKey = 0 }: { refreshKey?: number }) {
       <Card tight>
         <ModelRadio value={model} onChange={setModel} />
       </Card>
-      <DaysList key={refreshKey} model={model} />
+      <DaysList key={refreshKey} model={model} onModelChange={setModel} />
       <PhotoBackfillPanel only="missing" model={model} />
       {/* 全文章削除パネル — 今後使わないため一旦コメントアウト */}
       {/* <PhotoBackfillPanel only="clear" model={model} /> */}
