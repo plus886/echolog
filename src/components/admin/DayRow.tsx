@@ -2,7 +2,7 @@ import { actions } from "astro:actions";
 import { useEffect, useState } from "react";
 
 import type { PassageModelChoice } from "@/components/admin/ModelRadio";
-import { RegenerateDialog } from "@/components/admin/RegenerateDialog";
+import { PassageDialog } from "@/components/admin/PassageDialog";
 import type { Day } from "@/types/microcms";
 
 // days 一覧の 1 行 (DaisyUI card)。サムネイル + passageJa/Zh +
@@ -188,13 +188,25 @@ export function DayRow({ day, model }: Props) {
       </div>
 
       {dialogOpen && (
-        <RegenerateDialog
-          day={{ id: day.id, imageUrl: day.image.url }}
+        <PassageDialog
+          title="文章を再生成"
+          imageUrl={day.image.url}
           model={model}
+          adoptLabel="採用"
+          onAdopt={async (p) => {
+            const res = await actions.updateDayPassages({
+              id: day.id,
+              passageJa: p.passageJa,
+              passageZh: p.passageZh,
+            });
+            if (res.error || !res.data) {
+              return res.error?.message ?? "採用に失敗しました";
+            }
+            // 保存された内容でこの行だけ書き換える (一覧の再取得はしない)。
+            setPassages({ ja: res.data.passageJa, zh: res.data.passageZh });
+            return null;
+          }}
           onClose={() => setDialogOpen(false)}
-          onAdopted={(p) =>
-            setPassages({ ja: p.passageJa, zh: p.passageZh })
-          }
         />
       )}
     </div>

@@ -405,16 +405,13 @@ export const server = {
     },
   }),
 
-  // 写真を formosa にアップロード → Claude vision で文章生成 → days に作成。
-  // 文章生成が失敗したら ActionError を throw し createDay に到達させない
-  // (= 投稿しない。写真と文章は常に揃える)。
-  publishPhoto: defineAction({
+  // 写真を formosa にアップロードし、Claude vision で文章を生成する。
+  // ここでは days に作成しない (投稿前のプレビュー)。オーナーが文章を確認・
+  // 再生成したうえで、採用したら publishPhoto で実際に投稿する。
+  preparePhoto: defineAction({
     accept: "form",
     input: z.object({
       image: z.instanceof(File),
-      camera: z.string().min(1),
-      lens: z.string().optional(),
-      date: z.string().optional(),
       model: PassageModelInput,
       // 文章生成時に Claude へ渡す留意事項 (任意)。
       notes: z.string().max(2000).optional(),
@@ -434,9 +431,13 @@ export const server = {
         });
       }
 
-      let passages: { passageJa: string; passageZh: string };
       try {
-        passages = await generatePassages(imageUrl, input.model, input.notes);
+        const passages = await generatePassages(
+          imageUrl,
+          input.model,
+          input.notes,
+        );
+        return { imageUrl, ...passages };
       } catch (e) {
         console.error("[photo] passage generation failed", e);
         throw new ActionError({
@@ -444,17 +445,31 @@ export const server = {
           message: "文章の生成に失敗しました。時間をおいて再試行してください",
         });
       }
+    },
+  }),
 
-      let id: string;
+  // preparePhoto でアップロード済みの画像と、プレビューで採用された文章を
+  // days に作成する (ここで初めて公開される)。
+  publishPhoto: defineAction({
+    input: z.object({
+      imageUrl: z.string().url(),
+      camera: z.string().min(1),
+      lens: z.string().optional(),
+      date: z.string().optional(),
+      passageJa: z.string().min(1),
+      passageZh: z.string().min(1),
+    }),
+    handler: async (input) => {
       try {
-        ({ id } = await createDay({
-          imageUrl,
+        const { id } = await createDay({
+          imageUrl: input.imageUrl,
           camera: input.camera,
           lens: input.lens?.trim() || undefined,
-          passageJa: passages.passageJa,
-          passageZh: passages.passageZh,
+          passageJa: input.passageJa,
+          passageZh: input.passageZh,
           date: resolvePhotoDate(input.date),
-        }));
+        });
+        return { id };
       } catch (e) {
         console.error("[photo] createDay failed", e);
         throw new ActionError({
@@ -463,12 +478,6 @@ export const server = {
             "投稿の作成に失敗しました。microCMS の API キーに days への POST 権限があるかご確認ください",
         });
       }
-      return {
-        id,
-        imageUrl,
-        passageJa: passages.passageJa,
-        passageZh: passages.passageZh,
-      };
     },
   }),
 
