@@ -6,7 +6,7 @@ import { callAnthropic, cachedSystem } from "@/lib/anthropic";
 // 注意: ANTHROPIC_API_KEY を読むため actions / SSR からのみ import する
 // こと。client component には絶対にバンドルしない。
 
-const MODEL = "claude-sonnet-5";
+const MODEL = "claude-opus-5";
 
 // system prompt はリクエスト間で byte 安定 (module-level const)。
 const SYSTEM_PROMPT = [

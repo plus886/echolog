@@ -8,7 +8,7 @@ import { TWEET_SUGGEST_SYSTEM_PROMPT } from "@/lib/tweet-suggest-prompt";
 // 注意: ANTHROPIC_API_KEY を読むため actions / SSR からのみ import する。
 // client component には絶対にバンドルしない。
 
-const MODEL = "claude-sonnet-5";
+const MODEL = "claude-opus-5";
 
 export type SuggestTweetInput = {
   // 文体参考にする過去のツイート本文 (新しい順)。
