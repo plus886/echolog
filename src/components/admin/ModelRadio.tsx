@@ -1,15 +1,17 @@
 import { useId } from "react";
 
-// 文章生成モデル (Opus / Sonnet) 選択ラジオ。写真投稿タブ・文章管理タブで
-// 共用する。DaisyUI の radio を使う。
+// 文章生成モデル (Opus / Sonnet / Fable) 選択ラジオ。写真投稿タブ・文章管理
+// タブで共用する。DaisyUI の radio を使う。実 model ID の対応は
+// lib/photo-passage.ts の MODEL_IDS 側に集約。
 //
 // PassageModelChoice 型もここに置く (旧 PhotoComposer から移動)。
 
-export type PassageModelChoice = "opus" | "sonnet";
+export type PassageModelChoice = "opus" | "sonnet" | "fable";
 
 const MODELS: readonly [PassageModelChoice, string][] = [
   ["opus", "Opus"],
   ["sonnet", "Sonnet"],
+  ["fable", "Fable"],
 ];
 
 export function ModelRadio({

@@ -6,7 +6,7 @@ import { callAnthropic, cachedSystem } from "@/lib/anthropic";
 // 注意: ANTHROPIC_API_KEY を読むため actions / SSR からのみ import する
 // こと。client component には絶対にバンドルしない。
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "claude-sonnet-5";
 
 // system prompt はリクエスト間で byte 安定 (module-level const)。
 const SYSTEM_PROMPT = [
@@ -27,8 +27,10 @@ export async function translateToZh(body: string): Promise<string> {
     model: MODEL,
     system: cachedSystem(SYSTEM_PROMPT),
     messages: [{ role: "user", content: body }],
-    maxTokens: 2000,
-    timeoutMs: 15_000,
+    // Claude 5 系は extended thinking の分も output トークンを食うため、
+    // 本文ぶんに加えて余裕を持たせる (翻訳は実測 40 tok / 3 秒程度)。
+    maxTokens: 4000,
+    timeoutMs: 30_000,
     errorLabel: "translate failed",
   });
 }

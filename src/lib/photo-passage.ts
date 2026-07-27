@@ -11,11 +11,25 @@ import {
 // 注意: ANTHROPIC_API_KEY を読むため actions / SSR からのみ import する。
 
 // admin 側のラジオで選ぶモデル種別。実 model ID への対応はここで集約。
-export type PassageModel = "opus" | "sonnet";
+// fable は創作文向けのモデル。短歌・現代詩の生成はまさにその用途なので
+// 選択肢に含める (料金は opus の 2 倍: $10/$50 per MTok)。
+export type PassageModel = "opus" | "sonnet" | "fable";
 const MODEL_IDS: Record<PassageModel, string> = {
-  opus: "claude-opus-4-7",
-  sonnet: "claude-sonnet-4-6",
+  opus: "claude-opus-5",
+  sonnet: "claude-sonnet-5",
+  fable: "claude-fable-5",
 };
+
+// Claude 5 系は既定で extended thinking が有効で、その思考も output トークン
+// として max_tokens を消費する。プロンプトが「内部で 3 案生成 → 自己評価」を
+// 求めるぶん思考が長く、実測で 1,000〜2,100 tok 使う (旧値 1024 では思考の
+// 途中で打ち切られ、本文の JSON が返らなかった)。余裕を見て 4096。
+const MAX_TOKENS = 4096;
+
+// 同じ理由で応答も遅い (実測 opus 24s / sonnet 34s / fable 41s)。旧値 25s
+// では opus でもタイムアウトしていたので 90s に広げる。await 中の時間は
+// Workers の CPU 時間に計上されないので、この待ちは問題にならない。
+const TIMEOUT_MS = 90_000;
 
 export type Passages = {
   passageJa: string;
@@ -54,9 +68,8 @@ export async function generatePassages(
         ],
       },
     ],
-    maxTokens: 1024,
-    // vision はテキストのみより遅いので翻訳 (15s) より長めに取る。
-    timeoutMs: 25_000,
+    maxTokens: MAX_TOKENS,
+    timeoutMs: TIMEOUT_MS,
     errorLabel: "photo-passage failed",
   });
 

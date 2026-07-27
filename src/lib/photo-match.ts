@@ -7,7 +7,7 @@ import { MATCH_SYSTEM_PROMPT } from "@/lib/photo-match-prompt";
 //
 // 注意: ANTHROPIC_API_KEY を読むため actions / SSR からのみ import する。
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "claude-sonnet-5";
 
 export type GearMatchInput = {
   cameraExif?: string;
@@ -38,8 +38,11 @@ export async function matchCameraAndLens(
     model: MODEL,
     system: cachedSystem(MATCH_SYSTEM_PROMPT),
     messages: [{ role: "user", content: userContent }],
-    maxTokens: 256,
-    timeoutMs: 15_000,
+    // 返す JSON 自体は数十トークンだが、Claude 5 系は extended thinking の
+    // 分も max_tokens を消費する。旧値 256 では思考だけで尽きて本文が
+    // 返らなくなるため広げる (実測 30 tok / 2 秒)。
+    maxTokens: 2048,
+    timeoutMs: 30_000,
     errorLabel: "photo-match failed",
   });
 

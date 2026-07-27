@@ -157,7 +157,7 @@ const BACKFILL_CHUNK = 3;
 const CLEAR_CHUNK = 25;
 
 // 文章生成に使うモデル種別 (admin のラジオで選択。既定 Opus)。
-const PassageModelInput = z.enum(["opus", "sonnet"]).default("opus");
+const PassageModelInput = z.enum(["opus", "sonnet", "fable"]).default("opus");
 
 // date は EXIF 撮影日 (ISO) を想定。空・不正なら投稿日 (今日) にする。
 function resolvePhotoDate(raw?: string): string {

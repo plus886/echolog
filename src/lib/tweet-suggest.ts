@@ -8,7 +8,7 @@ import { TWEET_SUGGEST_SYSTEM_PROMPT } from "@/lib/tweet-suggest-prompt";
 // 注意: ANTHROPIC_API_KEY を読むため actions / SSR からのみ import する。
 // client component には絶対にバンドルしない。
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = "claude-sonnet-5";
 
 export type SuggestTweetInput = {
   // 文体参考にする過去のツイート本文 (新しい順)。
@@ -82,8 +82,10 @@ export async function suggestTweet(input: SuggestTweetInput): Promise<string> {
     model: MODEL,
     system: cachedSystem(TWEET_SUGGEST_SYSTEM_PROMPT),
     messages: [{ role: "user", content: buildUserMessage(input) }],
-    maxTokens: 1024,
-    timeoutMs: 20_000,
+    // 下書き自体は短いが、Claude 5 系は extended thinking の分も
+    // max_tokens を消費するので余裕を持たせる (実測 39 tok / 2 秒)。
+    maxTokens: 4096,
+    timeoutMs: 45_000,
     errorLabel: "tweet-suggest failed",
   });
   return stripWrappingQuotes(text);
