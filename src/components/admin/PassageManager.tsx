@@ -16,7 +16,15 @@ import { Card } from "@/components/admin/ui";
 
 // refreshKey が変わると DaysList を remount し、既定ビュー (最新が先頭) で
 // 再取得させる。写真投稿成功後に最新データを確認させるために使う。
-export function PassageManager({ refreshKey = 0 }: { refreshKey?: number }) {
+// threadsRefreshKey はタブ再表示のたびに増え、Threads バッジだけを
+// 再取得させる (一覧は remount しない = 表示は消えない)。
+export function PassageManager({
+  refreshKey = 0,
+  threadsRefreshKey = 0,
+}: {
+  refreshKey?: number;
+  threadsRefreshKey?: number;
+}) {
   const [model, setModel] = useState<PassageModelChoice>("opus");
 
   return (
@@ -25,7 +33,12 @@ export function PassageManager({ refreshKey = 0 }: { refreshKey?: number }) {
       <Card tight>
         <ModelRadio value={model} onChange={setModel} />
       </Card>
-      <DaysList key={refreshKey} model={model} onModelChange={setModel} />
+      <DaysList
+        key={refreshKey}
+        model={model}
+        onModelChange={setModel}
+        threadsRefreshKey={threadsRefreshKey}
+      />
       <PhotoBackfillPanel only="missing" model={model} />
       {/* 全文章削除パネル — 今後使わないため一旦コメントアウト */}
       {/* <PhotoBackfillPanel only="clear" model={model} /> */}

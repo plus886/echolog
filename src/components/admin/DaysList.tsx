@@ -1,7 +1,7 @@
 import { actions } from "astro:actions";
 import { useCallback, useEffect, useState } from "react";
 
-import { DayRow } from "@/components/admin/DayRow";
+import { DayRow, type ThreadsDayInfo } from "@/components/admin/DayRow";
 import type { PassageModelChoice } from "@/components/admin/ModelRadio";
 import { Button } from "@/components/admin/ui";
 import type { Day } from "@/types/microcms";
@@ -10,6 +10,8 @@ import type { Day } from "@/types/microcms";
 // ページサイズ 30 / 50 / 100、お気に入り (featured) 状態での絞り込み、
 // ID での完全一致検索。各行 (DayRow) の編集・再生成は行内で完結し、
 // 一覧の再取得は伴わない (ページ送り・フィルタ・検索・再試行時のみ取得)。
+// Threads 予約状況はページ表示後にまとめて取得してバッジ表示する
+// (取得失敗はバッジが出ないだけで一覧は使える)。
 
 const PAGE_SIZES = [30, 50, 100] as const;
 type ListState = "loading" | "ready" | "error";
@@ -24,9 +26,12 @@ const FAVORITE_OPTIONS: readonly [FavoriteFilter, string][] = [
 export function DaysList({
   model,
   onModelChange,
+  threadsRefreshKey = 0,
 }: {
   model: PassageModelChoice;
   onModelChange: (model: PassageModelChoice) => void;
+  // タブ再表示のたびに増える。Threads バッジだけ再取得する (一覧は保持)。
+  threadsRefreshKey?: number;
 }) {
   const [pageSize, setPageSize] = useState<number>(30);
   const [page, setPage] = useState(0); // 0 始まり
@@ -38,6 +43,24 @@ export function DaysList({
   const [days, setDays] = useState<Day[]>([]);
   const [total, setTotal] = useState(0);
   const [state, setState] = useState<ListState>("loading");
+  const [threadsMap, setThreadsMap] = useState<Record<string, ThreadsDayInfo>>(
+    {},
+  );
+
+  // Threads 予約状況の取得。一覧の描画はブロックしない (失敗時はバッジが
+  // 出ないだけ)。
+  const fetchThreadsStatuses = useCallback(async (dayIds: string[]) => {
+    if (dayIds.length === 0) {
+      setThreadsMap({});
+      return;
+    }
+    const t = await actions.threadsStatusForDays({ dayIds });
+    if (!t.error && t.data) {
+      setThreadsMap(
+        Object.fromEntries(t.data.statuses.map((s) => [s.dayId, s])),
+      );
+    }
+  }, []);
 
   const fetchPage = useCallback(
     async (p: number, size: number, fav: FavoriteFilter, sid: string) => {
@@ -55,13 +78,23 @@ export function DaysList({
       setDays(res.data.days);
       setTotal(res.data.total);
       setState("ready");
+      void fetchThreadsStatuses(res.data.days.map((d) => d.id));
     },
-    [],
+    [fetchThreadsStatuses],
   );
 
   useEffect(() => {
     void fetchPage(page, pageSize, favorite, searchId);
   }, [page, pageSize, favorite, searchId, fetchPage]);
+
+  // タブへ戻ってきたとき、Threads タブでの取消・投稿を バッジへ反映する。
+  useEffect(() => {
+    if (threadsRefreshKey > 0) {
+      void fetchThreadsStatuses(days.map((d) => d.id));
+    }
+    // days は依存に含めない (ページ変更時は fetchPage 側が取得する)。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threadsRefreshKey, fetchThreadsStatuses]);
 
   const refetch = useCallback(() => {
     void fetchPage(page, pageSize, favorite, searchId);
@@ -171,6 +204,10 @@ export function DaysList({
               day={day}
               model={model}
               onModelChange={onModelChange}
+              threads={threadsMap[day.id] ?? null}
+              onThreadsEnqueued={(dayId, info) =>
+                setThreadsMap((m) => ({ ...m, [dayId]: info }))
+              }
             />
           ))}
         </div>

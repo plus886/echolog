@@ -3,22 +3,40 @@ import { useEffect, useState } from "react";
 
 import type { PassageModelChoice } from "@/components/admin/ModelRadio";
 import { PassageDialog } from "@/components/admin/PassageDialog";
+import { formatTaipei } from "@/lib/taipei-time";
 import type { Day } from "@/types/microcms";
 
 // days 一覧の 1 行 (DaisyUI card)。サムネイル + passageJa/Zh +
-// お気に入りトグル + 文章の手編集 + 再生成。
+// お気に入りトグル + 文章の手編集 + 再生成 + Threads 予約。
+
+// この day の Threads 予約状況 (DaysList がページ単位でまとめて取得)。
+export type ThreadsDayInfo = {
+  status: string;
+  scheduledAt: string;
+  publishedAt: string | null;
+};
 
 type Props = {
   day: Day;
   model: PassageModelChoice;
   // 再生成ダイアログでモデルを変えたらタブ上部の選択にも反映する。
   onModelChange: (model: PassageModelChoice) => void;
+  threads: ThreadsDayInfo | null;
+  onThreadsEnqueued: (dayId: string, info: ThreadsDayInfo) => void;
 };
 
-export function DayRow({ day, model, onModelChange }: Props) {
+export function DayRow({
+  day,
+  model,
+  onModelChange,
+  threads,
+  onThreadsEnqueued,
+}: Props) {
   const [featured, setFeatured] = useState(Boolean(day.featured));
   const [favBusy, setFavBusy] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [threadsBusy, setThreadsBusy] = useState(false);
+  const [threadsError, setThreadsError] = useState<string | null>(null);
 
   // 表示中の文章。再生成 (onChanged → 親が再取得) で day prop が
   // 更新されたら同期する。
@@ -62,6 +80,34 @@ export function DayRow({ day, model, onModelChange }: Props) {
     setSaveError(null);
   };
 
+  // Threads 予約。投稿済みの写真の再予約だけ確認を挟む (意図的な再投稿
+  // かもしれないので禁止まではしない)。
+  const enqueueThreads = async () => {
+    if (threadsBusy) return;
+    if (
+      threads?.status === "published" &&
+      !window.confirm("この写真は Threads 投稿済みです。もう一度予約しますか？")
+    ) {
+      return;
+    }
+    setThreadsBusy(true);
+    setThreadsError(null);
+    const res = await actions.threadsEnqueue({ dayId: day.id });
+    setThreadsBusy(false);
+    if (res.error || !res.data) {
+      setThreadsError(res.error?.message ?? "予約に失敗しました");
+      return;
+    }
+    onThreadsEnqueued(day.id, {
+      status: "scheduled",
+      scheduledAt: res.data.post.scheduledAt,
+      publishedAt: null,
+    });
+  };
+
+  const threadsActive =
+    threads?.status === "scheduled" || threads?.status === "publishing";
+
   const save = async () => {
     if (saveBusy) return;
     setSaveBusy(true);
@@ -101,6 +147,37 @@ export function DayRow({ day, model, onModelChange }: Props) {
             />
           </a>
           <div className="flex-1" />
+          {/* Threads 予約状況。アクティブな予約はバッジのみ (取消・日時
+              変更は Threads タブから)。 */}
+          {threadsActive ? (
+            <span className="badge badge-info badge-sm whitespace-nowrap">
+              Threads {formatTaipei(threads!.scheduledAt)}
+            </span>
+          ) : (
+            <>
+              {threads?.status === "published" && (
+                <span className="badge badge-success badge-sm whitespace-nowrap">
+                  Threads済
+                </span>
+              )}
+              {threads?.status === "failed" && (
+                <span className="badge badge-error badge-sm whitespace-nowrap">
+                  Threads失敗
+                </span>
+              )}
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => void enqueueThreads()}
+                disabled={threadsBusy || editing || !passages.zh}
+                title={
+                  passages.zh ? undefined : "中文が未生成のため予約できません"
+                }
+              >
+                {threadsBusy ? "予約中…" : "Threads予約"}
+              </button>
+            </>
+          )}
           <button
             type="button"
             onClick={() => void toggleFavorite()}
@@ -131,6 +208,10 @@ export function DayRow({ day, model, onModelChange }: Props) {
           </button>
         </div>
 
+        {threadsError && (
+          <p className="m-0 text-xs text-error">{threadsError}</p>
+        )}
+
         {editing ? (
           <div className="flex flex-col gap-2">
             <label className="flex flex-col gap-1 text-xs font-medium opacity-60">
@@ -153,9 +234,7 @@ export function DayRow({ day, model, onModelChange }: Props) {
                 disabled={saveBusy}
               />
             </label>
-            {saveError && (
-              <p className="m-0 text-sm text-error">{saveError}</p>
-            )}
+            {saveError && <p className="m-0 text-sm text-error">{saveError}</p>}
             <div className="flex justify-end gap-2">
               <button
                 type="button"

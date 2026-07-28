@@ -22,6 +22,10 @@ const ServerEnvSchema = z.object({
   // Claude API — 日本語投稿を台湾繁體中文へ自動翻訳する (lib/translate.ts)。
   // 未設定でもサイトは動く。その場合は投稿時の翻訳のみ失敗する。
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  // Threads (Meta) アプリの OAuth クレデンシャル (lib/threads.ts)。
+  // 未設定でもサイトは動き、admin の Threads 連携のみ使えない。
+  THREADS_APP_ID: z.string().min(1).optional(),
+  THREADS_APP_SECRET: z.string().min(1).optional(),
   CF_ACCESS_TEAM_DOMAIN: z.string().min(1).optional(),
   CF_ACCESS_AUD: z.string().min(1).optional(),
   // Astro 流の公開変数 prefix。旧 NEXT_PUBLIC_SITE_URL から改名。

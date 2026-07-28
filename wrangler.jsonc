@@ -1,7 +1,10 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "echolog",
-  "main": "@astrojs/cloudflare/entrypoints/server",
+  // Threads 予約投稿の Cron Trigger を受けるため、既定の
+  // "@astrojs/cloudflare/entrypoints/server" (fetch のみ) から scheduled
+  // ハンドラ付きのカスタムエントリへ差し替え (src/worker.ts 参照)。
+  "main": "./src/worker.ts",
   "compatibility_date": "2026-05-13",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
@@ -11,6 +14,22 @@
   "observability": {
     "enabled": true,
   },
+  "triggers": {
+    // Threads 予約投稿の配信 + 長期トークンの自動リフレッシュ
+    // (src/lib/threads-cron.ts)。5 分毎に due な予約を拾う。
+    "crons": ["*/5 * * * *"],
+  },
+  "d1_databases": [
+    {
+      // Threads 予約キュー・投稿ログ・長期トークン。スキーマは migrations/ に
+      // あり、`wrangler d1 migrations apply echolog-threads --local|--remote`
+      // で適用する。
+      "binding": "THREADS_DB",
+      "database_name": "echolog-threads",
+      "database_id": "f94b3a73-a154-4360-b12b-eacf1980aec8",
+      "migrations_dir": "migrations",
+    },
+  ],
   "vars": {
     // 旧 NEXT_PUBLIC_SITE_URL の Astro 流改名。client + server 両方で
     // 参照される唯一の "公開" 変数 (`PUBLIC_` prefix で client にも露出)。
@@ -19,11 +38,11 @@
     "PUBLIC_SITE_URL": "https://kokaiji.tw",
   },
   // Bindings:
-  //   このアプリ (echolog) は D1 / R2 / KV にアプリデータを持たない。
   //   コンテンツは microCMS (2 ワークスペース) にあり、認証は Cloudflare
-  //   Access のエッジ JWT のみ。OpenNext 用の R2 incremental cache /
-  //   D1 tag cache / WORKER_SELF_REFERENCE は Astro SSR では不要。
-  //   詳細は MIGRATION_INVENTORY.md 表B を参照。
+  //   Access のエッジ JWT のみ。R2 / KV は使わない (OpenNext 用の R2
+  //   incremental cache / D1 tag cache / WORKER_SELF_REFERENCE は Astro
+  //   SSR では不要)。唯一のアプリデータが上の D1 (Threads 予約投稿) で、
+  //   これはサイト表示には関与しない。詳細は MIGRATION_INVENTORY.md 表B。
   //
   // Environment variables (vars / secret):
   //   - 公開系: PUBLIC_SITE_URL (旧 NEXT_PUBLIC_SITE_URL を Astro 流に改名)

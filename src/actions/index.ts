@@ -9,6 +9,7 @@ import {
   uploadFormosaMedia,
 } from "@/lib/formosa-management";
 import {
+  getDay,
   getLocation,
   listAllLocations,
   listDays,
@@ -25,6 +26,24 @@ import {
 import { generateAltTexts } from "@/lib/photo-alt";
 import { matchCameraAndLens } from "@/lib/photo-match";
 import { generatePassages } from "@/lib/photo-passage";
+import { formatTaipei } from "@/lib/taipei-time";
+import { fetchThreadsProfile, getThreadsAppConfig } from "@/lib/threads";
+import {
+  claimThreadsPost,
+  deleteScheduledThreadsPost,
+  deleteThreadsAuth,
+  findActiveThreadsPostByDay,
+  getThreadsAuth,
+  getThreadsPost,
+  insertThreadsPost,
+  listActiveThreadsScheduleTimes,
+  listThreadsPosts,
+  listThreadsPostsByDayIds,
+  rescheduleThreadsPost,
+  saveThreadsAuth,
+} from "@/lib/threads-db";
+import { publishThreadsPost } from "@/lib/threads-publish";
+import { pickScheduleSlot } from "@/lib/threads-schedule";
 import { translateToZh } from "@/lib/translate";
 import { suggestTweet as generateTweetSuggestion } from "@/lib/tweet-suggest";
 import { evaluateTweetText } from "@/lib/tweet-text";
@@ -760,6 +779,263 @@ export const server = {
           message: "文章の生成に失敗しました。時間をおいて再試行してください",
         });
       }
+    },
+  }),
+
+  // ---- Threads 連携 (接続管理) ----
+
+  // 接続状態。app 設定の有無 + D1 に保存済みのトークン情報を返す。
+  // verify=true なら /me を叩いて生存確認し、username も最新化する。
+  threadsStatus: defineAction({
+    input: z.object({ verify: z.boolean().optional() }).optional(),
+    handler: async (input) => {
+      const appConfigured = Boolean(getThreadsAppConfig());
+      let auth;
+      try {
+        auth = await getThreadsAuth();
+      } catch (e) {
+        console.error("[threads] status failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "Threads 用 D1 が使えません。migration の適用を確認してください (docs/threads.md)",
+        });
+      }
+      if (!auth) return { appConfigured, connected: false as const };
+
+      let username = auth.username;
+      let tokenOk: boolean | undefined;
+      if (input?.verify) {
+        try {
+          const profile = await fetchThreadsProfile(auth.accessToken);
+          username = profile.username ?? username;
+          tokenOk = true;
+          if (username !== auth.username) {
+            await saveThreadsAuth({ ...auth, username });
+          }
+        } catch (e) {
+          console.error("[threads] token verify failed", e);
+          tokenOk = false;
+        }
+      }
+      return {
+        appConfigured,
+        connected: true as const,
+        username,
+        threadsUserId: auth.threadsUserId,
+        expiresAt: auth.expiresAt,
+        refreshedAt: auth.refreshedAt,
+        tokenOk,
+      };
+    },
+  }),
+
+  // 長期トークンの手動登録。OAuth リダイレクトが使えないローカル開発や、
+  // 失効時の応急用。/me で実在確認してから保存する。
+  threadsSetToken: defineAction({
+    input: z.object({ token: z.string().min(20) }),
+    handler: async ({ token }) => {
+      const trimmed = token.trim();
+      let profile;
+      try {
+        profile = await fetchThreadsProfile(trimmed);
+      } catch (e) {
+        console.error("[threads] manual token rejected", e);
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "トークンが無効です。長期アクセストークンか確認してください",
+        });
+      }
+      const now = Date.now();
+      await saveThreadsAuth({
+        accessToken: trimmed,
+        threadsUserId: profile.id,
+        username: profile.username,
+        // 手動登録では正確な失効時刻が分からないので長期トークンの
+        // 60 日とみなす (以後は cron のリフレッシュで正確な値に収束)。
+        expiresAt: new Date(now + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        refreshedAt: new Date(now).toISOString(),
+      });
+      return { username: profile.username };
+    },
+  }),
+
+  // 接続解除 (D1 のトークン破棄)。Threads 側のアプリ連携解除は Threads
+  // アプリの設定 (ウェブサイトのアクセス許可) から行う。
+  threadsDisconnect: defineAction({
+    handler: async () => {
+      await deleteThreadsAuth();
+      return { ok: true };
+    },
+  }),
+
+  // ---- Threads 予約キュー ----
+
+  // 文章管理タブの予約ボタン。空き枠 (台湾時間 20–22時 / 60分間隔 /
+  // 1日2件 / 明日以降) を自動で割り当てて D1 に積む。
+  threadsEnqueue: defineAction({
+    input: z.object({ dayId: z.string().min(1) }),
+    handler: async ({ dayId }) => {
+      let day;
+      try {
+        day = await getDay(dayId);
+      } catch {
+        throw new ActionError({
+          code: "NOT_FOUND",
+          message: "写真が見つかりません",
+        });
+      }
+      if (!day.passageZh?.trim()) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "中文 (passageZh) が未生成のため予約できません",
+        });
+      }
+      const active = await findActiveThreadsPostByDay(dayId);
+      if (active) {
+        throw new ActionError({
+          code: "CONFLICT",
+          message: `すでに予約済みです (${formatTaipei(active.scheduledAt)} 台湾時間)`,
+        });
+      }
+      const times = await listActiveThreadsScheduleTimes();
+      const scheduledAt = pickScheduleSlot(times, Date.now());
+      const post = await insertThreadsPost({
+        dayId,
+        imageUrl: day.image.url,
+        scheduledAt,
+      });
+      return { post };
+    },
+  }),
+
+  // ダッシュボードの一覧 (キュー + ログ)。キュー行のプレビュー用に、
+  // 各 day の現時点の passageZh も添える (published 分は posted_text が
+  // snapshot として行内にある)。
+  threadsListPosts: defineAction({
+    handler: async () => {
+      const posts = await listThreadsPosts();
+      const dayIds = [...new Set(posts.map((p) => p.dayId))].slice(0, 100);
+      const passageByDay = new Map<string, string | null>();
+      if (dayIds.length > 0) {
+        try {
+          const res = await listDays({
+            ids: dayIds.join(","),
+            limit: 100,
+            fields: "id,passageZh",
+          });
+          for (const d of res.contents) {
+            passageByDay.set(d.id, d.passageZh ?? null);
+          }
+        } catch (e) {
+          // 取れなくても一覧自体は返す (プレビューが出ないだけ)。
+          console.error("[threads] day enrich failed", e);
+        }
+      }
+      return {
+        posts: posts.map((p) => ({
+          ...p,
+          passageZh: passageByDay.get(p.dayId) ?? null,
+        })),
+      };
+    },
+  }),
+
+  // 文章管理タブのバッジ用。表示中ページの day ごとに「アクティブな予約が
+  // あればそれ、なければ最新の履歴」を返す。
+  threadsStatusForDays: defineAction({
+    input: z.object({ dayIds: z.array(z.string().min(1)).max(100) }),
+    handler: async ({ dayIds }) => {
+      const rows = await listThreadsPostsByDayIds(dayIds);
+      const byDay = new Map<string, (typeof rows)[number]>();
+      for (const row of rows) {
+        const current = byDay.get(row.dayId);
+        const rowActive =
+          row.status === "scheduled" || row.status === "publishing";
+        const currentActive =
+          current &&
+          (current.status === "scheduled" || current.status === "publishing");
+        // rows は created_at 降順なので、最初に見つかった行が最新。
+        // アクティブ行はそれより古くても優先する。
+        if (!current || (rowActive && !currentActive))
+          byDay.set(row.dayId, row);
+      }
+      return {
+        statuses: [...byDay.values()].map((row) => ({
+          dayId: row.dayId,
+          status: row.status,
+          scheduledAt: row.scheduledAt,
+          publishedAt: row.publishedAt,
+        })),
+      };
+    },
+  }),
+
+  // 日時変更 (failed → scheduled の再試行も兼ねる)。台湾時間の入力を
+  // クライアント側で UTC ISO に変換してから渡す。
+  threadsReschedule: defineAction({
+    input: z.object({ id: z.number().int(), scheduledAt: z.string() }),
+    handler: async ({ id, scheduledAt }) => {
+      const t = Date.parse(scheduledAt);
+      if (!Number.isFinite(t)) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "日時の形式が不正です",
+        });
+      }
+      if (t <= Date.now()) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "過去の時刻には設定できません",
+        });
+      }
+      const post = await rescheduleThreadsPost(id, new Date(t).toISOString());
+      if (!post) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "この状態の投稿は変更できません",
+        });
+      }
+      return { post };
+    },
+  }),
+
+  // 未投稿予約の取消 (行削除)。published の削除 (Threads 側も消す) は
+  // 別 action で扱う。
+  threadsCancel: defineAction({
+    input: z.object({ id: z.number().int() }),
+    handler: async ({ id }) => {
+      const ok = await deleteScheduledThreadsPost(id);
+      if (!ok) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "取り消せるのは未投稿 (予約中 / 失敗) の項目だけです",
+        });
+      }
+      return { ok: true };
+    },
+  }),
+
+  // 予定を待たずに今すぐ投稿する (動作確認・失敗分の即時リトライ用)。
+  threadsPublishNow: defineAction({
+    input: z.object({ id: z.number().int() }),
+    handler: async ({ id }) => {
+      const claimed = await claimThreadsPost(id);
+      if (!claimed) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "実行できるのは予約中 / 失敗の項目だけです",
+        });
+      }
+      const result = await publishThreadsPost(claimed);
+      if (!result.ok) {
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `投稿に失敗しました: ${result.error}`,
+        });
+      }
+      const post = await getThreadsPost(id);
+      return { post, replyFailed: result.replyFailed };
     },
   }),
 };

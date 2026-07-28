@@ -4,19 +4,22 @@ import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import type { ComposeMode } from "@/components/admin/ComposeForm";
 import { PassageManager } from "@/components/admin/PassageManager";
 import { PhotoComposer } from "@/components/admin/PhotoComposer";
+import { ThreadsManager } from "@/components/admin/ThreadsManager";
 import type { ThreadNode } from "@/lib/thread";
 
-// /admin の最上位 island。3 タブ (ツイート / 写真投稿 / 文章管理) を束ねる。
+// /admin の最上位 island。4 タブ (ツイート / 写真投稿 / 文章管理 / Threads)
+// を束ねる。
 //  - ツイート  = 従来の AdminDashboard (SSR 済みの一覧データを受け渡す)。
 //  - 写真投稿  = PhotoComposer (formosa/days への単発写真投稿)。
 //  - 文章管理  = PassageManager (バルク文章操作 + days 一覧管理)。
+//  - Threads   = ThreadsManager (Threads 接続 + 予約投稿ダッシュボード)。
 // 最後に開いたタブは LocalStorage で記憶。client:only="react" 前提なので
 // useState 初期化子で LocalStorage を読んでも hydration mismatch は無い。
 //
-// 写真投稿・文章管理タブは初回に開いた時だけマウントする (それまで
+// ツイート以外のタブは初回に開いた時だけマウントする (それまで
 // スキーマ取得や一覧 fetch を走らせない)。一度開いたら hidden トグルで保持。
 
-type TabKey = "tweet" | "photo" | "passages";
+type TabKey = "tweet" | "photo" | "passages" | "threads";
 const TAB_STORAGE_KEY = "echolog-admin-tab";
 
 type Props = {
@@ -30,26 +33,39 @@ const TABS: readonly [TabKey, string][] = [
   ["tweet", "ツイート"],
   ["photo", "写真投稿"],
   ["passages", "文章管理"],
+  ["threads", "Threads"],
 ];
 
 export function AdminTabs(props: Props) {
   const [tab, setTab] = useState<TabKey>(() => {
     try {
       const v = localStorage.getItem(TAB_STORAGE_KEY);
-      return v === "photo" || v === "passages" ? v : "tweet";
+      return v === "photo" || v === "passages" || v === "threads" ? v : "tweet";
     } catch {
       return "tweet";
     }
   });
   const [photoMounted, setPhotoMounted] = useState(tab === "photo");
   const [passagesMounted, setPassagesMounted] = useState(tab === "passages");
+  const [threadsMounted, setThreadsMounted] = useState(tab === "threads");
   // インクリメントで DaysList を remount させ、最新データで再取得させる。
   const [daysRefreshKey, setDaysRefreshKey] = useState(0);
+  // タブを開き直すたびに増えるキー。マウント済みタブに「表示された」ことを
+  // 伝え、Threads の予約状況だけ再取得させる (remount はしない)。
+  const [passagesVisitKey, setPassagesVisitKey] = useState(0);
+  const [threadsVisitKey, setThreadsVisitKey] = useState(0);
 
   const selectTab = (next: TabKey) => {
     setTab(next);
     if (next === "photo") setPhotoMounted(true);
-    if (next === "passages") setPassagesMounted(true);
+    if (next === "passages") {
+      if (passagesMounted) setPassagesVisitKey((k) => k + 1);
+      setPassagesMounted(true);
+    }
+    if (next === "threads") {
+      if (threadsMounted) setThreadsVisitKey((k) => k + 1);
+      setThreadsMounted(true);
+    }
     try {
       localStorage.setItem(TAB_STORAGE_KEY, next);
     } catch {
@@ -93,7 +109,15 @@ export function AdminTabs(props: Props) {
       )}
       {passagesMounted && (
         <div hidden={tab !== "passages"}>
-          <PassageManager refreshKey={daysRefreshKey} />
+          <PassageManager
+            refreshKey={daysRefreshKey}
+            threadsRefreshKey={passagesVisitKey}
+          />
+        </div>
+      )}
+      {threadsMounted && (
+        <div hidden={tab !== "threads"}>
+          <ThreadsManager refreshKey={threadsVisitKey} />
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@ import { createClient, type MicroCMSQueries } from "microcms-js-sdk";
 import { getEnv } from "@/lib/env";
 import type {
   Day,
+  DayFields,
   DayListResponse,
   Location,
   LocationFields,
@@ -102,6 +103,17 @@ export async function listDays(
     queries: { limit: 50, orders: "-date", ...queries },
   });
   return response as DayListResponse;
+}
+
+// days 1 件。Threads 投稿時に最新の passage / alt を読む用途なので
+// no-store (予約後に文章を手直ししても投稿へ反映させる)。
+export async function getDay(contentId: string): Promise<Day> {
+  const day = await getFormosa().getListDetail<DayFields>({
+    endpoint: DAYS_ENDPOINT,
+    contentId,
+    customRequestInit: { cache: "no-store" },
+  });
+  return day as Day;
 }
 
 // 撮影地の全件。admin の写真投稿フォームで選択肢に出す。microCMS の
