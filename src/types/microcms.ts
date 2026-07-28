@@ -67,6 +67,7 @@ export function getRetweetKind(
 
 // microCMS の days API。select フィールド (camera / lens) は読み取り時
 // 値文字列の配列で返る。passage* は ja / zh の 2 言語キャプション。
+// alt* は検索最適化・スクリーンリーダー向けの 2 言語代替テキスト。
 export type DayFields = {
   image: MicroCMSImage;
   date: string;
@@ -75,6 +76,8 @@ export type DayFields = {
   featured?: boolean;
   passageJa?: string;
   passageZh?: string;
+  altJa?: string;
+  altZh?: string;
 };
 
 export type Day = DayFields & MicroCMSContentId & EchologDate;
@@ -96,5 +99,7 @@ export type DayWriteFields = {
   featured?: boolean;
   passageJa?: string;
   passageZh?: string;
+  altJa?: string;
+  altZh?: string;
   date?: string;
 };

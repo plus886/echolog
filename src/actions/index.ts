@@ -17,6 +17,7 @@ import {
   updateTweet,
   type TweetWriteFields,
 } from "@/lib/microcms-management";
+import { generateAltTexts } from "@/lib/photo-alt";
 import { matchCameraAndLens } from "@/lib/photo-match";
 import { generatePassages } from "@/lib/photo-passage";
 import { translateToZh } from "@/lib/translate";
@@ -432,14 +433,16 @@ export const server = {
       }
 
       try {
-        const passages = await generatePassages(
-          imageUrl,
-          input.model,
-          input.notes,
-        );
-        return { imageUrl, ...passages };
+        // 短歌 (選択モデル) と代替テキスト (Opus 5 固定) を並列生成する。
+        // alt は創作でなく事実描写なので確認・再生成の対象にせず、投稿時に
+        // そのまま days に書き込む。
+        const [passages, alt] = await Promise.all([
+          generatePassages(imageUrl, input.model, input.notes),
+          generateAltTexts(imageUrl),
+        ]);
+        return { imageUrl, ...passages, ...alt };
       } catch (e) {
-        console.error("[photo] passage generation failed", e);
+        console.error("[photo] passage/alt generation failed", e);
         throw new ActionError({
           code: "INTERNAL_SERVER_ERROR",
           message: "文章の生成に失敗しました。時間をおいて再試行してください",
@@ -448,8 +451,8 @@ export const server = {
     },
   }),
 
-  // preparePhoto でアップロード済みの画像と、プレビューで採用された文章を
-  // days に作成する (ここで初めて公開される)。
+  // preparePhoto でアップロード済みの画像と、プレビューで採用された文章・
+  // 代替テキストを days に作成する (ここで初めて公開される)。
   publishPhoto: defineAction({
     input: z.object({
       imageUrl: z.string().url(),
@@ -458,6 +461,8 @@ export const server = {
       date: z.string().optional(),
       passageJa: z.string().min(1),
       passageZh: z.string().min(1),
+      altJa: z.string().min(1),
+      altZh: z.string().min(1),
     }),
     handler: async (input) => {
       try {
@@ -467,6 +472,8 @@ export const server = {
           lens: input.lens?.trim() || undefined,
           passageJa: input.passageJa,
           passageZh: input.passageZh,
+          altJa: input.altJa,
+          altZh: input.altZh,
           date: resolvePhotoDate(input.date),
         });
         return { id };

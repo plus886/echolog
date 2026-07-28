@@ -115,6 +115,8 @@ function toDaysPayload(content: DayWriteFields): Record<string, unknown> {
   if (content.featured != null) payload.featured = content.featured;
   if (content.passageJa) payload.passageJa = content.passageJa;
   if (content.passageZh) payload.passageZh = content.passageZh;
+  if (content.altJa) payload.altJa = content.altJa;
+  if (content.altZh) payload.altZh = content.altZh;
   if (content.date) payload.date = content.date;
   return payload;
 }

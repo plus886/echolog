@@ -21,8 +21,14 @@ import { resizeImageForUpload } from "@/lib/image-resize";
 
 type Schema = { camera: string[]; lens: string[] };
 type SchemaState = "loading" | "ready" | "error";
-// アップロード済み画像 + 生成された文章 (まだ投稿していない)。
-type Prepared = { imageUrl: string; passageJa: string; passageZh: string };
+// アップロード済み画像 + 生成された文章・代替テキスト (まだ投稿していない)。
+type Prepared = {
+  imageUrl: string;
+  passageJa: string;
+  passageZh: string;
+  altJa: string;
+  altZh: string;
+};
 
 const ACCEPT_MIME = "image/jpeg,image/png,image/webp";
 
@@ -318,6 +324,9 @@ export function PhotoComposer({
               date: exif?.dateOriginal,
               passageJa: p.passageJa,
               passageZh: p.passageZh,
+              // alt はアップロード時に Opus 5 固定で生成済み (確認対象外)。
+              altJa: prepared.altJa,
+              altZh: prepared.altZh,
             });
             if (res.error) return res.error.message ?? "投稿に失敗しました";
             resetForm();
