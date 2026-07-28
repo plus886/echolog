@@ -302,6 +302,16 @@ export async function markThreadsPostPublished(
     .run();
 }
 
+// Threads 側から削除済みにする。行は履歴として残す (status='deleted')。
+export async function markThreadsPostDeleted(id: number): Promise<void> {
+  await getThreadsDb()
+    .prepare(
+      "UPDATE threads_posts SET status = 'deleted' WHERE id = ?1 AND status = 'published'",
+    )
+    .bind(id)
+    .run();
+}
+
 export async function markThreadsPostFailed(
   id: number,
   error: string,

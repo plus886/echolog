@@ -283,6 +283,90 @@ export async function fetchPostPermalink(
   return typeof data.permalink === "string" ? data.permalink : null;
 }
 
+// ---- 公開後の運用 (返信・表示回数・削除) ----
+
+export type ThreadsReply = {
+  id: string;
+  text: string;
+  username: string | null;
+  permalink: string | null;
+  timestamp: string | null;
+  isReplyOwnedByMe: boolean;
+};
+
+const REPLY_FIELDS =
+  "id,text,username,permalink,timestamp,is_reply_owned_by_me,has_replies";
+
+// あるポストに付いた返信。conversation は深さに関係なく全返信を平坦化
+// して返すので、スレッド全体を一覧するこの用途に合う (replies だと
+// トップレベルのみ)。chronological (reverse=false) で古い順。
+export async function fetchPostReplies(
+  mediaId: string,
+  token: string,
+): Promise<ThreadsReply[]> {
+  const url = new URL(`${THREADS_GRAPH}/v1.0/${mediaId}/conversation`);
+  url.searchParams.set("fields", REPLY_FIELDS);
+  url.searchParams.set("reverse", "false");
+  url.searchParams.set("access_token", token);
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await parseJsonResponse(res, "threads replies fetch failed");
+  const list = Array.isArray(data.data) ? data.data : [];
+  return list.map((raw) => {
+    const r = raw as Record<string, unknown>;
+    return {
+      id: String(r.id ?? ""),
+      text: typeof r.text === "string" ? r.text : "",
+      username: typeof r.username === "string" ? r.username : null,
+      permalink: typeof r.permalink === "string" ? r.permalink : null,
+      timestamp: typeof r.timestamp === "string" ? r.timestamp : null,
+      isReplyOwnedByMe: r.is_reply_owned_by_me === true,
+    };
+  });
+}
+
+// 表示回数。views は Meta 側で "in development" 扱いのメトリクスなので、
+// 取れないことがあっても致命ではない (呼び出し側で null 表示)。
+export async function fetchPostViews(
+  mediaId: string,
+  token: string,
+): Promise<number | null> {
+  const url = new URL(`${THREADS_GRAPH}/v1.0/${mediaId}/insights`);
+  url.searchParams.set("metric", "views");
+  url.searchParams.set("access_token", token);
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await parseJsonResponse(res, "threads insights fetch failed");
+  const list = Array.isArray(data.data) ? data.data : [];
+  for (const raw of list) {
+    const entry = raw as Record<string, unknown>;
+    if (entry.name !== "views") continue;
+    // views は単一値 (total_value.value) で返る。
+    const total = entry.total_value as Record<string, unknown> | undefined;
+    if (typeof total?.value === "number") return total.value;
+    const values = Array.isArray(entry.values) ? entry.values : [];
+    const first = values[0] as Record<string, unknown> | undefined;
+    if (typeof first?.value === "number") return first.value;
+  }
+  return null;
+}
+
+// 自分のポスト (または返信) を削除する。アカウントあたり 100 件/日。
+export async function deleteThreadsMedia(
+  mediaId: string,
+  token: string,
+): Promise<void> {
+  const url = new URL(`${THREADS_GRAPH}/v1.0/${mediaId}`);
+  url.searchParams.set("access_token", token);
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  await parseJsonResponse(res, "threads delete failed");
+}
+
 // トークンの持ち主のプロフィール。接続確認・手動トークン検証に使う。
 export async function fetchThreadsProfile(
   token: string,

@@ -11,8 +11,9 @@ import {
 // Threads タブ = 接続管理 + 予約投稿ダッシュボード。
 //  - 予約キュー: 予約中 / 実行中 / 失敗 (時系列昇順)。日時編集・取消・
 //    今すぐ投稿・投稿前プレビュー (先頭40字のフィード見え方 + 画像縦横比)。
-//  - 投稿ログ: 投稿済み / 削除済み (新しい順)。permalink・失敗注記。
-// 返信・表示回数は次フェーズでログ側に足す。
+//  - 投稿ログ: 投稿済み / 削除済み (新しい順)。permalink・失敗注記に加え、
+//    行を開くと表示回数と届いた返信を取得し、その場で返信できる。削除は
+//    Threads 側のポスト (と URL リプライ) も消す。
 //
 // 接続フロー: 「Threads と接続」→ /admin/threads/oauth/start → Meta の
 // 認可画面 → callback が D1 にトークンを保存 → /admin?threads=connected に
@@ -42,6 +43,26 @@ type PostItem = {
   publishedAt: string | null;
   passageZh: string | null;
 };
+
+type ReplyItem = {
+  id: string;
+  text: string;
+  username: string | null;
+  permalink: string | null;
+  timestamp: string | null;
+  isReplyOwnedByMe: boolean;
+};
+
+// 投稿済み 1 件の追加情報 (返信・表示回数)。行を開いたときだけ取得する
+// (ログ全件ぶんの API 呼び出しを避けるため)。
+type PostDetail = {
+  loading: boolean;
+  views?: number | null;
+  replies?: ReplyItem[];
+  error?: string | null;
+};
+
+const EMPTY_DETAIL: PostDetail = { loading: false };
 
 const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   denied: "認可がキャンセルされました",
@@ -294,7 +315,26 @@ function QueueRow({
 
 // ---- ログ 1 行 ----
 
-function LogRow({ post }: { post: PostItem }) {
+function LogRow({
+  post,
+  busy,
+  detail,
+  onOpenDetail,
+  onReply,
+  onDelete,
+}: {
+  post: PostItem;
+  busy: boolean;
+  detail: PostDetail;
+  onOpenDetail: (id: number) => Promise<void>;
+  onReply: (
+    postId: number,
+    replyToId: string,
+    text: string,
+  ) => Promise<string | null>;
+  onDelete: (id: number) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
   const text = post.postedText ?? post.passageZh ?? "";
   return (
     <div className="rounded-lg border border-base-300 p-3">
@@ -326,17 +366,206 @@ function LogRow({ post }: { post: PostItem }) {
             <p className="m-0 text-xs text-warning">{post.error}</p>
           )}
         </div>
-        {post.threadsPermalink && (
+        <div className="flex flex-wrap gap-1.5">
+          {post.status === "published" && (
+            <>
+              <Button
+                variant="neutral"
+                className="btn-sm"
+                disabled={detail.loading}
+                onClick={() => {
+                  if (!open) void onOpenDetail(post.id);
+                  setOpen((v) => !v);
+                }}
+              >
+                {detail.loading
+                  ? "取得中…"
+                  : open
+                    ? "閉じる"
+                    : "返信・表示回数"}
+              </Button>
+              <Button
+                variant="danger"
+                className="btn-sm"
+                disabled={busy}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "この投稿を Threads からも削除します。取り消せません。よろしいですか？",
+                    )
+                  ) {
+                    void onDelete(post.id);
+                  }
+                }}
+              >
+                削除
+              </Button>
+            </>
+          )}
+          {post.threadsPermalink && (
+            <a
+              href={post.threadsPermalink}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-sm"
+            >
+              Threads で見る
+            </a>
+          )}
+        </div>
+      </div>
+
+      {open && (
+        <div className="mt-3 flex flex-col gap-2 rounded-md bg-base-200 p-3">
+          <div className="flex items-center gap-3 text-xs">
+            <span className="opacity-60">
+              表示回数:{" "}
+              {detail.views === null || detail.views === undefined ? (
+                <span className="opacity-60">取得できません</span>
+              ) : (
+                <span className="font-semibold">
+                  {detail.views.toLocaleString("ja-JP")}
+                </span>
+              )}
+            </span>
+            <span className="opacity-60">
+              返信: {detail.replies?.length ?? 0} 件
+            </span>
+            <div className="flex-1" />
+            <Button
+              variant="ghost"
+              className="btn-xs"
+              disabled={detail.loading}
+              onClick={() => void onOpenDetail(post.id)}
+            >
+              更新
+            </Button>
+          </div>
+
+          {detail.error && (
+            <p className="m-0 text-xs text-error">{detail.error}</p>
+          )}
+
+          {detail.replies?.length === 0 && !detail.loading && (
+            <p className="m-0 text-sm opacity-60">まだ返信はありません。</p>
+          )}
+
+          {detail.replies?.map((reply) => (
+            <ReplyRow
+              key={reply.id}
+              postId={post.id}
+              reply={reply}
+              busy={busy}
+              onReply={onReply}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- 届いた返信 1 件 + 返信フォーム ----
+
+function ReplyRow({
+  postId,
+  reply,
+  busy,
+  onReply,
+}: {
+  postId: number;
+  reply: ReplyItem;
+  busy: boolean;
+  onReply: (
+    postId: number,
+    replyToId: string,
+    text: string,
+  ) => Promise<string | null>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+
+  const send = async () => {
+    if (!text.trim()) return;
+    setSending(true);
+    setError(null);
+    const message = await onReply(postId, reply.id, text);
+    setSending(false);
+    if (message) {
+      setError(message);
+      return;
+    }
+    setText("");
+    setOpen(false);
+    setSent(true);
+  };
+
+  return (
+    <div
+      className={`rounded-md bg-base-100 p-2 ${
+        reply.isReplyOwnedByMe ? "border-l-4 border-primary/40" : ""
+      }`}
+    >
+      <div className="flex flex-wrap items-center gap-2 text-xs opacity-60">
+        <span className="font-semibold">@{reply.username ?? "unknown"}</span>
+        {reply.isReplyOwnedByMe && (
+          <span className="badge badge-ghost badge-xs">自分</span>
+        )}
+        {reply.timestamp && (
+          <span>{formatTaipei(reply.timestamp)} 台湾時間</span>
+        )}
+        {reply.permalink && (
           <a
-            href={post.threadsPermalink}
+            href={reply.permalink}
             target="_blank"
             rel="noreferrer"
-            className="btn btn-sm"
+            className="link"
           >
-            Threads で見る
+            開く
           </a>
         )}
+        <div className="flex-1" />
+        {sent && <span className="text-success">返信しました</span>}
+        <Button
+          variant="ghost"
+          className="btn-xs"
+          disabled={busy}
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? "やめる" : "返信"}
+        </Button>
       </div>
+      <p className="m-0 mt-1 text-sm whitespace-pre-wrap">{reply.text}</p>
+
+      {open && (
+        <div className="mt-2 flex flex-col gap-1.5">
+          <textarea
+            className="textarea textarea-bordered w-full text-sm"
+            rows={2}
+            maxLength={500}
+            placeholder="返信を入力（繁體中文）"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            disabled={sending}
+          />
+          {error && <p className="m-0 text-xs text-error">{error}</p>}
+          <div className="flex items-center gap-2">
+            <span className="text-xs opacity-50">{text.length} / 500</span>
+            <div className="flex-1" />
+            <Button
+              variant="primary"
+              className="btn-sm"
+              disabled={sending || !text.trim()}
+              onClick={() => void send()}
+            >
+              {sending ? "送信中…" : "送信"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -357,6 +586,8 @@ export function ThreadsManager({ refreshKey = 0 }: { refreshKey?: number }) {
   const [postsState, setPostsState] = useState<"loading" | "ready" | "error">(
     "loading",
   );
+  // 投稿済み行を開いたときだけ取得する返信・表示回数 (post.id → 詳細)。
+  const [details, setDetails] = useState<Record<number, PostDetail>>({});
 
   const load = async (verify = false) => {
     setLoading(true);
@@ -502,6 +733,55 @@ export function ThreadsManager({ refreshKey = 0 }: { refreshKey?: number }) {
           : "Threads へ投稿しました",
       );
     }
+    await loadPosts();
+  };
+
+  // ---- 公開後の操作 ----
+
+  const openDetail = async (id: number) => {
+    setDetails((d) => ({
+      ...d,
+      [id]: { ...(d[id] ?? EMPTY_DETAIL), loading: true },
+    }));
+    const res = await actions.threadsPostDetail({ id });
+    setDetails((d) => ({
+      ...d,
+      [id]: res.error
+        ? {
+            ...(d[id] ?? EMPTY_DETAIL),
+            loading: false,
+            error: res.error.message,
+          }
+        : {
+            loading: false,
+            error: null,
+            views: res.data.views,
+            replies: res.data.replies as ReplyItem[],
+          },
+    }));
+  };
+
+  const replyTo = async (postId: number, replyToId: string, text: string) => {
+    setBusy(true);
+    const res = await actions.threadsReplyTo({ id: postId, replyToId, text });
+    setBusy(false);
+    if (res.error) return res.error.message;
+    // 送信した返信を一覧へ反映する。
+    await openDetail(postId);
+    return null;
+  };
+
+  const deletePost = async (id: number) => {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const res = await actions.threadsDeletePost({ id });
+    setBusy(false);
+    if (res.error) {
+      setError(res.error.message);
+      return;
+    }
+    setNotice("Threads から削除しました");
     await loadPosts();
   };
 
@@ -673,7 +953,15 @@ export function ThreadsManager({ refreshKey = 0 }: { refreshKey?: number }) {
         ) : (
           <div className="flex flex-col gap-2">
             {log.map((post) => (
-              <LogRow key={post.id} post={post} />
+              <LogRow
+                key={post.id}
+                post={post}
+                busy={busy}
+                detail={details[post.id] ?? EMPTY_DETAIL}
+                onOpenDetail={openDetail}
+                onReply={replyTo}
+                onDelete={deletePost}
+              />
             ))}
           </div>
         )}

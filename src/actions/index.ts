@@ -27,7 +27,16 @@ import { generateAltTexts } from "@/lib/photo-alt";
 import { matchCameraAndLens } from "@/lib/photo-match";
 import { generatePassages } from "@/lib/photo-passage";
 import { formatTaipei } from "@/lib/taipei-time";
-import { fetchThreadsProfile, getThreadsAppConfig } from "@/lib/threads";
+import {
+  createReplyTextContainer,
+  deleteThreadsMedia,
+  fetchPostReplies,
+  fetchPostViews,
+  fetchThreadsProfile,
+  getThreadsAppConfig,
+  publishContainer,
+  waitForContainerReady,
+} from "@/lib/threads";
 import {
   claimThreadsPost,
   deleteScheduledThreadsPost,
@@ -39,6 +48,7 @@ import {
   listActiveThreadsScheduleTimes,
   listThreadsPosts,
   listThreadsPostsByDayIds,
+  markThreadsPostDeleted,
   rescheduleThreadsPost,
   saveThreadsAuth,
 } from "@/lib/threads-db";
@@ -1036,6 +1046,135 @@ export const server = {
       }
       const post = await getThreadsPost(id);
       return { post, replyFailed: result.replyFailed };
+    },
+  }),
+
+  // ---- Threads 公開後の運用 (返信・表示回数・削除) ----
+
+  // 投稿済みポストの詳細。返信一覧と表示回数を 1 往復で返す。
+  // 表示回数 (views) は Meta 側で開発中扱いのメトリクスなので、取れなくても
+  // 返信は返す (views は null)。
+  threadsPostDetail: defineAction({
+    input: z.object({ id: z.number().int() }),
+    handler: async ({ id }) => {
+      const post = await getThreadsPost(id);
+      if (!post?.threadsMediaId) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "投稿済みの項目ではありません",
+        });
+      }
+      const auth = await getThreadsAuth();
+      if (!auth) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "Threads が未接続です",
+        });
+      }
+      const [replies, views] = await Promise.all([
+        fetchPostReplies(post.threadsMediaId, auth.accessToken).catch((e) => {
+          console.error("[threads] replies fetch failed", e);
+          throw new ActionError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "返信の取得に失敗しました",
+          });
+        }),
+        fetchPostViews(post.threadsMediaId, auth.accessToken).catch((e) => {
+          console.error("[threads] views fetch failed", e);
+          return null;
+        }),
+      ]);
+      // URL をぶら下げた自分のリプライは会話の一部だが、読むべき「届いた
+      // 返信」ではないので除く。
+      return {
+        views,
+        replies: replies.filter((r) => r.id !== post.replyMediaId),
+      };
+    },
+  }),
+
+  // 届いた返信に返信する。相手の返信 ID にぶら下げる。
+  threadsReplyTo: defineAction({
+    input: z.object({
+      id: z.number().int(),
+      replyToId: z.string().min(1),
+      text: z.string().min(1).max(500),
+    }),
+    handler: async ({ id, replyToId, text }) => {
+      const post = await getThreadsPost(id);
+      if (!post?.threadsMediaId) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "投稿済みの項目ではありません",
+        });
+      }
+      const auth = await getThreadsAuth();
+      if (!auth) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "Threads が未接続です",
+        });
+      }
+      try {
+        const container = await createReplyTextContainer(
+          auth.threadsUserId,
+          auth.accessToken,
+          { text: text.trim(), replyToId },
+        );
+        await waitForContainerReady(container, auth.accessToken);
+        const mediaId = await publishContainer(
+          auth.threadsUserId,
+          auth.accessToken,
+          container,
+        );
+        return { mediaId };
+      } catch (e) {
+        console.error("[threads] reply failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `返信に失敗しました: ${e instanceof Error ? e.message : String(e)}`,
+        });
+      }
+    },
+  }),
+
+  // 投稿済みポストを Threads からも削除する。行は履歴として残す
+  // (status='deleted')。URL をぶら下げたリプライも併せて消す
+  // (root を消してもリプライが残る可能性があるため先に削除する)。
+  threadsDeletePost: defineAction({
+    input: z.object({ id: z.number().int() }),
+    handler: async ({ id }) => {
+      const post = await getThreadsPost(id);
+      if (!post || post.status !== "published" || !post.threadsMediaId) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "削除できるのは投稿済みの項目だけです",
+        });
+      }
+      const auth = await getThreadsAuth();
+      if (!auth) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "Threads が未接続です",
+        });
+      }
+      if (post.replyMediaId) {
+        // 既に消えている等で失敗しても本体の削除は続ける。
+        await deleteThreadsMedia(post.replyMediaId, auth.accessToken).catch(
+          (e) => console.error("[threads] reply delete failed", e),
+        );
+      }
+      try {
+        await deleteThreadsMedia(post.threadsMediaId, auth.accessToken);
+      } catch (e) {
+        console.error("[threads] delete failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Threads からの削除に失敗しました: ${e instanceof Error ? e.message : String(e)}`,
+        });
+      }
+      await markThreadsPostDeleted(id);
+      return { ok: true };
     },
   }),
 };
