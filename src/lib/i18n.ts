@@ -154,3 +154,15 @@ export function localizedBody(
   if (locale === "zh") return tweet.bodyZh || tweet.body;
   return tweet.body;
 }
+
+// microCMS day の代替テキストを locale で出し分ける。写真は内容を持つ
+// 画像なので、その言語の alt が無いときは装飾扱い (空 alt) にせず
+// もう一方の言語へフォールバックする (読み上げられない方が損失が大きい)。
+export function localizedAlt(
+  day: { altJa?: string; altZh?: string },
+  locale: Locale,
+): string {
+  const [primary, fallback] =
+    locale === "zh" ? [day.altZh, day.altJa] : [day.altJa, day.altZh];
+  return primary || fallback || "";
+}

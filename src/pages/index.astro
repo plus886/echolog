@@ -12,6 +12,7 @@ import { setEdgeCache } from "@/lib/http";
 import {
   defaultLocale,
   localeUrl,
+  localizedAlt,
   localizedBody,
   pick,
   t,
@@ -168,9 +169,11 @@ setEdgeCache(Astro.response);
                 ]}
                 style={`--w: calc(var(--gallery-scale, 1) * ${slot.w}px); --ideal-left: ${slot.leftPct}; top: calc(var(--gallery-scale, 1) * ${slot.top}px); width: var(--w); height: calc(var(--gallery-scale, 1) * ${slot.h}px);`}
               >
+                {/* alt は microCMS の altJa/altZh (Claude 生成の具体描写)。
+                    lightbox もサムネイルの alt をそのまま引き継ぐ。 */}
                 <img
                   src={`${item.day.image.url}?w=400`}
-                  alt={item.day.date ?? ""}
+                  alt={localizedAlt(item.day, locale)}
                   loading="lazy"
                   class="block h-full w-full object-cover"
                 />
