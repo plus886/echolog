@@ -406,6 +406,17 @@ export async function markThreadsPostDeleted(id: number): Promise<void> {
     .run();
 }
 
+// 削除済み行を履歴からも消す (完全削除)。対象は status='deleted' のみ。
+// published をここで直接消させない (Threads 側の削除を伴う操作は
+// threadsDeletePost 経由で、まず 'deleted' にする)。
+export async function purgeDeletedThreadsPost(id: number): Promise<boolean> {
+  const res = await getThreadsDb()
+    .prepare("DELETE FROM threads_posts WHERE id = ?1 AND status = 'deleted'")
+    .bind(id)
+    .run();
+  return (res.meta.changes ?? 0) > 0;
+}
+
 export async function markThreadsPostFailed(
   id: number,
   error: string,

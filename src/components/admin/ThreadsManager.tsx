@@ -350,6 +350,7 @@ function LogRow({
   onOpenDetail,
   onReply,
   onDelete,
+  onPurge,
 }: {
   post: PostItem;
   busy: boolean;
@@ -361,6 +362,7 @@ function LogRow({
     text: string,
   ) => Promise<string | null>;
   onDelete: (id: number) => Promise<void>;
+  onPurge: (id: number) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const text = post.postedText ?? post.passage ?? "";
@@ -446,7 +448,26 @@ function LogRow({
               </Button>
             </>
           )}
-          {post.threadsPermalink && (
+          {post.status === "deleted" && (
+            <Button
+              variant="danger"
+              className="btn-sm"
+              disabled={busy}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "この行を履歴からも完全に削除しますか？（Threads 側は削除済み。投稿記録が残らなくなります）",
+                  )
+                ) {
+                  void onPurge(post.id);
+                }
+              }}
+            >
+              履歴からも削除
+            </Button>
+          )}
+          {/* permalink は削除済みだとリンク切れなので出さない */}
+          {post.status !== "deleted" && post.threadsPermalink && (
             <a
               href={post.threadsPermalink}
               target="_blank"
@@ -888,6 +909,20 @@ export function ThreadsManager({
     await loadPosts();
   };
 
+  const purgeLog = async (id: number) => {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const res = await actions.threadsPurgeLog({ id });
+    setBusy(false);
+    if (res.error) {
+      setError(res.error.message);
+      return;
+    }
+    setNotice("履歴から削除しました");
+    await loadPosts();
+  };
+
   // 2 チャンネルの対は同時刻なので、時刻同順はチャンネルで安定させる
   // (接続カードと同じく中文 threads-zh を先に)。
   const queue = posts
@@ -1120,6 +1155,7 @@ export function ThreadsManager({
                 onOpenDetail={openDetail}
                 onReply={replyTo}
                 onDelete={deletePost}
+                onPurge={purgeLog}
               />
             ))}
           </div>

@@ -55,6 +55,7 @@ import {
   listThreadsPosts,
   listThreadsPostsByDayIds,
   markThreadsPostDeleted,
+  purgeDeletedThreadsPost,
   rescheduleThreadsPost,
   saveThreadsAccount,
   type ThreadsAccount,
@@ -1283,6 +1284,23 @@ export const server = {
         });
       }
       await markThreadsPostDeleted(id);
+      return { ok: true };
+    },
+  }),
+
+  // 削除済み行を履歴からも消す (完全削除)。痕跡ごと消したいとき用。
+  // Threads 側は threadsDeletePost の時点で削除済みなので、ここは D1 の
+  // 行を消すだけ。
+  threadsPurgeLog: defineAction({
+    input: z.object({ id: z.number().int() }),
+    handler: async ({ id }) => {
+      const purged = await purgeDeletedThreadsPost(id);
+      if (!purged) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "履歴から消せるのは削除済みの項目だけです",
+        });
+      }
       return { ok: true };
     },
   }),
