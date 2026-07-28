@@ -43,9 +43,10 @@ export function DaysList({
   const [days, setDays] = useState<Day[]>([]);
   const [total, setTotal] = useState(0);
   const [state, setState] = useState<ListState>("loading");
-  const [threadsMap, setThreadsMap] = useState<Record<string, ThreadsDayInfo>>(
-    {},
-  );
+  // day → チャンネルごとの予約状況 (0〜2 件)。
+  const [threadsMap, setThreadsMap] = useState<
+    Record<string, ThreadsDayInfo[]>
+  >({});
 
   // Threads 予約状況の取得。一覧の描画はブロックしない (失敗時はバッジが
   // 出ないだけ)。
@@ -56,9 +57,11 @@ export function DaysList({
     }
     const t = await actions.threadsStatusForDays({ dayIds });
     if (!t.error && t.data) {
-      setThreadsMap(
-        Object.fromEntries(t.data.statuses.map((s) => [s.dayId, s])),
-      );
+      const grouped: Record<string, ThreadsDayInfo[]> = {};
+      for (const s of t.data.statuses) {
+        (grouped[s.dayId] ??= []).push(s);
+      }
+      setThreadsMap(grouped);
     }
   }, []);
 
@@ -204,9 +207,16 @@ export function DaysList({
               day={day}
               model={model}
               onModelChange={onModelChange}
-              threads={threadsMap[day.id] ?? null}
-              onThreadsEnqueued={(dayId, info) =>
-                setThreadsMap((m) => ({ ...m, [dayId]: info }))
+              threads={threadsMap[day.id] ?? []}
+              onThreadsEnqueued={(dayId, infos) =>
+                // 予約されたチャンネルの行を差し替え、他チャンネルは保持。
+                setThreadsMap((m) => {
+                  const changed = new Set(infos.map((i) => i.channel));
+                  const kept = (m[dayId] ?? []).filter(
+                    (i) => !changed.has(i.channel),
+                  );
+                  return { ...m, [dayId]: [...kept, ...infos] };
+                })
               }
             />
           ))}

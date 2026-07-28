@@ -37,20 +37,27 @@ import {
   waitForContainerReady,
 } from "@/lib/threads";
 import {
+  CHANNEL_LABEL,
+  THREADS_CHANNELS,
+  type ThreadsChannel,
+} from "@/lib/threads-channels";
+import {
   claimThreadsPost,
   countThreadsPostsNeedingReply,
   deleteScheduledThreadsPost,
-  deleteThreadsAuth,
+  deleteThreadsAccount,
   findActiveThreadsPostByDay,
-  getThreadsAuth,
+  getThreadsAccount,
   getThreadsPost,
   insertThreadsPost,
   listActiveThreadsScheduleTimes,
+  listThreadsAccounts,
   listThreadsPosts,
   listThreadsPostsByDayIds,
   markThreadsPostDeleted,
   rescheduleThreadsPost,
-  saveThreadsAuth,
+  saveThreadsAccount,
+  type ThreadsAccount,
 } from "@/lib/threads-db";
 import { publishThreadsPost } from "@/lib/threads-publish";
 import { syncPostReplies } from "@/lib/threads-replies";
@@ -795,15 +802,16 @@ export const server = {
 
   // ---- Threads 連携 (接続管理) ----
 
-  // 接続状態。app 設定の有無 + D1 に保存済みのトークン情報を返す。
-  // verify=true なら /me を叩いて生存確認し、username も最新化する。
+  // 接続状態。app 設定の有無 + チャンネル別の保存済みトークン情報を返す。
+  // verify=true なら各チャンネルの /me を叩いて生存確認し、username も
+  // 最新化する。
   threadsStatus: defineAction({
     input: z.object({ verify: z.boolean().optional() }).optional(),
     handler: async (input) => {
       const appConfigured = Boolean(getThreadsAppConfig());
-      let auth;
+      let stored: ThreadsAccount[];
       try {
-        auth = await getThreadsAuth();
+        stored = await listThreadsAccounts();
       } catch (e) {
         console.error("[threads] status failed", e);
         throw new ActionError({
@@ -812,40 +820,57 @@ export const server = {
             "Threads 用 D1 が使えません。migration の適用を確認してください (docs/threads.md)",
         });
       }
-      if (!auth) return { appConfigured, connected: false as const };
 
-      let username = auth.username;
-      let tokenOk: boolean | undefined;
-      if (input?.verify) {
-        try {
-          const profile = await fetchThreadsProfile(auth.accessToken);
-          username = profile.username ?? username;
-          tokenOk = true;
-          if (username !== auth.username) {
-            await saveThreadsAuth({ ...auth, username });
-          }
-        } catch (e) {
-          console.error("[threads] token verify failed", e);
-          tokenOk = false;
-        }
-      }
-      return {
-        appConfigured,
-        connected: true as const,
-        username,
-        threadsUserId: auth.threadsUserId,
-        expiresAt: auth.expiresAt,
-        refreshedAt: auth.refreshedAt,
-        tokenOk,
+      type AccountStatus = {
+        username: string | null;
+        threadsUserId: string;
+        expiresAt: string;
+        refreshedAt: string;
+        tokenOk?: boolean;
       };
+      const accounts: Record<ThreadsChannel, AccountStatus | null> = {
+        "threads-zh": null,
+        "threads-ja": null,
+      };
+      for (const account of stored) {
+        let username = account.username;
+        let tokenOk: boolean | undefined;
+        if (input?.verify) {
+          try {
+            const profile = await fetchThreadsProfile(account.accessToken);
+            username = profile.username ?? username;
+            tokenOk = true;
+            if (username !== account.username) {
+              await saveThreadsAccount({ ...account, username });
+            }
+          } catch (e) {
+            console.error(
+              `[threads] token verify failed (${account.channel})`,
+              e,
+            );
+            tokenOk = false;
+          }
+        }
+        accounts[account.channel] = {
+          username,
+          threadsUserId: account.threadsUserId,
+          expiresAt: account.expiresAt,
+          refreshedAt: account.refreshedAt,
+          tokenOk,
+        };
+      }
+      return { appConfigured, accounts };
     },
   }),
 
   // 長期トークンの手動登録。OAuth リダイレクトが使えないローカル開発や、
   // 失効時の応急用。/me で実在確認してから保存する。
   threadsSetToken: defineAction({
-    input: z.object({ token: z.string().min(20) }),
-    handler: async ({ token }) => {
+    input: z.object({
+      channel: z.enum(THREADS_CHANNELS),
+      token: z.string().min(20),
+    }),
+    handler: async ({ channel, token }) => {
       const trimmed = token.trim();
       let profile;
       try {
@@ -857,8 +882,21 @@ export const server = {
           message: "トークンが無効です。長期アクセストークンか確認してください",
         });
       }
+      // もう一方のチャンネルと同じアカウントは登録させない (同じアカウント
+      // へ 2 重投稿する事故防止。OAuth コールバック側にも同じガードがある)。
+      for (const other of THREADS_CHANNELS) {
+        if (other === channel) continue;
+        const existing = await getThreadsAccount(other);
+        if (existing && existing.threadsUserId === profile.id) {
+          throw new ActionError({
+            code: "BAD_REQUEST",
+            message: `${CHANNEL_LABEL[other]}チャンネルと同じアカウントです。別のアカウントのトークンを使ってください`,
+          });
+        }
+      }
       const now = Date.now();
-      await saveThreadsAuth({
+      await saveThreadsAccount({
+        channel,
         accessToken: trimmed,
         threadsUserId: profile.id,
         username: profile.username,
@@ -874,16 +912,19 @@ export const server = {
   // 接続解除 (D1 のトークン破棄)。Threads 側のアプリ連携解除は Threads
   // アプリの設定 (ウェブサイトのアクセス許可) から行う。
   threadsDisconnect: defineAction({
-    handler: async () => {
-      await deleteThreadsAuth();
+    input: z.object({ channel: z.enum(THREADS_CHANNELS) }),
+    handler: async ({ channel }) => {
+      await deleteThreadsAccount(channel);
       return { ok: true };
     },
   }),
 
   // ---- Threads 予約キュー ----
 
-  // 文章管理タブの予約ボタン。空き枠 (台湾時間 20–22時 / 60分間隔 /
-  // 1日2件 / 明日以降) を自動で割り当てて D1 に積む。
+  // 文章管理タブの予約ボタン。1 回の操作で 2 チャンネル (中文 / 日本語) を
+  // 同じ空き枠 (台湾時間 20–22時 / 60分間隔 / 1日2件 / 明日以降) に積む。
+  // 文章未生成・未接続・予約済みのチャンネルはスキップして理由を返す
+  // (以後の日時変更・取消・返信はチャンネルの行ごとに行う)。
   threadsEnqueue: defineAction({
     input: z.object({ dayId: z.string().min(1) }),
     handler: async ({ dayId }) => {
@@ -896,47 +937,92 @@ export const server = {
           message: "写真が見つかりません",
         });
       }
-      if (!day.passageZh?.trim()) {
+
+      const skipped: { channel: ThreadsChannel; reason: string }[] = [];
+      const ready: ThreadsChannel[] = [];
+      for (const channel of THREADS_CHANNELS) {
+        const isZh = channel === "threads-zh";
+        const passage = (isZh ? day.passageZh : day.passageJa)?.trim();
+        if (!passage) {
+          skipped.push({
+            channel,
+            reason: `${isZh ? "passageZh" : "passageJa"} が未生成`,
+          });
+          continue;
+        }
+        if (!(await getThreadsAccount(channel))) {
+          skipped.push({ channel, reason: "アカウント未接続" });
+          continue;
+        }
+        const active = await findActiveThreadsPostByDay(dayId, channel);
+        if (active) {
+          skipped.push({
+            channel,
+            reason: `予約済み (${formatTaipei(active.scheduledAt)} 台湾時間)`,
+          });
+          continue;
+        }
+        ready.push(channel);
+      }
+
+      if (ready.length === 0) {
         throw new ActionError({
           code: "BAD_REQUEST",
-          message: "中文 (passageZh) が未生成のため予約できません",
+          message:
+            "予約できるチャンネルがありません — " +
+            skipped
+              .map((s) => `${CHANNEL_LABEL[s.channel]}: ${s.reason}`)
+              .join(" / "),
         });
       }
-      const active = await findActiveThreadsPostByDay(dayId);
-      if (active) {
-        throw new ActionError({
-          code: "CONFLICT",
-          message: `すでに予約済みです (${formatTaipei(active.scheduledAt)} 台湾時間)`,
-        });
-      }
+
       const times = await listActiveThreadsScheduleTimes();
       const scheduledAt = pickScheduleSlot(times, Date.now());
-      const post = await insertThreadsPost({
-        dayId,
-        imageUrl: day.image.url,
-        scheduledAt,
-      });
-      return { post };
+      const posts = [];
+      for (const channel of ready) {
+        posts.push(
+          await insertThreadsPost({
+            dayId,
+            channel,
+            imageUrl: day.image.url,
+            scheduledAt,
+          }),
+        );
+      }
+      return {
+        posts,
+        skipped: skipped.map((s) => ({
+          channel: s.channel,
+          label: CHANNEL_LABEL[s.channel],
+          reason: s.reason,
+        })),
+      };
     },
   }),
 
   // ダッシュボードの一覧 (キュー + ログ)。キュー行のプレビュー用に、
-  // 各 day の現時点の passageZh も添える (published 分は posted_text が
-  // snapshot として行内にある)。
+  // 各行のチャンネルに対応する現時点の passage も添える (published 分は
+  // posted_text が snapshot として行内にある)。
   threadsListPosts: defineAction({
     handler: async () => {
       const posts = await listThreadsPosts();
       const dayIds = [...new Set(posts.map((p) => p.dayId))].slice(0, 100);
-      const passageByDay = new Map<string, string | null>();
+      const passagesByDay = new Map<
+        string,
+        { zh: string | null; ja: string | null }
+      >();
       if (dayIds.length > 0) {
         try {
           const res = await listDays({
             ids: dayIds.join(","),
             limit: 100,
-            fields: "id,passageZh",
+            fields: "id,passageZh,passageJa",
           });
           for (const d of res.contents) {
-            passageByDay.set(d.id, d.passageZh ?? null);
+            passagesByDay.set(d.id, {
+              zh: d.passageZh ?? null,
+              ja: d.passageJa ?? null,
+            });
           }
         } catch (e) {
           // 取れなくても一覧自体は返す (プレビューが出ないだけ)。
@@ -944,23 +1030,29 @@ export const server = {
         }
       }
       return {
-        posts: posts.map((p) => ({
-          ...p,
-          passageZh: passageByDay.get(p.dayId) ?? null,
-        })),
+        posts: posts.map((p) => {
+          const passages = passagesByDay.get(p.dayId);
+          return {
+            ...p,
+            passage:
+              (p.channel === "threads-zh" ? passages?.zh : passages?.ja) ??
+              null,
+          };
+        }),
       };
     },
   }),
 
-  // 文章管理タブのバッジ用。表示中ページの day ごとに「アクティブな予約が
-  // あればそれ、なければ最新の履歴」を返す。
+  // 文章管理タブのバッジ用。表示中ページの day × チャンネルごとに
+  // 「アクティブな予約があればそれ、なければ最新の履歴」を返す。
   threadsStatusForDays: defineAction({
     input: z.object({ dayIds: z.array(z.string().min(1)).max(100) }),
     handler: async ({ dayIds }) => {
       const rows = await listThreadsPostsByDayIds(dayIds);
-      const byDay = new Map<string, (typeof rows)[number]>();
+      const byKey = new Map<string, (typeof rows)[number]>();
       for (const row of rows) {
-        const current = byDay.get(row.dayId);
+        const key = `${row.dayId}:${row.channel}`;
+        const current = byKey.get(key);
         const rowActive =
           row.status === "scheduled" || row.status === "publishing";
         const currentActive =
@@ -968,12 +1060,12 @@ export const server = {
           (current.status === "scheduled" || current.status === "publishing");
         // rows は created_at 降順なので、最初に見つかった行が最新。
         // アクティブ行はそれより古くても優先する。
-        if (!current || (rowActive && !currentActive))
-          byDay.set(row.dayId, row);
+        if (!current || (rowActive && !currentActive)) byKey.set(key, row);
       }
       return {
-        statuses: [...byDay.values()].map((row) => ({
+        statuses: [...byKey.values()].map((row) => ({
           dayId: row.dayId,
+          channel: row.channel,
           status: row.status,
           scheduledAt: row.scheduledAt,
           publishedAt: row.publishedAt,
@@ -1065,11 +1157,11 @@ export const server = {
           message: "投稿済みの項目ではありません",
         });
       }
-      const auth = await getThreadsAuth();
+      const auth = await getThreadsAccount(post.channel);
       if (!auth) {
         throw new ActionError({
           code: "BAD_REQUEST",
-          message: "Threads が未接続です",
+          message: `${CHANNEL_LABEL[post.channel]}アカウントが未接続です`,
         });
       }
       // 取得ついでに D1 のバッジ用キャッシュも更新し、一覧のバッジと
@@ -1120,11 +1212,11 @@ export const server = {
           message: "投稿済みの項目ではありません",
         });
       }
-      const auth = await getThreadsAuth();
+      const auth = await getThreadsAccount(post.channel);
       if (!auth) {
         throw new ActionError({
           code: "BAD_REQUEST",
-          message: "Threads が未接続です",
+          message: `${CHANNEL_LABEL[post.channel]}アカウントが未接続です`,
         });
       }
       try {
@@ -1168,11 +1260,11 @@ export const server = {
           message: "削除できるのは投稿済みの項目だけです",
         });
       }
-      const auth = await getThreadsAuth();
+      const auth = await getThreadsAccount(post.channel);
       if (!auth) {
         throw new ActionError({
           code: "BAD_REQUEST",
-          message: "Threads が未接続です",
+          message: `${CHANNEL_LABEL[post.channel]}アカウントが未接続です`,
         });
       }
       if (post.replyMediaId) {

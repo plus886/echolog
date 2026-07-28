@@ -1,8 +1,9 @@
 import { refreshLongLivedToken } from "@/lib/threads";
 import {
   claimDueThreadsPosts,
-  getThreadsAuth,
-  saveThreadsAuth,
+  listThreadsAccounts,
+  saveThreadsAccount,
+  type ThreadsAccount,
 } from "@/lib/threads-db";
 import { publishThreadsPost } from "@/lib/threads-publish";
 import { syncReplyStatsBatch } from "@/lib/threads-replies";
@@ -26,7 +27,7 @@ export async function runThreadsCron(): Promise<void> {
     console.error("[threads-cron] reply sync failed", e);
   }
   try {
-    await maybeRefreshToken();
+    await refreshTokens();
   } catch (e) {
     console.error("[threads-cron] token refresh failed", e);
   }
@@ -46,19 +47,33 @@ async function publishDuePosts(): Promise<void> {
   }
 }
 
-// 長期トークン (約 60 日) を 7 日おきに転がしてゆく。リフレッシュ API は
-// 「発行 24 時間後〜失効前」のトークンにしか使えないため、失効済みなら
-// 何もしない (管理画面の再接続待ち。期限はダッシュボードに表示される)。
-async function maybeRefreshToken(): Promise<void> {
-  const auth = await getThreadsAuth();
-  if (!auth) return;
+// 各チャンネルの長期トークン (約 60 日) を 7 日おきに転がしてゆく。
+// リフレッシュ API は「発行 24 時間後〜失効前」のトークンにしか使えない
+// ため、失効済みなら何もしない (管理画面の再接続待ち。期限はダッシュ
+// ボードに表示される)。片方の失敗がもう片方を止めないよう個別に捕捉。
+async function refreshTokens(): Promise<void> {
+  const accounts = await listThreadsAccounts();
+  for (const account of accounts) {
+    try {
+      await maybeRefreshToken(account);
+    } catch (e) {
+      console.error(
+        `[threads-cron] token refresh failed (${account.channel})`,
+        e,
+      );
+    }
+  }
+}
 
+async function maybeRefreshToken(account: ThreadsAccount): Promise<void> {
   const now = Date.now();
-  const refreshedAt = Date.parse(auth.refreshedAt);
-  const expiresAt = Date.parse(auth.expiresAt);
+  const refreshedAt = Date.parse(account.refreshedAt);
+  const expiresAt = Date.parse(account.expiresAt);
 
   if (Number.isFinite(expiresAt) && now > expiresAt) {
-    console.warn("[threads-cron] token expired; reconnect from /admin");
+    console.warn(
+      `[threads-cron] token expired (${account.channel}); reconnect from /admin`,
+    );
     return;
   }
   if (
@@ -68,12 +83,12 @@ async function maybeRefreshToken(): Promise<void> {
     return;
   }
 
-  const refreshed = await refreshLongLivedToken(auth.accessToken);
-  await saveThreadsAuth({
-    ...auth,
+  const refreshed = await refreshLongLivedToken(account.accessToken);
+  await saveThreadsAccount({
+    ...account,
     accessToken: refreshed.accessToken,
     expiresAt: new Date(now + refreshed.expiresInSec * 1000).toISOString(),
     refreshedAt: new Date(now).toISOString(),
   });
-  console.log("[threads-cron] token refreshed");
+  console.log(`[threads-cron] token refreshed (${account.channel})`);
 }

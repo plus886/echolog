@@ -4,13 +4,20 @@ import { useEffect, useState } from "react";
 import type { PassageModelChoice } from "@/components/admin/ModelRadio";
 import { PassageDialog } from "@/components/admin/PassageDialog";
 import { formatTaipei } from "@/lib/taipei-time";
+import {
+  CHANNEL_LABEL,
+  isThreadsChannel,
+  THREADS_CHANNELS,
+} from "@/lib/threads-channels";
 import type { Day } from "@/types/microcms";
 
 // days 一覧の 1 行 (DaisyUI card)。サムネイル + passageJa/Zh +
 // お気に入りトグル + 文章の手編集 + 再生成 + Threads 予約。
 
-// この day の Threads 予約状況 (DaysList がページ単位でまとめて取得)。
+// この day の Threads 予約状況 (チャンネルごと 1 件。DaysList がページ
+// 単位でまとめて取得)。
 export type ThreadsDayInfo = {
+  channel: string;
   status: string;
   scheduledAt: string;
   publishedAt: string | null;
@@ -21,9 +28,13 @@ type Props = {
   model: PassageModelChoice;
   // 再生成ダイアログでモデルを変えたらタブ上部の選択にも反映する。
   onModelChange: (model: PassageModelChoice) => void;
-  threads: ThreadsDayInfo | null;
-  onThreadsEnqueued: (dayId: string, info: ThreadsDayInfo) => void;
+  threads: ThreadsDayInfo[];
+  onThreadsEnqueued: (dayId: string, infos: ThreadsDayInfo[]) => void;
 };
+
+function channelLabel(channel: string): string {
+  return isThreadsChannel(channel) ? CHANNEL_LABEL[channel] : channel;
+}
 
 export function DayRow({
   day,
@@ -37,6 +48,8 @@ export function DayRow({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [threadsBusy, setThreadsBusy] = useState(false);
   const [threadsError, setThreadsError] = useState<string | null>(null);
+  // スキップされたチャンネルの理由 (エラーではなく注記)。
+  const [threadsNote, setThreadsNote] = useState<string | null>(null);
 
   // 表示中の文章。再生成 (onChanged → 親が再取得) で day prop が
   // 更新されたら同期する。
@@ -80,33 +93,53 @@ export function DayRow({
     setSaveError(null);
   };
 
-  // Threads 予約。投稿済みの写真の再予約だけ確認を挟む (意図的な再投稿
-  // かもしれないので禁止まではしない)。
+  // Threads 予約 (1 操作で中文 + 日本語の 2 チャンネルに積む)。投稿済み
+  // チャンネルの再予約だけ確認を挟む (意図的な再投稿かもしれないので禁止
+  // まではしない)。未生成・未接続・予約済みのチャンネルはサーバ側で
+  // スキップされ、理由が返る (threadsNote に表示)。
   const enqueueThreads = async () => {
     if (threadsBusy) return;
+    const published = threads.filter((t) => t.status === "published");
     if (
-      threads?.status === "published" &&
-      !window.confirm("この写真は Threads 投稿済みです。もう一度予約しますか？")
+      published.length > 0 &&
+      !window.confirm(
+        `この写真は Threads 投稿済み（${published
+          .map((t) => channelLabel(t.channel))
+          .join("・")}）です。もう一度予約しますか？`,
+      )
     ) {
       return;
     }
     setThreadsBusy(true);
     setThreadsError(null);
+    setThreadsNote(null);
     const res = await actions.threadsEnqueue({ dayId: day.id });
     setThreadsBusy(false);
     if (res.error || !res.data) {
       setThreadsError(res.error?.message ?? "予約に失敗しました");
       return;
     }
-    onThreadsEnqueued(day.id, {
-      status: "scheduled",
-      scheduledAt: res.data.post.scheduledAt,
-      publishedAt: null,
-    });
+    onThreadsEnqueued(
+      day.id,
+      res.data.posts.map((p) => ({
+        channel: p.channel,
+        status: "scheduled",
+        scheduledAt: p.scheduledAt,
+        publishedAt: null,
+      })),
+    );
+    if (res.data.skipped.length > 0) {
+      setThreadsNote(
+        res.data.skipped.map((s) => `${s.label}: ${s.reason}`).join(" / "),
+      );
+    }
   };
 
-  const threadsActive =
-    threads?.status === "scheduled" || threads?.status === "publishing";
+  // 全チャンネルがアクティブ (予約中/実行中) なら予約ボタンは出さない。
+  const activeThreads = threads.filter(
+    (t) => t.status === "scheduled" || t.status === "publishing",
+  );
+  const allChannelsActive = activeThreads.length >= THREADS_CHANNELS.length;
 
   const save = async () => {
     if (saveBusy) return;
@@ -147,36 +180,58 @@ export function DayRow({
             />
           </a>
           <div className="flex-1" />
-          {/* Threads 予約状況。アクティブな予約はバッジのみ (取消・日時
-              変更は Threads タブから)。 */}
-          {threadsActive ? (
-            <span className="badge badge-info badge-sm whitespace-nowrap">
-              Threads {formatTaipei(threads!.scheduledAt)}
-            </span>
-          ) : (
-            <>
-              {threads?.status === "published" && (
-                <span className="badge badge-success badge-sm whitespace-nowrap">
-                  Threads済
+          {/* Threads 予約状況 (チャンネルごとのバッジ)。アクティブな予約の
+              取消・日時変更は Threads タブから。 */}
+          {threads.map((t) => {
+            const label = channelLabel(t.channel);
+            if (t.status === "scheduled" || t.status === "publishing") {
+              return (
+                <span
+                  key={t.channel}
+                  className="badge badge-info badge-sm whitespace-nowrap"
+                >
+                  {label} {formatTaipei(t.scheduledAt)}
                 </span>
-              )}
-              {threads?.status === "failed" && (
-                <span className="badge badge-error badge-sm whitespace-nowrap">
-                  Threads失敗
+              );
+            }
+            if (t.status === "published") {
+              return (
+                <span
+                  key={t.channel}
+                  className="badge badge-success badge-sm whitespace-nowrap"
+                >
+                  {label}済
                 </span>
-              )}
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={() => void enqueueThreads()}
-                disabled={threadsBusy || editing || !passages.zh}
-                title={
-                  passages.zh ? undefined : "中文が未生成のため予約できません"
-                }
-              >
-                {threadsBusy ? "予約中…" : "Threads予約"}
-              </button>
-            </>
+              );
+            }
+            if (t.status === "failed") {
+              return (
+                <span
+                  key={t.channel}
+                  className="badge badge-error badge-sm whitespace-nowrap"
+                >
+                  {label}失敗
+                </span>
+              );
+            }
+            return null; // deleted はバッジを出さない (再予約可)
+          })}
+          {!allChannelsActive && (
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => void enqueueThreads()}
+              disabled={
+                threadsBusy || editing || (!passages.zh && !passages.ja)
+              }
+              title={
+                passages.zh || passages.ja
+                  ? undefined
+                  : "文章が未生成のため予約できません"
+              }
+            >
+              {threadsBusy ? "予約中…" : "Threads予約"}
+            </button>
           )}
           <button
             type="button"
@@ -210,6 +265,9 @@ export function DayRow({
 
         {threadsError && (
           <p className="m-0 text-xs text-error">{threadsError}</p>
+        )}
+        {threadsNote && (
+          <p className="m-0 text-xs text-warning">{threadsNote}</p>
         )}
 
         {editing ? (

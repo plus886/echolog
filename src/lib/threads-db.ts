@@ -1,7 +1,9 @@
 import { env as rawEnv } from "cloudflare:workers";
 
+import type { ThreadsChannel } from "@/lib/threads-channels";
+
 // Threads 連携の D1 (THREADS_DB binding) アクセス層。予約キュー・投稿ログ・
-// 長期トークンを保持する。スキーマは migrations/0001_threads.sql。
+// チャンネル別の長期トークンを保持する。スキーマは migrations/ 配下。
 // D1 binding は lib/env.ts の zod スキーマ (文字列 env 用) を通らないため、
 // ここで cloudflare:workers の env から直接取り出す。
 
@@ -15,9 +17,10 @@ export function getThreadsDb(): D1Database {
   return db;
 }
 
-// ---- 認証 (threads_auth, 常に 1 行) ----
+// ---- 認証 (threads_accounts, チャンネルごとに 1 行) ----
 
-export type ThreadsAuth = {
+export type ThreadsAccount = {
+  channel: ThreadsChannel;
   accessToken: string;
   threadsUserId: string;
   username: string | null;
@@ -25,7 +28,8 @@ export type ThreadsAuth = {
   refreshedAt: string;
 };
 
-type ThreadsAuthRow = {
+type ThreadsAccountRow = {
+  channel: ThreadsChannel;
   access_token: string;
   threads_user_id: string;
   username: string | null;
@@ -33,12 +37,9 @@ type ThreadsAuthRow = {
   refreshed_at: string;
 };
 
-export async function getThreadsAuth(): Promise<ThreadsAuth | null> {
-  const row = await getThreadsDb()
-    .prepare("SELECT * FROM threads_auth WHERE id = 1")
-    .first<ThreadsAuthRow>();
-  if (!row) return null;
+function toAccount(row: ThreadsAccountRow): ThreadsAccount {
   return {
+    channel: row.channel,
     accessToken: row.access_token,
     threadsUserId: row.threads_user_id,
     username: row.username,
@@ -47,28 +48,53 @@ export async function getThreadsAuth(): Promise<ThreadsAuth | null> {
   };
 }
 
-export async function saveThreadsAuth(auth: ThreadsAuth): Promise<void> {
+export async function getThreadsAccount(
+  channel: ThreadsChannel,
+): Promise<ThreadsAccount | null> {
+  const row = await getThreadsDb()
+    .prepare("SELECT * FROM threads_accounts WHERE channel = ?1")
+    .bind(channel)
+    .first<ThreadsAccountRow>();
+  return row ? toAccount(row) : null;
+}
+
+export async function listThreadsAccounts(): Promise<ThreadsAccount[]> {
+  const res = await getThreadsDb()
+    .prepare("SELECT * FROM threads_accounts")
+    .all<ThreadsAccountRow>();
+  return res.results.map(toAccount);
+}
+
+export async function saveThreadsAccount(
+  account: ThreadsAccount,
+): Promise<void> {
   await getThreadsDb()
     .prepare(
-      `INSERT INTO threads_auth
-         (id, access_token, threads_user_id, username, expires_at, refreshed_at)
-       VALUES (1, ?1, ?2, ?3, ?4, ?5)
-       ON CONFLICT (id) DO UPDATE SET
-         access_token = ?1, threads_user_id = ?2, username = ?3,
-         expires_at = ?4, refreshed_at = ?5`,
+      `INSERT INTO threads_accounts
+         (channel, access_token, threads_user_id, username, expires_at, refreshed_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+       ON CONFLICT (channel) DO UPDATE SET
+         access_token = ?2, threads_user_id = ?3, username = ?4,
+         expires_at = ?5, refreshed_at = ?6`,
     )
     .bind(
-      auth.accessToken,
-      auth.threadsUserId,
-      auth.username,
-      auth.expiresAt,
-      auth.refreshedAt,
+      account.channel,
+      account.accessToken,
+      account.threadsUserId,
+      account.username,
+      account.expiresAt,
+      account.refreshedAt,
     )
     .run();
 }
 
-export async function deleteThreadsAuth(): Promise<void> {
-  await getThreadsDb().prepare("DELETE FROM threads_auth WHERE id = 1").run();
+export async function deleteThreadsAccount(
+  channel: ThreadsChannel,
+): Promise<void> {
+  await getThreadsDb()
+    .prepare("DELETE FROM threads_accounts WHERE channel = ?1")
+    .bind(channel)
+    .run();
 }
 
 // ---- 予約キュー / 投稿ログ (threads_posts) ----
@@ -87,7 +113,7 @@ export type ThreadsPostStatus =
 
 export type ThreadsPost = {
   id: number;
-  channel: string;
+  channel: ThreadsChannel;
   dayId: string;
   imageUrl: string;
   scheduledAt: string;
@@ -107,7 +133,8 @@ export type ThreadsPost = {
 
 type ThreadsPostRow = {
   id: number;
-  channel: string;
+  // migration 0003 適用後は threads-zh / threads-ja のどちらか。
+  channel: ThreadsChannel;
   day_id: string;
   image_url: string;
   scheduled_at: string;
@@ -156,24 +183,27 @@ export async function listThreadsPosts(limit = 200): Promise<ThreadsPost[]> {
 }
 
 // 枠割当の入力になる「アクティブな予約」(scheduled / publishing) の時刻一覧。
+// 2 チャンネルは同じ時刻に対で積まれるので DISTINCT で 1 つに畳む
+// (1日2件・60分間隔の枠ルールはアカウントごとの体感频度に対するもの)。
 export async function listActiveThreadsScheduleTimes(): Promise<string[]> {
   const res = await getThreadsDb()
     .prepare(
-      "SELECT scheduled_at FROM threads_posts WHERE status IN ('scheduled','publishing')",
+      "SELECT DISTINCT scheduled_at FROM threads_posts WHERE status IN ('scheduled','publishing')",
     )
     .all<{ scheduled_at: string }>();
   return res.results.map((r) => r.scheduled_at);
 }
 
-// 同じ写真の二重予約を防ぐためのチェック。
+// 同じ写真の二重予約を防ぐためのチェック (チャンネルごと)。
 export async function findActiveThreadsPostByDay(
   dayId: string,
+  channel: ThreadsChannel,
 ): Promise<ThreadsPost | null> {
   const row = await getThreadsDb()
     .prepare(
-      "SELECT * FROM threads_posts WHERE day_id = ?1 AND status IN ('scheduled','publishing') LIMIT 1",
+      "SELECT * FROM threads_posts WHERE day_id = ?1 AND channel = ?2 AND status IN ('scheduled','publishing') LIMIT 1",
     )
-    .bind(dayId)
+    .bind(dayId, channel)
     .first<ThreadsPostRow>();
   return row ? toPost(row) : null;
 }
@@ -204,16 +234,18 @@ export async function getThreadsPost(id: number): Promise<ThreadsPost | null> {
 
 export async function insertThreadsPost(input: {
   dayId: string;
+  channel: ThreadsChannel;
   imageUrl: string;
   scheduledAt: string;
 }): Promise<ThreadsPost> {
   const row = await getThreadsDb()
     .prepare(
-      `INSERT INTO threads_posts (day_id, image_url, scheduled_at, created_at)
-       VALUES (?1, ?2, ?3, ?4) RETURNING *`,
+      `INSERT INTO threads_posts (day_id, channel, image_url, scheduled_at, created_at)
+       VALUES (?1, ?2, ?3, ?4, ?5) RETURNING *`,
     )
     .bind(
       input.dayId,
+      input.channel,
       input.imageUrl,
       input.scheduledAt,
       new Date().toISOString(),

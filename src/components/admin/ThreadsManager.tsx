@@ -7,32 +7,45 @@ import {
   isoToTaipeiInput,
   taipeiInputToIso,
 } from "@/lib/taipei-time";
+import {
+  CHANNEL_LABEL,
+  dayPageUrl,
+  isThreadsChannel,
+  THREADS_CHANNELS,
+  type ThreadsChannel,
+} from "@/lib/threads-channels";
 
-// Threads タブ = 接続管理 + 予約投稿ダッシュボード。
+// Threads タブ = 接続管理 + 予約投稿ダッシュボード。チャンネル (言語別
+// アカウント: 中文 threads-zh / 日本語 threads-ja) ごとに接続を持ち、
+// 予約は 1 操作で両チャンネルに積まれる (文章管理タブ)。キュー・ログの
+// 行はチャンネル単位で、日時変更・取消・返信・削除も行ごとに行う。
 //  - 予約キュー: 予約中 / 実行中 / 失敗 (時系列昇順)。日時編集・取消・
 //    今すぐ投稿・投稿前プレビュー (先頭40字のフィード見え方 + 画像縦横比)。
 //  - 投稿ログ: 投稿済み / 削除済み (新しい順)。permalink・失敗注記に加え、
 //    行を開くと表示回数と届いた返信を取得し、その場で返信できる。削除は
 //    Threads 側のポスト (と URL リプライ) も消す。
 //
-// 接続フロー: 「Threads と接続」→ /admin/threads/oauth/start → Meta の
-// 認可画面 → callback が D1 にトークンを保存 → /admin?threads=connected に
-// 戻る。mount 時にそのクエリを拾って結果を表示し、URL からは消す。
+// 接続フロー: チャンネルの「接続」→ /admin/threads/oauth/start?channel=…
+// → Meta の認可画面 → callback が D1 にトークンを保存 →
+// /admin?threads=connected&channel=… に戻る。mount 時にそのクエリを拾って
+// 結果を表示し、URL からは消す。
 
-type ConnStatus =
-  | { appConfigured: boolean; connected: false }
-  | {
-      appConfigured: boolean;
-      connected: true;
-      username: string | null;
-      threadsUserId: string;
-      expiresAt: string;
-      refreshedAt: string;
-      tokenOk?: boolean;
-    };
+type AccountInfo = {
+  username: string | null;
+  threadsUserId: string;
+  expiresAt: string;
+  refreshedAt: string;
+  tokenOk?: boolean;
+};
+
+type ConnStatus = {
+  appConfigured: boolean;
+  accounts: Record<ThreadsChannel, AccountInfo | null>;
+};
 
 type PostItem = {
   id: number;
+  channel: ThreadsChannel;
   dayId: string;
   imageUrl: string;
   scheduledAt: string;
@@ -41,7 +54,8 @@ type PostItem = {
   threadsPermalink: string | null;
   error: string | null;
   publishedAt: string | null;
-  passageZh: string | null;
+  // 行のチャンネルに対応する現時点の本文 (zh は passageZh、ja は passageJa)。
+  passage: string | null;
   // cron が同期した返信状況 (開かなくても分かるようバッジに出す)。
   replyCount: number;
   needsReply: boolean;
@@ -72,9 +86,9 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   denied: "認可がキャンセルされました",
   state: "state の検証に失敗しました。もう一度お試しください",
   exchange: "トークンの取得に失敗しました。サーバログを確認してください",
+  same_account:
+    "もう一方のチャンネルと同じアカウントが認可されました。Threads 側でログイン中のアカウントを切り替えてから再接続してください",
 };
-
-const DAY_URL_BASE = "https://photo.kokaiji.tw/zh/days/";
 
 function formatDateTime(iso: string): string {
   const t = Date.parse(iso);
@@ -137,6 +151,15 @@ function StatusBadge({ status }: { status: PostItem["status"] }) {
   return <span className={`badge badge-sm ${cls}`}>{label}</span>;
 }
 
+// チャンネル (言語別アカウント) の識別バッジ。
+function ChannelBadge({ channel }: { channel: ThreadsChannel }) {
+  return (
+    <span className="badge badge-outline badge-sm whitespace-nowrap">
+      {CHANNEL_LABEL[channel]}
+    </span>
+  );
+}
+
 // ---- キュー 1 行 ----
 
 function QueueRow({
@@ -158,7 +181,7 @@ function QueueRow({
   const [previewOpen, setPreviewOpen] = useState(false);
   const [ratio, setRatio] = useState<number | null>(null);
 
-  const text = post.passageZh ?? post.postedText ?? "";
+  const text = post.passage ?? post.postedText ?? "";
 
   const startTimeEdit = () => {
     setTimeValue(isoToTaipeiInput(post.scheduledAt));
@@ -184,7 +207,7 @@ function QueueRow({
     <div className="rounded-lg border border-base-300 p-3">
       <div className="flex flex-wrap items-center gap-3">
         <a
-          href={`${DAY_URL_BASE}${post.dayId}`}
+          href={dayPageUrl(post.channel, post.dayId)}
           target="_blank"
           rel="noreferrer"
         >
@@ -204,6 +227,7 @@ function QueueRow({
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
             <StatusBadge status={post.status} />
+            <ChannelBadge channel={post.channel} />
             <span className="font-mono text-xs opacity-60">{post.dayId}</span>
           </div>
           <div className="text-sm font-medium">
@@ -299,7 +323,8 @@ function QueueRow({
             <FeedPreview text={text} />
           ) : (
             <p className="m-0 text-sm text-error">
-              本文 (passageZh) を取得できませんでした
+              本文 ({post.channel === "threads-zh" ? "passageZh" : "passageJa"})
+              を取得できませんでした
             </p>
           )}
           <img
@@ -308,8 +333,7 @@ function QueueRow({
             className="max-h-72 w-auto max-w-full rounded-md"
           />
           <p className="m-0 text-xs opacity-60">
-            ↳ リプライ: {DAY_URL_BASE}
-            {post.dayId}
+            ↳ リプライ: {dayPageUrl(post.channel, post.dayId)}
           </p>
         </div>
       )}
@@ -339,12 +363,12 @@ function LogRow({
   onDelete: (id: number) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
-  const text = post.postedText ?? post.passageZh ?? "";
+  const text = post.postedText ?? post.passage ?? "";
   return (
     <div className="rounded-lg border border-base-300 p-3">
       <div className="flex flex-wrap items-center gap-3">
         <a
-          href={`${DAY_URL_BASE}${post.dayId}`}
+          href={dayPageUrl(post.channel, post.dayId)}
           target="_blank"
           rel="noreferrer"
         >
@@ -357,6 +381,7 @@ function LogRow({
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={post.status} />
+            <ChannelBadge channel={post.channel} />
             {/* 返信の見落とし防止。未返信は目立たせ、返信済みは件数だけ。 */}
             {post.needsReply ? (
               <span className="badge badge-warning badge-sm font-semibold">
@@ -473,6 +498,7 @@ function LogRow({
             <ReplyRow
               key={reply.id}
               postId={post.id}
+              channel={post.channel}
               reply={reply}
               busy={busy}
               onReply={onReply}
@@ -488,11 +514,13 @@ function LogRow({
 
 function ReplyRow({
   postId,
+  channel,
   reply,
   busy,
   onReply,
 }: {
   postId: number;
+  channel: ThreadsChannel;
   reply: ReplyItem;
   busy: boolean;
   onReply: (
@@ -565,7 +593,11 @@ function ReplyRow({
             className="textarea textarea-bordered w-full text-sm"
             rows={2}
             maxLength={500}
-            placeholder="返信を入力（繁體中文）"
+            placeholder={
+              channel === "threads-zh"
+                ? "返信を入力（繁體中文）"
+                : "返信を入力（日本語）"
+            }
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={sending}
@@ -606,7 +638,9 @@ export function ThreadsManager({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [manualToken, setManualToken] = useState("");
+  const [manualTokens, setManualTokens] = useState<
+    Record<ThreadsChannel, string>
+  >({ "threads-zh": "", "threads-ja": "" });
 
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [postsState, setPostsState] = useState<"loading" | "ready" | "error">(
@@ -624,16 +658,30 @@ export function ThreadsManager({
     if (actionError) {
       setError(actionError.message);
     } else {
-      setStatus(data);
-      if (verify && data.connected) {
+      setStatus(data as ConnStatus);
+      if (verify) {
+        // 各チャンネルの生存確認の結果をまとめて出す。
+        const results = THREADS_CHANNELS.flatMap((channel) => {
+          const account = (data as ConnStatus).accounts[channel];
+          if (!account || account.tokenOk === undefined) return [];
+          return [
+            `${CHANNEL_LABEL[channel]}: ${
+              account.tokenOk
+                ? `有効 (@${account.username ?? account.threadsUserId})`
+                : "失効の可能性"
+            }`,
+          ];
+        });
         setNotice(
-          data.tokenOk
-            ? `トークンは有効です (@${data.username ?? data.threadsUserId})`
-            : null,
+          results.length > 0 ? `トークン確認 — ${results.join(" / ")}` : null,
         );
-        if (data.tokenOk === false) {
+        const anyExpired = THREADS_CHANNELS.some(
+          (channel) =>
+            (data as ConnStatus).accounts[channel]?.tokenOk === false,
+        );
+        if (anyExpired) {
           setError(
-            "トークンが失効している可能性があります。再接続してください",
+            "失効している可能性のあるトークンがあります。該当チャンネルを再接続してください",
           );
         }
       }
@@ -658,7 +706,13 @@ export function ThreadsManager({
     const params = new URLSearchParams(window.location.search);
     const connected = params.get("threads") === "connected";
     const oauthError = params.get("threads_error");
-    if (connected) setNotice("Threads と接続しました");
+    const channelParam = params.get("channel");
+    if (connected) {
+      const label = isThreadsChannel(channelParam)
+        ? `（${CHANNEL_LABEL[channelParam]}）`
+        : "";
+      setNotice(`Threads と接続しました${label}`);
+    }
     if (oauthError) {
       setError(
         OAUTH_ERROR_MESSAGES[oauthError] ??
@@ -668,6 +722,7 @@ export function ThreadsManager({
     if (connected || oauthError) {
       params.delete("threads");
       params.delete("threads_error");
+      params.delete("channel");
       const query = params.toString();
       window.history.replaceState(
         null,
@@ -685,39 +740,43 @@ export function ThreadsManager({
     if (refreshKey > 0) void loadPosts();
   }, [refreshKey, loadPosts]);
 
-  const disconnect = async () => {
+  const disconnect = async (channel: ThreadsChannel) => {
     if (
       !window.confirm(
-        "Threads との接続を解除しますか？保存済みトークンを破棄します",
+        `${CHANNEL_LABEL[channel]}アカウントの接続を解除しますか？保存済みトークンを破棄します`,
       )
     ) {
       return;
     }
     setBusy(true);
-    const { error: actionError } = await actions.threadsDisconnect({});
+    const { error: actionError } = await actions.threadsDisconnect({ channel });
     setBusy(false);
     if (actionError) {
       setError(actionError.message);
       return;
     }
-    setNotice("接続を解除しました");
+    setNotice(`${CHANNEL_LABEL[channel]}アカウントの接続を解除しました`);
     await load();
   };
 
-  const submitManualToken = async () => {
-    if (!manualToken.trim()) return;
+  const submitManualToken = async (channel: ThreadsChannel) => {
+    const token = manualTokens[channel];
+    if (!token.trim()) return;
     setBusy(true);
     setError(null);
     const { data, error: actionError } = await actions.threadsSetToken({
-      token: manualToken,
+      channel,
+      token,
     });
     setBusy(false);
     if (actionError) {
       setError(actionError.message);
       return;
     }
-    setManualToken("");
-    setNotice(`トークンを登録しました (@${data.username ?? "unknown"})`);
+    setManualTokens((m) => ({ ...m, [channel]: "" }));
+    setNotice(
+      `${CHANNEL_LABEL[channel]}のトークンを登録しました (@${data.username ?? "unknown"})`,
+    );
     await load();
   };
 
@@ -829,9 +888,15 @@ export function ThreadsManager({
     await loadPosts();
   };
 
+  // 2 チャンネルの対は同時刻なので、時刻同順はチャンネルで安定させる
+  // (接続カードと同じく中文 threads-zh を先に)。
   const queue = posts
     .filter((p) => ["scheduled", "publishing", "failed"].includes(p.status))
-    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+    .sort(
+      (a, b) =>
+        a.scheduledAt.localeCompare(b.scheduledAt) ||
+        b.channel.localeCompare(a.channel),
+    );
   // ログは新しい順。ただし未返信のものは見落とさないよう先頭へ寄せる。
   const log = posts
     .filter((p) => ["published", "deleted"].includes(p.status))
@@ -866,76 +931,108 @@ export function ThreadsManager({
           </p>
         )}
 
-        {!loading && status && !status.connected && (
+        {!loading && status && (
           <div className="flex flex-col gap-3">
-            <p className="text-sm text-base-content/70">
-              未接続です。Threads アカウントを接続すると予約投稿を使えます。
-            </p>
-            {status.appConfigured && (
-              <a
-                className="btn btn-primary w-fit"
-                href="/admin/threads/oauth/start"
-              >
-                Threads と接続
-              </a>
-            )}
-          </div>
-        )}
+            {THREADS_CHANNELS.map((channel) => {
+              const account = status.accounts[channel];
+              return (
+                <div
+                  key={channel}
+                  className="rounded-md border border-base-300 p-3"
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    <ChannelBadge channel={channel} />
+                    <span className="text-xs opacity-50">
+                      {channel === "threads-zh"
+                        ? "中文詩 (passageZh) を投稿"
+                        : "日本語短歌 (passageJa) を投稿"}
+                    </span>
+                  </div>
 
-        {!loading && status?.connected && (
-          <div className="flex flex-col gap-3">
-            <div className="text-sm">
-              <span className="font-semibold">
-                @{status.username ?? status.threadsUserId}
-              </span>{" "}
-              として接続中
-            </div>
-            <div className="text-xs text-base-content/60">
-              トークン期限: {formatDateTime(status.expiresAt)}（
-              {formatDateTime(status.refreshedAt)} に更新 / 7日ごとに自動延長）
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                disabled={busy || loading}
-                onClick={() => void load(true)}
-              >
-                接続確認
-              </Button>
-              <Button
-                variant="danger"
-                disabled={busy || loading}
-                onClick={() => void disconnect()}
-              >
-                接続解除
-              </Button>
-            </div>
-          </div>
-        )}
+                  {account ? (
+                    <div className="flex flex-col gap-2">
+                      <div className="text-sm">
+                        <span className="font-semibold">
+                          @{account.username ?? account.threadsUserId}
+                        </span>{" "}
+                        として接続中
+                        {account.tokenOk === false && (
+                          <span className="ml-2 text-xs text-error">
+                            トークン失効の可能性
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-base-content/60">
+                        トークン期限: {formatDateTime(account.expiresAt)}（
+                        {formatDateTime(account.refreshedAt)} に更新 /
+                        7日ごとに自動延長）
+                      </div>
+                      <Button
+                        variant="danger"
+                        className="btn-sm w-fit"
+                        disabled={busy || loading}
+                        onClick={() => void disconnect(channel)}
+                      >
+                        接続解除
+                      </Button>
+                    </div>
+                  ) : status.appConfigured ? (
+                    <div className="flex flex-col gap-2">
+                      <p className="m-0 text-sm text-base-content/70">
+                        未接続です。Threads
+                        側でこのチャンネル用のアカウントにログインした状態で接続してください。
+                      </p>
+                      <a
+                        className="btn btn-primary btn-sm w-fit"
+                        href={`/admin/threads/oauth/start?channel=${channel}`}
+                      >
+                        {CHANNEL_LABEL[channel]}アカウントと接続
+                      </a>
+                      <details>
+                        <summary className="cursor-pointer text-xs text-base-content/60">
+                          長期トークンを手動登録（ローカル開発・応急用）
+                        </summary>
+                        <div className="mt-2 flex flex-col gap-2">
+                          <textarea
+                            className="textarea textarea-bordered w-full font-mono text-xs"
+                            rows={3}
+                            placeholder="長期アクセストークンを貼り付け"
+                            value={manualTokens[channel]}
+                            onChange={(e) =>
+                              setManualTokens((m) => ({
+                                ...m,
+                                [channel]: e.target.value,
+                              }))
+                            }
+                          />
+                          <Button
+                            variant="outline"
+                            className="btn-sm w-fit"
+                            disabled={busy || !manualTokens[channel].trim()}
+                            onClick={() => void submitManualToken(channel)}
+                          >
+                            検証して保存
+                          </Button>
+                        </div>
+                      </details>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
 
-        {!loading && status && !status.connected && status.appConfigured && (
-          <details className="mt-4">
-            <summary className="cursor-pointer text-xs text-base-content/60">
-              長期トークンを手動登録（ローカル開発・応急用）
-            </summary>
-            <div className="mt-2 flex flex-col gap-2">
-              <textarea
-                className="textarea textarea-bordered w-full font-mono text-xs"
-                rows={3}
-                placeholder="長期アクセストークンを貼り付け"
-                value={manualToken}
-                onChange={(e) => setManualToken(e.target.value)}
-              />
-              <Button
-                variant="outline"
-                className="w-fit"
-                disabled={busy || !manualToken.trim()}
-                onClick={() => void submitManualToken()}
-              >
-                検証して保存
-              </Button>
-            </div>
-          </details>
+            {status.appConfigured &&
+              Object.values(status.accounts).some(Boolean) && (
+                <Button
+                  variant="outline"
+                  className="btn-sm w-fit"
+                  disabled={busy || loading}
+                  onClick={() => void load(true)}
+                >
+                  接続確認
+                </Button>
+              )}
+          </div>
         )}
       </Card>
 

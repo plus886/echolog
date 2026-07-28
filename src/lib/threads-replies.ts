@@ -1,7 +1,8 @@
 import { fetchPostReplies, type ThreadsReply } from "@/lib/threads";
+import type { ThreadsChannel } from "@/lib/threads-channels";
 import {
-  getThreadsAuth,
   listPostsForReplySync,
+  listThreadsAccounts,
   type ThreadsPost,
   updateThreadsReplyStats,
 } from "@/lib/threads-db";
@@ -53,11 +54,15 @@ export async function syncPostReplies(
   return { replies, stats };
 }
 
-// cron 用。同期が古い順に SYNC_BATCH 件だけ回す。個別の失敗は握りつぶす
+// cron 用。同期が古い順に SYNC_BATCH 件だけ回す (チャンネル横断の 1 巡回。
+// 行のチャンネルに応じたトークンで引く)。個別の失敗は握りつぶす
 // (次の巡回で拾い直せるし、返信同期の失敗で cron 全体を止めたくない)。
 export async function syncReplyStatsBatch(): Promise<void> {
-  const auth = await getThreadsAuth();
-  if (!auth) return;
+  const accounts = await listThreadsAccounts();
+  if (accounts.length === 0) return;
+  const tokenByChannel = new Map<ThreadsChannel, string>(
+    accounts.map((a) => [a.channel, a.accessToken]),
+  );
 
   const after = new Date(
     Date.now() - SYNC_WINDOW_DAYS * 24 * 60 * 60 * 1000,
@@ -65,8 +70,10 @@ export async function syncReplyStatsBatch(): Promise<void> {
   const posts = await listPostsForReplySync(SYNC_BATCH, after);
 
   for (const post of posts) {
+    const token = tokenByChannel.get(post.channel);
+    if (!token) continue; // そのチャンネルが未接続なら次の巡回に回す
     try {
-      const { stats } = await syncPostReplies(post, auth.accessToken);
+      const { stats } = await syncPostReplies(post, token);
       if (stats.needsReply) {
         console.log(
           `[threads-cron] post ${post.id} has ${stats.replyCount} reply(ies), needs reply`,
