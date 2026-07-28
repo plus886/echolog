@@ -42,6 +42,10 @@ type PostItem = {
   error: string | null;
   publishedAt: string | null;
   passageZh: string | null;
+  // cron が同期した返信状況 (開かなくても分かるようバッジに出す)。
+  replyCount: number;
+  needsReply: boolean;
+  replySyncedAt: string | null;
 };
 
 type ReplyItem = {
@@ -353,6 +357,18 @@ function LogRow({
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={post.status} />
+            {/* 返信の見落とし防止。未返信は目立たせ、返信済みは件数だけ。 */}
+            {post.needsReply ? (
+              <span className="badge badge-warning badge-sm font-semibold">
+                要返信 {post.replyCount}
+              </span>
+            ) : (
+              post.replyCount > 0 && (
+                <span className="badge badge-ghost badge-sm">
+                  返信 {post.replyCount}
+                </span>
+              )
+            )}
             <span className="text-xs opacity-60">
               {post.publishedAt
                 ? formatTaipei(post.publishedAt)
@@ -364,6 +380,9 @@ function LogRow({
           <p className="m-0 truncate text-sm opacity-80">{text.slice(0, 60)}</p>
           {post.error && (
             <p className="m-0 text-xs text-warning">{post.error}</p>
+          )}
+          {post.replySyncedAt === null && post.status === "published" && (
+            <p className="m-0 text-xs opacity-40">返信の確認待ち</p>
           )}
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -574,7 +593,14 @@ function ReplyRow({
 
 // refreshKey はタブを開き直すたびに増える (AdminTabs)。文章管理タブでの
 // 新規予約をキューへ反映するため、変化したら一覧を再取得する。
-export function ThreadsManager({ refreshKey = 0 }: { refreshKey?: number }) {
+// onRepliesChanged は返信状況が変わったときの通知 (タブの未返信バッジ用)。
+export function ThreadsManager({
+  refreshKey = 0,
+  onRepliesChanged,
+}: {
+  refreshKey?: number;
+  onRepliesChanged?: () => void;
+}) {
   const [status, setStatus] = useState<ConnStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -624,7 +650,8 @@ export function ThreadsManager({ refreshKey = 0 }: { refreshKey?: number }) {
     }
     setPosts(data.posts as PostItem[]);
     setPostsState("ready");
-  }, []);
+    onRepliesChanged?.();
+  }, [onRepliesChanged]);
 
   useEffect(() => {
     // OAuth コールバックからの戻りクエリを拾って表示し、URL から消す。
@@ -759,6 +786,23 @@ export function ThreadsManager({ refreshKey = 0 }: { refreshKey?: number }) {
             replies: res.data.replies as ReplyItem[],
           },
     }));
+    // 開いた時点の実データで行のバッジも更新する (cron を待たない)。
+    if (!res.error) {
+      const stats = res.data.stats;
+      setPosts((list) =>
+        list.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                replyCount: stats.replyCount,
+                needsReply: stats.needsReply,
+                replySyncedAt: new Date().toISOString(),
+              }
+            : p,
+        ),
+      );
+      onRepliesChanged?.();
+    }
   };
 
   const replyTo = async (postId: number, replyToId: string, text: string) => {
@@ -788,13 +832,16 @@ export function ThreadsManager({ refreshKey = 0 }: { refreshKey?: number }) {
   const queue = posts
     .filter((p) => ["scheduled", "publishing", "failed"].includes(p.status))
     .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
+  // ログは新しい順。ただし未返信のものは見落とさないよう先頭へ寄せる。
   const log = posts
     .filter((p) => ["published", "deleted"].includes(p.status))
-    .sort((a, b) =>
-      (b.publishedAt ?? b.scheduledAt).localeCompare(
+    .sort((a, b) => {
+      if (a.needsReply !== b.needsReply) return a.needsReply ? -1 : 1;
+      return (b.publishedAt ?? b.scheduledAt).localeCompare(
         a.publishedAt ?? a.scheduledAt,
-      ),
-    );
+      );
+    });
+  const needsReplyCount = log.filter((p) => p.needsReply).length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -945,9 +992,24 @@ export function ThreadsManager({ refreshKey = 0 }: { refreshKey?: number }) {
       </Card>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold text-base-content/70">
-          投稿ログ
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <h2 className="m-0 text-sm font-semibold text-base-content/70">
+            投稿ログ
+          </h2>
+          {needsReplyCount > 0 ? (
+            <span className="badge badge-warning badge-sm font-semibold">
+              未返信 {needsReplyCount} 件
+            </span>
+          ) : (
+            postsState === "ready" &&
+            log.length > 0 && (
+              <span className="text-xs opacity-50">未返信はありません</span>
+            )
+          )}
+          <span className="text-xs opacity-40">
+            返信は 5 分毎に自動確認されます
+          </span>
+        </div>
         {postsState === "ready" && log.length === 0 ? (
           <p className="m-0 py-2 text-sm opacity-60">まだ投稿はありません。</p>
         ) : (

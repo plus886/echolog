@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { actions } from "astro:actions";
+import { useCallback, useEffect, useState } from "react";
 
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import type { ComposeMode } from "@/components/admin/ComposeForm";
@@ -54,6 +55,19 @@ export function AdminTabs(props: Props) {
   // 伝え、Threads の予約状況だけ再取得させる (remount はしない)。
   const [passagesVisitKey, setPassagesVisitKey] = useState(0);
   const [threadsVisitKey, setThreadsVisitKey] = useState(0);
+  // Threads の未返信件数。タブを開かなくても気づけるようバッジに出す。
+  // D1 を数えるだけの action なので admin 表示のたびに呼んでも安い
+  // (Threads API への問い合わせは cron 側が担当)。
+  const [pendingReplies, setPendingReplies] = useState(0);
+
+  const refreshPendingReplies = useCallback(async () => {
+    const res = await actions.threadsPendingReplyCount({});
+    if (!res.error && res.data) setPendingReplies(res.data.count);
+  }, []);
+
+  useEffect(() => {
+    void refreshPendingReplies();
+  }, [refreshPendingReplies]);
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -93,6 +107,11 @@ export function AdminTabs(props: Props) {
             className={`tab ${tab === key ? "tab-active" : ""}`}
           >
             {label}
+            {key === "threads" && pendingReplies > 0 && (
+              <span className="badge badge-warning badge-xs ml-1.5 font-semibold">
+                {pendingReplies}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -117,7 +136,10 @@ export function AdminTabs(props: Props) {
       )}
       {threadsMounted && (
         <div hidden={tab !== "threads"}>
-          <ThreadsManager refreshKey={threadsVisitKey} />
+          <ThreadsManager
+            refreshKey={threadsVisitKey}
+            onRepliesChanged={refreshPendingReplies}
+          />
         </div>
       )}
     </div>

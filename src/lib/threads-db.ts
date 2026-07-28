@@ -99,6 +99,10 @@ export type ThreadsPost = {
   error: string | null;
   createdAt: string;
   publishedAt: string | null;
+  // 返信状況のキャッシュ (cron が同期。migrations/0002 参照)。
+  replyCount: number;
+  needsReply: boolean;
+  replySyncedAt: string | null;
 };
 
 type ThreadsPostRow = {
@@ -115,6 +119,9 @@ type ThreadsPostRow = {
   error: string | null;
   created_at: string;
   published_at: string | null;
+  reply_count: number;
+  needs_reply: number;
+  reply_synced_at: string | null;
 };
 
 function toPost(row: ThreadsPostRow): ThreadsPost {
@@ -132,6 +139,9 @@ function toPost(row: ThreadsPostRow): ThreadsPost {
     error: row.error,
     createdAt: row.created_at,
     publishedAt: row.published_at,
+    replyCount: row.reply_count ?? 0,
+    needsReply: row.needs_reply === 1,
+    replySyncedAt: row.reply_synced_at,
   };
 }
 
@@ -300,6 +310,58 @@ export async function markThreadsPostPublished(
       new Date().toISOString(),
     )
     .run();
+}
+
+// ---- 返信状況のキャッシュ ----
+
+// cron が同期する対象。同期が古い順 (未同期が先頭) に少しずつ回すことで、
+// 1 回あたりの Threads API 呼び出し数を上限で抑えつつ全件を巡回できる。
+// 返信が付く見込みのない古い投稿は対象外にする。
+export async function listPostsForReplySync(
+  limit: number,
+  publishedAfterIso: string,
+): Promise<ThreadsPost[]> {
+  const res = await getThreadsDb()
+    .prepare(
+      `SELECT * FROM threads_posts
+       WHERE status = 'published' AND threads_media_id IS NOT NULL
+         AND published_at >= ?2
+       ORDER BY reply_synced_at IS NOT NULL, reply_synced_at ASC
+       LIMIT ?1`,
+    )
+    .bind(limit, publishedAfterIso)
+    .all<ThreadsPostRow>();
+  return res.results.map(toPost);
+}
+
+export async function updateThreadsReplyStats(
+  id: number,
+  stats: { replyCount: number; needsReply: boolean },
+): Promise<void> {
+  await getThreadsDb()
+    .prepare(
+      `UPDATE threads_posts
+       SET reply_count = ?2, needs_reply = ?3, reply_synced_at = ?4
+       WHERE id = ?1`,
+    )
+    .bind(
+      id,
+      stats.replyCount,
+      stats.needsReply ? 1 : 0,
+      new Date().toISOString(),
+    )
+    .run();
+}
+
+// admin のタブバッジ用。未返信の投稿件数だけを D1 から数える
+// (Threads API は叩かないので admin を開くたびに呼んでも安い)。
+export async function countThreadsPostsNeedingReply(): Promise<number> {
+  const row = await getThreadsDb()
+    .prepare(
+      "SELECT COUNT(*) AS n FROM threads_posts WHERE status = 'published' AND needs_reply = 1",
+    )
+    .first<{ n: number }>();
+  return row?.n ?? 0;
 }
 
 // Threads 側から削除済みにする。行は履歴として残す (status='deleted')。

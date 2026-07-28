@@ -5,10 +5,12 @@ import {
   saveThreadsAuth,
 } from "@/lib/threads-db";
 import { publishThreadsPost } from "@/lib/threads-publish";
+import { syncReplyStatsBatch } from "@/lib/threads-replies";
 
 // Cron Trigger (wrangler.jsonc triggers, 5 分毎) の処理本体。
 //  1. 予定時刻が来た予約投稿の配信
-//  2. 長期トークンの自動リフレッシュ
+//  2. 届いた返信の同期 (管理画面のバッジ用。返信の見落とし防止)
+//  3. 長期トークンの自動リフレッシュ
 
 const REFRESH_INTERVAL_DAYS = 7;
 
@@ -17,6 +19,11 @@ export async function runThreadsCron(): Promise<void> {
     await publishDuePosts();
   } catch (e) {
     console.error("[threads-cron] publish sweep failed", e);
+  }
+  try {
+    await syncReplyStatsBatch();
+  } catch (e) {
+    console.error("[threads-cron] reply sync failed", e);
   }
   try {
     await maybeRefreshToken();

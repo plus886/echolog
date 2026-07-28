@@ -30,7 +30,6 @@ import { formatTaipei } from "@/lib/taipei-time";
 import {
   createReplyTextContainer,
   deleteThreadsMedia,
-  fetchPostReplies,
   fetchPostViews,
   fetchThreadsProfile,
   getThreadsAppConfig,
@@ -39,6 +38,7 @@ import {
 } from "@/lib/threads";
 import {
   claimThreadsPost,
+  countThreadsPostsNeedingReply,
   deleteScheduledThreadsPost,
   deleteThreadsAuth,
   findActiveThreadsPostByDay,
@@ -53,6 +53,7 @@ import {
   saveThreadsAuth,
 } from "@/lib/threads-db";
 import { publishThreadsPost } from "@/lib/threads-publish";
+import { syncPostReplies } from "@/lib/threads-replies";
 import { pickScheduleSlot } from "@/lib/threads-schedule";
 import { translateToZh } from "@/lib/translate";
 import { suggestTweet as generateTweetSuggestion } from "@/lib/tweet-suggest";
@@ -1071,8 +1072,10 @@ export const server = {
           message: "Threads が未接続です",
         });
       }
-      const [replies, views] = await Promise.all([
-        fetchPostReplies(post.threadsMediaId, auth.accessToken).catch((e) => {
+      // 取得ついでに D1 のバッジ用キャッシュも更新し、一覧のバッジと
+      // 開いた中身がズレないようにする。
+      const [synced, views] = await Promise.all([
+        syncPostReplies(post, auth.accessToken).catch((e) => {
           console.error("[threads] replies fetch failed", e);
           throw new ActionError({
             code: "INTERNAL_SERVER_ERROR",
@@ -1084,12 +1087,21 @@ export const server = {
           return null;
         }),
       ]);
-      // URL をぶら下げた自分のリプライは会話の一部だが、読むべき「届いた
-      // 返信」ではないので除く。
-      return {
-        views,
-        replies: replies.filter((r) => r.id !== post.replyMediaId),
-      };
+      return { views, replies: synced.replies, stats: synced.stats };
+    },
+  }),
+
+  // 未返信の投稿件数。admin のタブバッジ用で D1 しか見ない
+  // (Threads API は cron が同期する)。未接続・未 migration でも 0 を返し、
+  // admin の表示を壊さない。
+  threadsPendingReplyCount: defineAction({
+    handler: async () => {
+      try {
+        return { count: await countThreadsPostsNeedingReply() };
+      } catch (e) {
+        console.error("[threads] pending reply count failed", e);
+        return { count: 0 };
+      }
     },
   }),
 
@@ -1126,6 +1138,11 @@ export const server = {
           auth.threadsUserId,
           auth.accessToken,
           container,
+        );
+        // 返信したことをバッジへ即反映する (次の cron を待たない)。
+        // 失敗しても返信自体は成功しているので握りつぶす。
+        await syncPostReplies(post, auth.accessToken).catch((e) =>
+          console.error("[threads] reply stats sync failed", e),
         );
         return { mediaId };
       } catch (e) {
