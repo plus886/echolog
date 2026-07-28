@@ -8,7 +8,7 @@ import {
   updateDay,
   uploadFormosaMedia,
 } from "@/lib/formosa-management";
-import { listDays, listTweets } from "@/lib/microcms";
+import { listAllLocations, listDays, listTweets } from "@/lib/microcms";
 import {
   createTweet,
   deleteTweet,
@@ -370,13 +370,26 @@ export const server = {
 
   // ---- 写真投稿タブ (formosa / days) ----
 
-  // days スキーマ (camera / lens の選択肢) を取得。写真タブを開いた時に呼ぶ。
-  fetchDaysSchema: defineAction({
+  // 写真投稿フォームの選択肢をまとめて取得する。写真タブを開いた時に 1 回。
+  // camera / lens は days スキーマの select 定義、location は locations
+  // API の既存コンテンツ (この UI からの追加はしない)。
+  fetchPhotoFormOptions: defineAction({
     handler: async () => {
       try {
-        return await fetchDaysSchema();
+        const [schema, locations] = await Promise.all([
+          fetchDaysSchema(),
+          listAllLocations(),
+        ]);
+        return {
+          ...schema,
+          locations: locations.map((l) => ({
+            id: l.id,
+            nameJa: l.nameJa ?? "",
+            cityJa: l.cityJa ?? "",
+          })),
+        };
       } catch (e) {
-        console.error("[photo] schema fetch failed", e);
+        console.error("[photo] form options fetch failed", e);
         throw new ActionError({
           code: "INTERNAL_SERVER_ERROR",
           message: "フィールド情報の取得に失敗しました",
@@ -458,6 +471,8 @@ export const server = {
       imageUrl: z.string().url(),
       camera: z.string().min(1),
       lens: z.string().optional(),
+      // 撮影地 (locations のコンテンツ ID)。任意。
+      location: z.string().optional(),
       date: z.string().optional(),
       passageJa: z.string().min(1),
       passageZh: z.string().min(1),
@@ -470,6 +485,7 @@ export const server = {
           imageUrl: input.imageUrl,
           camera: input.camera,
           lens: input.lens?.trim() || undefined,
+          location: input.location?.trim() || undefined,
           passageJa: input.passageJa,
           passageZh: input.passageZh,
           altJa: input.altJa,

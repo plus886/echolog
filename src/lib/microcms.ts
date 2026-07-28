@@ -4,6 +4,9 @@ import { getEnv } from "@/lib/env";
 import type {
   Day,
   DayListResponse,
+  Location,
+  LocationFields,
+  LocationListResponse,
   Tweet,
   TweetFields,
   TweetListResponse,
@@ -33,6 +36,7 @@ function getFormosa() {
 
 const TWEETS_ENDPOINT = "tweets";
 const DAYS_ENDPOINT = "days";
+const LOCATIONS_ENDPOINT = "locations";
 
 // depth=1 で parent / retweetOf を 1段だけ展開して取得する。
 const DEFAULT_DEPTH = 1 as const;
@@ -98,6 +102,27 @@ export async function listDays(
     queries: { limit: 50, orders: "-date", ...queries },
   });
   return response as DayListResponse;
+}
+
+// 撮影地の全件。admin の写真投稿フォームで選択肢に出す。microCMS の
+// limit 上限は 100 なので、件数が増えても取りこぼさないようページを繰る。
+//
+// microCMS は Cache-Control を返さない (etag のみ) ため、既定のままだと
+// Workers の fetch キャッシュに載って追加した撮影地が出てこないことがある。
+// admin 用途なので camera/lens のスキーマ取得と同様に no-store で毎回取る。
+export async function listAllLocations(): Promise<Location[]> {
+  const PAGE = 100;
+  const all: Location[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const res = (await getFormosa().getList<LocationFields>({
+      endpoint: LOCATIONS_ENDPOINT,
+      queries: { limit: PAGE, offset },
+      customRequestInit: { cache: "no-store" },
+    })) as LocationListResponse;
+    all.push(...res.contents);
+    if (all.length >= res.totalCount || res.contents.length === 0) break;
+  }
+  return all;
 }
 
 // Portfolio gallery 用：投稿時点の新しい順 25 件 + それ以外からランダム

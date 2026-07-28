@@ -65,14 +65,35 @@ export function getRetweetKind(
 
 // ---- Portfolio gallery (formosa-chiaroscuro / days) ----
 
+// 撮影地 (locations API)。days から単一参照される。名前を持たず市だけの
+// エントリ (例: 台北市そのもの) もあるので nameJa / nameZh も optional。
+export type LocationFields = {
+  nameJa?: string;
+  nameZh?: string;
+  cityJa?: string;
+  cityZh?: string;
+  country?: string[];
+};
+
+export type Location = LocationFields & MicroCMSContentId & EchologDate;
+
+export type LocationListResponse = Omit<
+  MicroCMSListResponse<LocationFields>,
+  "contents"
+> & {
+  contents: Location[];
+};
+
 // microCMS の days API。select フィールド (camera / lens) は読み取り時
 // 値文字列の配列で返る。passage* は ja / zh の 2 言語キャプション。
 // alt* は検索最適化・スクリーンリーダー向けの 2 言語代替テキスト。
+// location は locations への単一参照 (読み取り時は depth に応じて展開)。
 export type DayFields = {
   image: MicroCMSImage;
   date: string;
   camera?: string[];
   lens?: string[];
+  location?: Location;
   featured?: boolean;
   passageJa?: string;
   passageZh?: string;
@@ -96,6 +117,8 @@ export type DayWriteFields = {
   imageUrl: string;
   camera: string;
   lens?: string;
+  // 参照フィールドは書き込み時は参照先のコンテンツ ID (文字列)。
+  location?: string;
   featured?: boolean;
   passageJa?: string;
   passageZh?: string;

@@ -112,6 +112,8 @@ function toDaysPayload(content: DayWriteFields): Record<string, unknown> {
     camera: [content.camera],
   };
   if (content.lens) payload.lens = [content.lens];
+  // 参照フィールドはコンテンツ ID の文字列で書く。
+  if (content.location) payload.location = content.location;
   if (content.featured != null) payload.featured = content.featured;
   if (content.passageJa) payload.passageJa = content.passageJa;
   if (content.passageZh) payload.passageZh = content.passageZh;

@@ -19,8 +19,26 @@ import { resizeImageForUpload } from "@/lib/image-resize";
 // してから「投稿」で初めて days に作成する (publishPhoto)。既存写真の再生成
 // と同じ体験に揃えてある。
 
-type Schema = { camera: string[]; lens: string[] };
+type LocationOption = { id: string; nameJa: string; cityJa: string };
+type Schema = {
+  camera: string[];
+  lens: string[];
+  locations: LocationOption[];
+};
 type SchemaState = "loading" | "ready" | "error";
+
+// 撮影地を市ごとの optgroup にまとめる (件数が多いので探しやすくする)。
+// 市が空のものは末尾の「その他」へ。並びは microCMS の返す順を保つ。
+function groupByCity(locations: LocationOption[]): [string, LocationOption[]][] {
+  const groups = new Map<string, LocationOption[]>();
+  for (const loc of locations) {
+    const city = loc.cityJa || "その他";
+    const arr = groups.get(city);
+    if (arr) arr.push(loc);
+    else groups.set(city, [loc]);
+  }
+  return [...groups.entries()];
+}
 // アップロード済み画像 + 生成された文章・代替テキスト (まだ投稿していない)。
 type Prepared = {
   imageUrl: string;
@@ -48,6 +66,8 @@ export function PhotoComposer({
 
   const [camera, setCamera] = useState("");
   const [lens, setLens] = useState("");
+  // 撮影地 (locations のコンテンツ ID)。任意。空文字 = 未選択。
+  const [location, setLocation] = useState("");
   // 文章生成時に Claude へ渡す留意事項 (任意・単発投稿のみ)。
   const [notes, setNotes] = useState("");
 
@@ -67,7 +87,7 @@ export function PhotoComposer({
   const loadSchema = () => {
     setSchemaState("loading");
     void (async () => {
-      const res = await actions.fetchDaysSchema();
+      const res = await actions.fetchPhotoFormOptions();
       if (res.error || !res.data) {
         setSchemaState("error");
       } else {
@@ -168,6 +188,7 @@ export function PhotoComposer({
     setExif(null);
     setCamera("");
     setLens("");
+    setLocation("");
     setNotes("");
     setDetectNotice(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -272,6 +293,46 @@ export function PhotoComposer({
                 ))}
               </select>
             </label>
+
+            {/* 撮影地 — locations の既存コンテンツから選ぶ (追加は microCMS 側で)。
+                選択肢は mount 時に一度取るだけなので、microCMS に撮影地を
+                足した直後でも拾えるよう再読込ボタンを添える。 */}
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <div className="flex items-center gap-2">
+                <label
+                  htmlFor="photo-location"
+                  className="text-[13px] font-medium text-base-content/70"
+                >
+                  撮影地（任意）
+                </label>
+                <button
+                  type="button"
+                  onClick={loadSchema}
+                  disabled={selectsDisabled}
+                  className="btn btn-ghost btn-xs font-normal text-base-content/50"
+                >
+                  {schemaState === "loading" ? "更新中…" : "選択肢を再読込"}
+                </button>
+              </div>
+              <select
+                id="photo-location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                disabled={selectsDisabled}
+                className="select select-bordered w-full"
+              >
+                <option value="">なし</option>
+                {groupByCity(schema?.locations ?? []).map(([city, items]) => (
+                  <optgroup key={city} label={city}>
+                    {items.map((loc) => (
+                      <option key={loc.id} value={loc.id}>
+                        {loc.nameJa || loc.cityJa || loc.id}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
           </div>
         )}
 
@@ -321,6 +382,7 @@ export function PhotoComposer({
               imageUrl: prepared.imageUrl,
               camera,
               lens: lens || undefined,
+              location: location || undefined,
               date: exif?.dateOriginal,
               passageJa: p.passageJa,
               passageZh: p.passageZh,
