@@ -1,6 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 
 import {
+  ACCESS_COOKIE,
   ACCESS_EMAIL_HEADER,
   ACCESS_JWT_HEADER,
   verifyAccess,
@@ -28,6 +29,9 @@ import {
 // 旧 matcher: ["/admin", "/admin/:path*", "/api/og-preview", "/api/uploads"]
 function requiresAuth(pathname: string): boolean {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
+  // Astro Actions は全て admin 専用の操作 (投稿・削除・生成) なので一律
+  // 認証必須。ここを外すと本番で /_actions/* が未認証のまま直接叩ける。
+  if (pathname.startsWith("/_actions")) return true;
   if (pathname.startsWith("/api/admin/")) return true;
   if (pathname === "/api/og-preview") return true;
   if (pathname === "/api/uploads") return true;
@@ -80,7 +84,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // 認証ゲートは論理パス (接頭辞なし) で判定する。
   const authPath = context.locals.path ?? context.url.pathname;
   if (requiresAuth(authPath)) {
-    const jwt = context.request.headers.get(ACCESS_JWT_HEADER);
+    // Cloudflare Access が JWT ヘッダを注入するのは Access application の
+    // パス (kokaiji.tw/admin*) に一致したリクエストのみ。admin ページから
+    // fetch される /_actions・/api/* にはヘッダが付かないが、Access ログイン
+    // 時にドメインへ発行される CF_Authorization クッキーが同じ JWT を運ぶ
+    // ので、ヘッダ → クッキーの順で取り出して検証する (検証自体は同一)。
+    const jwt =
+      context.request.headers.get(ACCESS_JWT_HEADER) ??
+      context.cookies.get(ACCESS_COOKIE)?.value;
     const email = context.request.headers.get(ACCESS_EMAIL_HEADER);
 
     const result = await verifyAccess({ jwt, email });

@@ -4,6 +4,9 @@ import { getEnv, isAuthBypassed } from "@/lib/env";
 
 export const ACCESS_JWT_HEADER = "Cf-Access-Jwt-Assertion";
 export const ACCESS_EMAIL_HEADER = "Cf-Access-Authenticated-User-Email";
+// Access がログイン時にドメイン全体へ発行するクッキー。ヘッダと同じ JWT を
+// 運ぶので、Access application のパス外 (/_actions 等) の検証に使える。
+export const ACCESS_COOKIE = "CF_Authorization";
 
 const BYPASS_USER_EMAIL = "local-dev@echolog.local";
 
