@@ -1,8 +1,9 @@
 import { callAnthropic, cachedSystem } from "@/lib/anthropic";
 import {
   ALT_SYSTEM_PROMPT,
-  ALT_USER_INSTRUCTION,
+  buildAltUserMessage,
 } from "@/lib/photo-alt-prompt.mjs";
+import type { LocationFields } from "@/types/microcms";
 
 // 写真から検索最適化・アクセシビリティ用の代替テキスト (altJa / altZh) を
 // 生成する server 専用モジュール。短歌 (photo-passage) と違って創作ではなく
@@ -19,10 +20,14 @@ const TIMEOUT_MS = 60_000;
 
 export type AltTexts = { altJa: string; altZh: string };
 
-// 写真の URL を受け取り altJa / altZh を生成して返す。HTTP エラー・
-// タイムアウト・JSON パース失敗・どちらかが空のときは例外を throw する
-// (呼び出し側で投稿を中断する)。
-export async function generateAltTexts(imageUrl: string): Promise<AltTexts> {
+// 写真の URL を受け取り altJa / altZh を生成して返す。location を渡すと
+// 投稿者が確定させた撮影地として alt に含められる (未指定なら地名は一切
+// 書かれない)。HTTP エラー・タイムアウト・JSON パース失敗・どちらかが空の
+// ときは例外を throw する (呼び出し側で投稿を中断する)。
+export async function generateAltTexts(
+  imageUrl: string,
+  location?: LocationFields,
+): Promise<AltTexts> {
   // microCMS の画像 API 変換でリサイズ版を渡す (photo-passage と同じ)。
   const visionUrl = `${imageUrl}?w=1024&fm=webp`;
 
@@ -34,7 +39,7 @@ export async function generateAltTexts(imageUrl: string): Promise<AltTexts> {
         role: "user",
         content: [
           { type: "image", source: { type: "url", url: visionUrl } },
-          { type: "text", text: ALT_USER_INSTRUCTION },
+          { type: "text", text: buildAltUserMessage(location) },
         ],
       },
     ],

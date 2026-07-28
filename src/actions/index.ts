@@ -8,7 +8,12 @@ import {
   updateDay,
   uploadFormosaMedia,
 } from "@/lib/formosa-management";
-import { listAllLocations, listDays, listTweets } from "@/lib/microcms";
+import {
+  getLocation,
+  listAllLocations,
+  listDays,
+  listTweets,
+} from "@/lib/microcms";
 import {
   createTweet,
   deleteTweet,
@@ -429,9 +434,23 @@ export const server = {
       model: PassageModelInput,
       // 文章生成時に Claude へ渡す留意事項 (任意)。
       notes: z.string().max(2000).optional(),
+      // 撮影地 (locations のコンテンツ ID)。alt 生成に確定情報として渡す。
+      location: z.string().optional(),
     }),
     handler: async (input) => {
       assertValidPhoto(input.image);
+
+      // 撮影地は alt に地名を書いてよい根拠になる (投稿者が選んだ確定情報)。
+      // 引けなかった場合は地名なしで生成を続ける (投稿全体は止めない)。
+      const locationId = input.location?.trim();
+      let location: Awaited<ReturnType<typeof getLocation>> | undefined;
+      if (locationId) {
+        try {
+          location = await getLocation(locationId);
+        } catch (e) {
+          console.error("[photo] location fetch failed", locationId, e);
+        }
+      }
 
       let imageUrl: string;
       try {
@@ -451,7 +470,7 @@ export const server = {
         // そのまま days に書き込む。
         const [passages, alt] = await Promise.all([
           generatePassages(imageUrl, input.model, input.notes),
-          generateAltTexts(imageUrl),
+          generateAltTexts(imageUrl, location),
         ]);
         return { imageUrl, ...passages, ...alt };
       } catch (e) {

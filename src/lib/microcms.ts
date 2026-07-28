@@ -125,6 +125,16 @@ export async function listAllLocations(): Promise<Location[]> {
   return all;
 }
 
+// 撮影地 1 件。admin が alt 生成に渡す確定情報として引く (no-store)。
+export async function getLocation(contentId: string): Promise<Location> {
+  const location = await getFormosa().getListDetail<LocationFields>({
+    endpoint: LOCATIONS_ENDPOINT,
+    contentId,
+    customRequestInit: { cache: "no-store" },
+  });
+  return location as Location;
+}
+
 // Portfolio gallery 用：投稿時点の新しい順 25 件 + それ以外からランダム
 // 25 件 (重複なし) をインタリーブして返す。並びは公開ギャラリー
 // (photo.kokaiji.tw) に合わせて投稿日時 (publishedAt) 基準。

@@ -170,6 +170,8 @@ export function PhotoComposer({
       fd.set("image", uploadFile);
       fd.set("model", model);
       if (notes.trim()) fd.set("notes", notes.trim());
+      // 撮影地は alt 生成で確定情報として使う (未選択なら地名は書かれない)。
+      if (location) fd.set("location", location);
       const res = await actions.preparePhoto(fd);
       if (res.error || !res.data) {
         setError(res.error?.message ?? "アップロードに失敗しました");

@@ -27,7 +27,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   ALT_SYSTEM_PROMPT,
-  ALT_USER_INSTRUCTION,
+  buildAltUserMessage,
 } from "../src/lib/photo-alt-prompt.mjs";
 
 const MODEL = "claude-opus-5";
@@ -79,10 +79,13 @@ const env = loadEnv();
 
 // ---- microCMS ----
 async function listMissing(offset, count) {
+  // location は depth=1 で展開して受け取り、alt に確定情報として渡す
+  // (設定されていないエントリは地名なしで生成される)。
   const url =
     `https://${env.domain}.microcms.io/api/v1/days` +
     `?filters=${encodeURIComponent("altJa[not_exists]")}` +
-    `&fields=id,image&orders=date&limit=${count}&offset=${offset}`;
+    `&fields=id,image,location&depth=1` +
+    `&orders=date&limit=${count}&offset=${offset}`;
   const res = await fetch(url, {
     headers: { "X-MICROCMS-API-KEY": env.readKey },
   });
@@ -125,7 +128,7 @@ async function patchDay(id, alt) {
 }
 
 // ---- Claude (Opus 5 固定) ----
-async function generateAlt(imageUrl) {
+async function generateAlt(imageUrl, location) {
   const body = JSON.stringify({
     model: MODEL,
     max_tokens: MAX_TOKENS,
@@ -144,7 +147,7 @@ async function generateAlt(imageUrl) {
             type: "image",
             source: { type: "url", url: `${imageUrl}?w=1024&fm=webp` },
           },
-          { type: "text", text: ALT_USER_INSTRUCTION },
+          { type: "text", text: buildAltUserMessage(location) },
         ],
       },
     ],
@@ -209,18 +212,20 @@ while (processed + failed < limit) {
 
   const results = await Promise.allSettled(
     page.contents.map(async (day) => {
-      const alt = await generateAlt(day.image.url);
+      const alt = await generateAlt(day.image.url, day.location);
       if (!dryRun) await patchDay(day.id, alt);
-      return { id: day.id, ...alt };
+      return { id: day.id, location: day.location, ...alt };
     }),
   );
 
   for (const r of results) {
     if (r.status === "fulfilled") {
       processed += 1;
-      const { id, altJa, altZh } = r.value;
+      const { id, location, altJa, altZh } = r.value;
+      const place = location?.nameJa || location?.cityJa || "撮影地なし";
       console.log(
-        `[${processed + failed}/${total}] ${id}${dryRun ? " (dry)" : ""}\n` +
+        `[${processed + failed}/${total}] ${id}${dryRun ? " (dry)" : ""}` +
+          ` [${place}]\n` +
           `  JA(${altJa.length}) ${altJa}\n  ZH(${altZh.length}) ${altZh}`,
       );
     } else {

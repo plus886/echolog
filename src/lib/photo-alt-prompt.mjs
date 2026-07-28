@@ -23,9 +23,15 @@ export const ALT_SYSTEM_PROMPT = [
   "- 例外: 看板・標識・貼り紙などの文字がはっきり判読できる場合に限り、",
   "  その文字列そのものへの言及は可 (例: 「魯肉飯」と書かれた看板)。",
   "  かすれ・ぼけ・一部しか読めない文字を推測で補完しない。",
+  "- 例外: user メッセージに【撮影地】が与えられている場合に限り、そこに",
+  "  書かれた名称・市名は使ってよい。これは投稿者が選んで確定させた情報で、",
+  "  推測にはあたらないため。ただし与えられた文字列そのものだけを使い、",
+  "  そこから派生する地理情報 (国名・行政区・近隣の地名・施設名) を",
+  "  自分で補わない。撮影地が与えられていなければ従来どおり一切書かない。",
   "- 写っている人物の氏名・続柄・年齢を推測しない。",
   "  外見の客観描写 (男性・子ども・後ろ姿など) は可。",
-  "- 撮影場所・撮影日・機材など、画面の外にある情報を書かない。",
+  "- 撮影日・機材など、画面の外にある情報を書かない",
+  "  (撮影地は上記の例外に従う)。",
   "",
   "【分量】",
   "- altJa: 日本語で 40〜90 文字。",
@@ -39,6 +45,33 @@ export const ALT_SYSTEM_PROMPT = [
 ].join("\n");
 
 // user メッセージに添えるテキスト指示 (画像と一緒に送る)。
-export const ALT_USER_INSTRUCTION =
+const ALT_USER_INSTRUCTION =
   "この写真の代替テキストを、ルールに従って altJa (日本語) と " +
   "altZh (台湾繁體中文) の両方で生成してください。JSON のみを返してください。";
+
+// 投稿者が選んだ撮影地 (locations のエントリ) を確定情報として添える。
+// 名称を持たず市だけのエントリもあるので、埋まっている項目だけ書く。
+// 撮影地が無い / 全項目が空なら基本の指示だけを返す (地名は書かれない)。
+export function buildAltUserMessage(location) {
+  if (!location) return ALT_USER_INSTRUCTION;
+  const pick = (a, b) => (a || "").trim() || (b || "").trim();
+  const nameJa = pick(location.nameJa, location.nameZh);
+  const nameZh = pick(location.nameZh, location.nameJa);
+  const cityJa = pick(location.cityJa, location.cityZh);
+  const cityZh = pick(location.cityZh, location.cityJa);
+
+  const lines = [];
+  if (nameJa) lines.push(`名称: 日本語「${nameJa}」/ 繁體中文「${nameZh}」`);
+  if (cityJa) lines.push(`市: 日本語「${cityJa}」/ 繁體中文「${cityZh}」`);
+  if (lines.length === 0) return ALT_USER_INSTRUCTION;
+
+  return [
+    ALT_USER_INSTRUCTION,
+    "",
+    "【撮影地 — 投稿者が指定した確定情報】",
+    ...lines,
+    "これは投稿者が選択した情報なので推測にはあたらない。alt に自然な形で",
+    "含めてよい (altJa は日本語表記、altZh は繁體中文表記を使う)。",
+    "ここに書かれていない地理情報は補わないこと。",
+  ].join("\n");
+}
