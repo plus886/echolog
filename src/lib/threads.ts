@@ -194,7 +194,12 @@ function requireId(data: Record<string, unknown>, label: string): string {
 export async function createImageContainer(
   userId: string,
   token: string,
-  params: { imageUrl: string; text: string; altText?: string },
+  params: {
+    imageUrl: string;
+    text: string;
+    altText?: string;
+    topicTag?: string;
+  },
 ): Promise<string> {
   const body: Record<string, string> = {
     media_type: "IMAGE",
@@ -202,6 +207,9 @@ export async function createImageContainer(
     text: params.text,
   };
   if (params.altText) body.alt_text = params.altText.slice(0, 1000);
+  // topic_tag は # なし・1〜50 文字。ぶら下げる URL リプライには付けない
+  // (1 スレッドにつき本体ポストのタグだけで足りる)。
+  if (params.topicTag) body.topic_tag = params.topicTag.slice(0, 50);
   const data = await postForm(
     `/v1.0/${userId}/threads`,
     token,

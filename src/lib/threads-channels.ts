@@ -19,6 +19,14 @@ export const CHANNEL_LABEL: Record<ThreadsChannel, string> = {
   "threads-ja": "日本語",
 };
 
+// 本体ポストに付けるトピックタグ。Threads は 1 投稿 1 タグまでで、
+// API へは # なしの文字列を渡す (1〜50 文字、"." と "&" は不可)。
+// チャンネル固定 = 写真ごとの選択は不要、という運用上の決定。
+export const CHANNEL_TOPIC_TAG: Record<ThreadsChannel, string> = {
+  "threads-zh": "街頭攝影",
+  "threads-ja": "短歌",
+};
+
 // リプライでぶら下げる・サムネイルから飛ぶギャラリーページ。photolog の
 // i18n は日本語がルート、中文が /zh 接頭辞。
 export function dayPageUrl(channel: ThreadsChannel, dayId: string): string {

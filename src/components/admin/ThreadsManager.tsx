@@ -10,6 +10,7 @@ import {
 } from "@/lib/taipei-time";
 import {
   CHANNEL_LABEL,
+  CHANNEL_TOPIC_TAG,
   dayPageUrl,
   isThreadsChannel,
   THREADS_CHANNELS,
@@ -368,6 +369,9 @@ function QueueRow({
             alt=""
             className="max-h-72 w-auto max-w-full rounded-md"
           />
+          <p className="m-0 text-xs opacity-60">
+            トピックタグ: #{CHANNEL_TOPIC_TAG[post.channel]}
+          </p>
           <p className="m-0 text-xs opacity-60">
             ↳ リプライ: {dayPageUrl(post.channel, post.dayId)}
           </p>

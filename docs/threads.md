@@ -4,10 +4,14 @@
 予約投稿する仕組み。予約は 1 回の操作で 2 チャンネルに同じ時刻で積まれ、
 以後の管理（日時変更・取消・返信・削除）はチャンネルの行ごとに行う。
 
-| チャンネル             | 本文                    | alt   | リプライで貼る URL              |
-| ---------------------- | ----------------------- | ----- | ------------------------------- |
-| `threads-zh`（中文）   | passageZh（中文詩）     | altZh | `photo.kokaiji.tw/zh/days/{id}` |
-| `threads-ja`（日本語） | passageJa（日本語短歌） | altJa | `photo.kokaiji.tw/days/{id}`    |
+| チャンネル             | 本文                    | alt   | トピックタグ | リプライで貼る URL              |
+| ---------------------- | ----------------------- | ----- | ------------ | ------------------------------- |
+| `threads-zh`（中文）   | passageZh（中文詩）     | altZh | `街頭攝影`   | `photo.kokaiji.tw/zh/days/{id}` |
+| `threads-ja`（日本語） | passageJa（日本語短歌） | altJa | `短歌`       | `photo.kokaiji.tw/days/{id}`    |
+
+トピックタグは Threads の仕様で 1 投稿 1 つまで。チャンネル固定値として
+`src/lib/threads-channels.ts` の `CHANNEL_TOPIC_TAG` に持つ（写真ごとの
+指定はしない）。変更はその定数を書き換えるだけでよい。
 
 ## アーキテクチャ
 

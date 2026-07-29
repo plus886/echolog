@@ -6,7 +6,11 @@ import {
   publishContainer,
   waitForContainerReady,
 } from "@/lib/threads";
-import { CHANNEL_LABEL, dayPageUrl } from "@/lib/threads-channels";
+import {
+  CHANNEL_LABEL,
+  CHANNEL_TOPIC_TAG,
+  dayPageUrl,
+} from "@/lib/threads-channels";
 import {
   getThreadsAccount,
   markThreadsPostFailed,
@@ -20,7 +24,8 @@ import {
 //
 // 投稿内容は行のチャンネルで決まる: threads-zh は passageZh (中文詩) +
 // altZh、threads-ja は passageJa (日本語短歌) + altJa。どちらも写真付きで、
-// そのチャンネルの言語のギャラリー URL を本体ポストへの返信でぶら下げる。
+// チャンネル固定のトピックタグを付け、そのチャンネルの言語のギャラリー
+// URL を本体ポストへの返信でぶら下げる。
 // 本文・alt は予約時ではなく投稿時点の最新を microCMS から読む
 // (予約後の手直しを反映するため)。投稿した本文は posted_text に snapshot。
 
@@ -59,6 +64,7 @@ export async function publishThreadsPost(
         imageUrl: `${day.image.url}${IMAGE_PARAMS}`,
         text,
         altText,
+        topicTag: CHANNEL_TOPIC_TAG[post.channel],
       },
     );
     await waitForContainerReady(container, auth.accessToken);
