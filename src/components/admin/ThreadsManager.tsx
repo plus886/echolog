@@ -2,7 +2,7 @@ import { actions } from "astro:actions";
 import { useCallback, useEffect, useState } from "react";
 
 import { Toaster, useToast } from "@/components/admin/Toast";
-import { Button, Card } from "@/components/admin/ui";
+import { Button, Card, RowMenu } from "@/components/admin/ui";
 import {
   formatTaipei,
   isoToTaipeiInput,
@@ -204,13 +204,26 @@ function QueueRow({
     setEditingTime(false);
   };
 
+  const publishNowClick = () => {
+    if (window.confirm("今すぐ Threads へ投稿しますか？")) {
+      void onPublishNow(post.id);
+    }
+  };
+
+  const cancelClick = () => {
+    if (window.confirm("この予約を取り消しますか？")) {
+      void onCancel(post.id);
+    }
+  };
+
   return (
     <div className="rounded-lg border border-base-300 p-3">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-3">
         <a
           href={dayPageUrl(post.channel, post.dayId)}
           target="_blank"
           rel="noreferrer"
+          className="flex-none"
         >
           <img
             src={`${post.imageUrl}?w=120&fm=webp`}
@@ -225,18 +238,21 @@ function QueueRow({
             }
           />
         </a>
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={post.status} />
             <ChannelBadge channel={post.channel} />
-            <span className="font-mono text-xs opacity-60">{post.dayId}</span>
+            {/* dayId はモバイルでは畳む (サムネイルから該当ページへ飛べる) */}
+            <span className="hidden font-mono text-xs opacity-60 sm:inline">
+              {post.dayId}
+            </span>
           </div>
           <div className="text-sm font-medium">
             {formatTaipei(post.scheduledAt)} 台湾時間
           </div>
         </div>
-        <div className="flex-1" />
-        <div className="flex flex-wrap gap-1.5">
+        {/* デスクトップ: インラインボタン。モバイル: ⋯ メニューに集約。 */}
+        <div className="hidden flex-none flex-wrap justify-end gap-1.5 sm:flex">
           <Button
             variant="neutral"
             className="btn-sm"
@@ -257,11 +273,7 @@ function QueueRow({
             variant="neutral"
             className="btn-sm"
             disabled={busy}
-            onClick={() => {
-              if (window.confirm("今すぐ Threads へ投稿しますか？")) {
-                void onPublishNow(post.id);
-              }
-            }}
+            onClick={publishNowClick}
           >
             今すぐ投稿
           </Button>
@@ -269,14 +281,37 @@ function QueueRow({
             variant="danger"
             className="btn-sm"
             disabled={busy}
-            onClick={() => {
-              if (window.confirm("この予約を取り消しますか？")) {
-                void onCancel(post.id);
-              }
-            }}
+            onClick={cancelClick}
           >
             取消
           </Button>
+        </div>
+        <div className="flex-none sm:hidden">
+          <RowMenu
+            items={[
+              {
+                label: previewOpen ? "プレビューを閉じる" : "プレビュー",
+                onSelect: () => setPreviewOpen((v) => !v),
+                disabled: busy,
+              },
+              {
+                label: "日時変更",
+                onSelect: startTimeEdit,
+                disabled: busy || editingTime,
+              },
+              {
+                label: "今すぐ投稿",
+                onSelect: publishNowClick,
+                disabled: busy,
+              },
+              {
+                label: "取消",
+                onSelect: cancelClick,
+                danger: true,
+                disabled: busy,
+              },
+            ]}
+          />
         </div>
       </div>
 
@@ -367,13 +402,35 @@ function LogRow({
 }) {
   const [open, setOpen] = useState(false);
   const text = post.postedText ?? post.passage ?? "";
+
+  const deleteClick = () => {
+    if (
+      window.confirm(
+        "この投稿を Threads からも削除します。取り消せません。よろしいですか？",
+      )
+    ) {
+      void onDelete(post.id);
+    }
+  };
+
+  const purgeClick = () => {
+    if (
+      window.confirm(
+        "この行を履歴からも完全に削除しますか？（Threads 側は削除済み。投稿記録が残らなくなります）",
+      )
+    ) {
+      void onPurge(post.id);
+    }
+  };
+
   return (
     <div className="rounded-lg border border-base-300 p-3">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-3">
         <a
           href={dayPageUrl(post.channel, post.dayId)}
           target="_blank"
           rel="noreferrer"
+          className="flex-none"
         >
           <img
             src={`${post.imageUrl}?w=120&fm=webp`}
@@ -403,7 +460,10 @@ function LogRow({
                 : formatTaipei(post.scheduledAt)}{" "}
               台湾時間
             </span>
-            <span className="font-mono text-xs opacity-40">{post.dayId}</span>
+            {/* dayId はモバイルでは畳む (サムネイルから該当ページへ飛べる) */}
+            <span className="hidden font-mono text-xs opacity-40 sm:inline">
+              {post.dayId}
+            </span>
           </div>
           <p className="m-0 truncate text-sm opacity-80">{text.slice(0, 60)}</p>
           {post.error && (
@@ -413,71 +473,94 @@ function LogRow({
             <p className="m-0 text-xs opacity-40">返信の確認待ち</p>
           )}
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-none items-center gap-1.5">
+          {/* 返信・表示回数は主操作なので常時見せる。残りはデスクトップは
+              インライン、モバイルは ⋯ メニューに集約。 */}
           {post.status === "published" && (
-            <>
-              <Button
-                variant="neutral"
-                className="btn-sm"
-                disabled={detail.loading}
-                onClick={() => {
-                  if (!open) void onOpenDetail(post.id);
-                  setOpen((v) => !v);
-                }}
-              >
-                {detail.loading
-                  ? "取得中…"
-                  : open
-                    ? "閉じる"
-                    : "返信・表示回数"}
-              </Button>
+            <Button
+              variant="neutral"
+              className="btn-sm"
+              disabled={detail.loading}
+              onClick={() => {
+                if (!open) void onOpenDetail(post.id);
+                setOpen((v) => !v);
+              }}
+            >
+              {detail.loading ? "取得中…" : open ? "閉じる" : "返信・表示回数"}
+            </Button>
+          )}
+          <div className="hidden flex-wrap justify-end gap-1.5 sm:flex">
+            {post.status === "published" && (
               <Button
                 variant="danger"
                 className="btn-sm"
                 disabled={busy}
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      "この投稿を Threads からも削除します。取り消せません。よろしいですか？",
-                    )
-                  ) {
-                    void onDelete(post.id);
-                  }
-                }}
+                onClick={deleteClick}
               >
                 削除
               </Button>
-            </>
-          )}
-          {post.status === "deleted" && (
-            <Button
-              variant="danger"
-              className="btn-sm"
-              disabled={busy}
-              onClick={() => {
-                if (
-                  window.confirm(
-                    "この行を履歴からも完全に削除しますか？（Threads 側は削除済み。投稿記録が残らなくなります）",
-                  )
-                ) {
-                  void onPurge(post.id);
-                }
-              }}
-            >
-              履歴からも削除
-            </Button>
-          )}
-          {/* permalink は削除済みだとリンク切れなので出さない */}
-          {post.status !== "deleted" && post.threadsPermalink && (
-            <a
-              href={post.threadsPermalink}
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-sm"
-            >
-              Threads で見る
-            </a>
-          )}
+            )}
+            {post.status === "deleted" && (
+              <Button
+                variant="danger"
+                className="btn-sm"
+                disabled={busy}
+                onClick={purgeClick}
+              >
+                履歴からも削除
+              </Button>
+            )}
+            {/* permalink は削除済みだとリンク切れなので出さない */}
+            {post.status !== "deleted" && post.threadsPermalink && (
+              <a
+                href={post.threadsPermalink}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-sm"
+              >
+                Threads で見る
+              </a>
+            )}
+          </div>
+          <div className="sm:hidden">
+            <RowMenu
+              items={[
+                ...(post.status !== "deleted" && post.threadsPermalink
+                  ? [
+                      {
+                        label: "Threads で見る",
+                        onSelect: () =>
+                          window.open(
+                            post.threadsPermalink ?? "",
+                            "_blank",
+                            "noopener",
+                          ),
+                      },
+                    ]
+                  : []),
+                ...(post.status === "published"
+                  ? [
+                      {
+                        label: "削除",
+                        onSelect: deleteClick,
+                        danger: true,
+                        disabled: busy,
+                      },
+                    ]
+                  : []),
+                ...(post.status === "deleted"
+                  ? [
+                      {
+                        label: "履歴からも削除",
+                        onSelect: purgeClick,
+                        danger: true,
+                        disabled: busy,
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          </div>
         </div>
       </div>
 
@@ -1059,8 +1142,8 @@ export function ThreadsManager({
       </Card>
 
       <Card>
-        <div className="mb-3 flex items-center gap-2">
-          <h2 className="m-0 text-sm font-semibold text-base-content/70">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <h2 className="m-0 text-sm font-semibold whitespace-nowrap text-base-content/70">
             予約キュー
           </h2>
           <span className="text-xs opacity-50">
@@ -1112,7 +1195,7 @@ export function ThreadsManager({
 
       <Card>
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <h2 className="m-0 text-sm font-semibold text-base-content/70">
+          <h2 className="m-0 text-sm font-semibold whitespace-nowrap text-base-content/70">
             投稿ログ
           </h2>
           {needsReplyCount > 0 ? (

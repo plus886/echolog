@@ -62,6 +62,52 @@ export function Card({
   );
 }
 
+// 行アクションを「⋯」に集約するメニュー (DaisyUI dropdown)。モバイルで
+// ボタンを並べると幅が足りず崩れるため、狭い画面ではこれに収める。
+// トリガーは iOS Safari の button フォーカス問題を避けるため
+// tabIndex 付き div (DaisyUI 推奨マークアップ)。項目選択後は blur で閉じる。
+export type RowMenuItem = {
+  label: string;
+  onSelect: () => void;
+  danger?: boolean;
+  disabled?: boolean;
+};
+
+export function RowMenu({ items }: { items: RowMenuItem[] }) {
+  return (
+    <div className="dropdown dropdown-end">
+      <div
+        tabIndex={0}
+        role="button"
+        aria-label="その他の操作"
+        className="btn btn-ghost btn-sm btn-circle text-lg"
+      >
+        ⋯
+      </div>
+      <ul
+        tabIndex={0}
+        className="menu dropdown-content z-20 mt-1 w-44 rounded-box border border-base-300 bg-base-100 p-1.5 shadow-lg"
+      >
+        {items.map((item) => (
+          <li key={item.label} className={cx(item.disabled && "menu-disabled")}>
+            <button
+              type="button"
+              className={cx(item.danger && "text-error")}
+              onClick={() => {
+                if (item.disabled) return;
+                (document.activeElement as HTMLElement | null)?.blur();
+                item.onSelect();
+              }}
+            >
+              {item.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 // 単一メッセージのエラー表示 (DaisyUI alert)。再試行ボタン等を内包する
 // 複合的なエラー UI には使わず、その場合は各所でインライン実装する。
 export function ErrorAlert({

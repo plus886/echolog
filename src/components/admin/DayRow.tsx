@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import type { PassageModelChoice } from "@/components/admin/ModelRadio";
 import { PassageDialog } from "@/components/admin/PassageDialog";
+import { RowMenu } from "@/components/admin/ui";
 import { formatTaipei } from "@/lib/taipei-time";
 import {
   CHANNEL_LABEL,
@@ -165,7 +166,7 @@ export function DayRow({
           card-body は既定で flex-col。横並びにすると狭幅で本文が
           1 文字幅に潰れるため縦積みにする。 */}
       <div className="card-body gap-2 p-3 sm:p-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* サムネイルは本番ギャラリーの該当ページへのリンク */}
           <a
             href={`https://photo.kokaiji.tw/days/${day.id}`}
@@ -179,88 +180,118 @@ export function DayRow({
               className="h-14 w-14 rounded-md object-cover"
             />
           </a>
-          <div className="flex-1" />
-          {/* Threads 予約状況 (チャンネルごとのバッジ)。アクティブな予約の
-              取消・日時変更は Threads タブから。 */}
-          {threads.map((t) => {
-            const label = channelLabel(t.channel);
-            if (t.status === "scheduled" || t.status === "publishing") {
-              return (
-                <span
-                  key={t.channel}
-                  className="badge badge-info badge-sm whitespace-nowrap"
-                >
-                  {label} {formatTaipei(t.scheduledAt)}
-                </span>
-              );
-            }
-            if (t.status === "published") {
-              return (
-                <span
-                  key={t.channel}
-                  className="badge badge-success badge-sm whitespace-nowrap"
-                >
-                  {label}済
-                </span>
-              );
-            }
-            if (t.status === "failed") {
-              return (
-                <span
-                  key={t.channel}
-                  className="badge badge-error badge-sm whitespace-nowrap"
-                >
-                  {label}失敗
-                </span>
-              );
-            }
-            return null; // deleted はバッジを出さない (再予約可)
-          })}
-          {!allChannelsActive && (
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => void enqueueThreads()}
-              disabled={
-                threadsBusy || editing || (!passages.zh && !passages.ja)
+          {/* Threads 予約状況 (チャンネルごとのバッジ)。残り幅の中で
+              折り返す (ボタン列を押し出してカード外へはみ出さない)。
+              アクティブな予約の取消・日時変更は Threads タブから。 */}
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1.5">
+            {threads.map((t) => {
+              const label = channelLabel(t.channel);
+              if (t.status === "scheduled" || t.status === "publishing") {
+                return (
+                  <span
+                    key={t.channel}
+                    className="badge badge-info badge-sm whitespace-nowrap"
+                  >
+                    {label} {formatTaipei(t.scheduledAt)}
+                  </span>
+                );
               }
-              title={
-                passages.zh || passages.ja
-                  ? undefined
-                  : "文章が未生成のため予約できません"
+              if (t.status === "published") {
+                return (
+                  <span
+                    key={t.channel}
+                    className="badge badge-success badge-sm whitespace-nowrap"
+                  >
+                    {label}済
+                  </span>
+                );
               }
-            >
-              {threadsBusy ? "予約中…" : "Threads予約"}
-            </button>
-          )}
+              if (t.status === "failed") {
+                return (
+                  <span
+                    key={t.channel}
+                    className="badge badge-error badge-sm whitespace-nowrap"
+                  >
+                    {label}失敗
+                  </span>
+                );
+              }
+              return null; // deleted はバッジを出さない (再予約可)
+            })}
+          </div>
           <button
             type="button"
             onClick={() => void toggleFavorite()}
             disabled={favBusy}
             aria-pressed={featured}
             aria-label="お気に入り"
-            className={`btn btn-ghost btn-sm btn-circle text-lg ${
+            className={`btn btn-ghost btn-sm btn-circle flex-none text-lg ${
               featured ? "text-amber-500" : "text-base-content/40"
             }`}
           >
             {featured ? "★" : "☆"}
           </button>
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={startEdit}
-            disabled={editing}
-          >
-            編集
-          </button>
-          <button
-            type="button"
-            className="btn btn-sm"
-            onClick={() => setDialogOpen(true)}
-            disabled={editing}
-          >
-            再生成
-          </button>
+          {/* デスクトップ: インラインボタン。モバイル: ⋯ メニューに集約
+              (並べると幅が足りずはみ出すため)。 */}
+          <div className="hidden flex-none items-center gap-2 sm:flex">
+            {!allChannelsActive && (
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => void enqueueThreads()}
+                disabled={
+                  threadsBusy || editing || (!passages.zh && !passages.ja)
+                }
+                title={
+                  passages.zh || passages.ja
+                    ? undefined
+                    : "文章が未生成のため予約できません"
+                }
+              >
+                {threadsBusy ? "予約中…" : "Threads予約"}
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={startEdit}
+              disabled={editing}
+            >
+              編集
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => setDialogOpen(true)}
+              disabled={editing}
+            >
+              再生成
+            </button>
+          </div>
+          <div className="flex-none sm:hidden">
+            <RowMenu
+              items={[
+                ...(allChannelsActive
+                  ? []
+                  : [
+                      {
+                        label: threadsBusy ? "予約中…" : "Threads予約",
+                        onSelect: () => void enqueueThreads(),
+                        disabled:
+                          threadsBusy ||
+                          editing ||
+                          (!passages.zh && !passages.ja),
+                      },
+                    ]),
+                { label: "編集", onSelect: startEdit, disabled: editing },
+                {
+                  label: "再生成",
+                  onSelect: () => setDialogOpen(true),
+                  disabled: editing,
+                },
+              ]}
+            />
+          </div>
         </div>
 
         {threadsError && (
