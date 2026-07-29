@@ -1,7 +1,8 @@
 import { actions } from "astro:actions";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DayRow, type ThreadsDayInfo } from "@/components/admin/DayRow";
+import { Pager } from "@/components/admin/Pager";
 import type { PassageModelChoice } from "@/components/admin/ModelRadio";
 import { Button } from "@/components/admin/ui";
 import type { Day } from "@/types/microcms";
@@ -43,6 +44,8 @@ export function DaysList({
   const [days, setDays] = useState<Day[]>([]);
   const [total, setTotal] = useState(0);
   const [state, setState] = useState<ListState>("loading");
+  // ページ送り後にここへスクロールを戻す。
+  const topRef = useRef<HTMLElement>(null);
   // day → チャンネルごとの予約状況 (0〜2 件)。
   const [threadsMap, setThreadsMap] = useState<
     Record<string, ThreadsDayInfo[]>
@@ -109,7 +112,7 @@ export function DaysList({
   const to = Math.min((page + 1) * pageSize, total);
 
   return (
-    <section className="flex flex-col gap-3">
+    <section ref={topRef} className="flex flex-col gap-3 scroll-mt-20">
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="m-0 text-sm font-semibold">写真一覧</h2>
         <label className="flex items-center gap-1.5 text-sm whitespace-nowrap">
@@ -224,27 +227,17 @@ export function DaysList({
       )}
 
       {!searching && (
-        <div className="flex items-center justify-between gap-2">
-          <Button
-            variant="neutral"
-            className="btn-sm"
-            disabled={page <= 0 || state === "loading"}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-          >
-            ← 前
-          </Button>
-          <span className="text-sm opacity-60">
-            {page + 1} / {lastPage + 1}
-          </span>
-          <Button
-            variant="neutral"
-            className="btn-sm"
-            disabled={page >= lastPage || state === "loading"}
-            onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
-          >
-            次 →
-          </Button>
-        </div>
+        <Pager
+          page={page}
+          lastPage={lastPage}
+          disabled={state === "loading"}
+          onChange={(next) => {
+            setPage(next);
+            // ページを跨いだら一覧の先頭へ戻す (下端のページャを押した後、
+            // そのまま次ページの末尾を見せられても困る)。
+            topRef.current?.scrollIntoView({ block: "start" });
+          }}
+        />
       )}
     </section>
   );

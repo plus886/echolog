@@ -1,10 +1,11 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { AdminTweetRow } from "@/components/admin/AdminTweetRow";
 import ComposeForm, {
   type ComposeMode,
   type SeededBody,
 } from "@/components/admin/ComposeForm";
+import { Toaster, useToast } from "@/components/admin/Toast";
 import TweetSuggestDialog from "@/components/admin/TweetSuggestDialog";
 import { Card, cx } from "@/components/admin/ui";
 import type { ThreadNode } from "@/lib/thread";
@@ -71,16 +72,9 @@ export function AdminDashboard({
   const [filter, setFilter] = useState<Filter>(initialFilter);
   const [mode, setMode] = useState<ComposeMode>(initialMode);
   const [listState, setListState] = useState<ListState>("ready");
-  const [notice, setNotice] = useState<string | null>(null);
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [seededBody, setSeededBody] = useState<SeededBody>();
-  const noticeTimer = useRef<number | undefined>(undefined);
-
-  const showNotice = (msg: string) => {
-    setNotice(msg);
-    window.clearTimeout(noticeTimer.current);
-    noticeTimer.current = window.setTimeout(() => setNotice(null), 4000);
-  };
+  const toast = useToast();
 
   const refetch = useCallback(async (f: Filter) => {
     setListState("loading");
@@ -112,7 +106,7 @@ export function AdminDashboard({
     const f: Filter = kind === "draft" ? "drafts" : "posts";
     setFilter(f);
     void refetch(f);
-    showNotice(kind === "draft" ? "下書きを保存しました" : "投稿しました");
+    toast.success(kind === "draft" ? "下書きを保存しました" : "投稿しました");
   };
 
   const startReplyQuote = (kind: "reply" | "quote", t: AdminTweet) => {
@@ -162,11 +156,7 @@ export function AdminDashboard({
         />
       </Card>
 
-      {notice && (
-        <div className="alert alert-success text-sm">
-          <span>{notice}</span>
-        </div>
-      )}
+      <Toaster toast={toast} />
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center gap-1">

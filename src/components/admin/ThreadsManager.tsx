@@ -1,7 +1,8 @@
 import { actions } from "astro:actions";
 import { useCallback, useEffect, useState } from "react";
 
-import { Button, Card, ErrorAlert } from "@/components/admin/ui";
+import { Toaster, useToast } from "@/components/admin/Toast";
+import { Button, Card } from "@/components/admin/ui";
 import {
   formatTaipei,
   isoToTaipeiInput,
@@ -563,6 +564,7 @@ function ReplyRow({
     const message = await onReply(postId, reply.id, text);
     setSending(false);
     if (message) {
+      // 返信の失敗は入力中のフォームの直下に出す (打ち直せるように)。
       setError(message);
       return;
     }
@@ -656,9 +658,8 @@ export function ThreadsManager({
 }) {
   const [status, setStatus] = useState<ConnStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const toast = useToast();
   const [manualTokens, setManualTokens] = useState<
     Record<ThreadsChannel, string>
   >({ "threads-zh": "", "threads-ja": "" });
@@ -672,12 +673,11 @@ export function ThreadsManager({
 
   const load = async (verify = false) => {
     setLoading(true);
-    setError(null);
     const { data, error: actionError } = await actions.threadsStatus({
       verify,
     });
     if (actionError) {
-      setError(actionError.message);
+      toast.error(actionError.message);
     } else {
       setStatus(data as ConnStatus);
       if (verify) {
@@ -693,15 +693,15 @@ export function ThreadsManager({
             }`,
           ];
         });
-        setNotice(
-          results.length > 0 ? `トークン確認 — ${results.join(" / ")}` : null,
-        );
+        if (results.length > 0) {
+          toast.success(`トークン確認 — ${results.join(" / ")}`);
+        }
         const anyExpired = THREADS_CHANNELS.some(
           (channel) =>
             (data as ConnStatus).accounts[channel]?.tokenOk === false,
         );
         if (anyExpired) {
-          setError(
+          toast.error(
             "失効している可能性のあるトークンがあります。該当チャンネルを再接続してください",
           );
         }
@@ -732,10 +732,10 @@ export function ThreadsManager({
       const label = isThreadsChannel(channelParam)
         ? `（${CHANNEL_LABEL[channelParam]}）`
         : "";
-      setNotice(`Threads と接続しました${label}`);
+      toast.success(`Threads と接続しました${label}`);
     }
     if (oauthError) {
-      setError(
+      toast.error(
         OAUTH_ERROR_MESSAGES[oauthError] ??
           `接続に失敗しました (${oauthError})`,
       );
@@ -773,10 +773,10 @@ export function ThreadsManager({
     const { error: actionError } = await actions.threadsDisconnect({ channel });
     setBusy(false);
     if (actionError) {
-      setError(actionError.message);
+      toast.error(actionError.message);
       return;
     }
-    setNotice(`${CHANNEL_LABEL[channel]}アカウントの接続を解除しました`);
+    toast.success(`${CHANNEL_LABEL[channel]}アカウントの接続を解除しました`);
     await load();
   };
 
@@ -784,18 +784,17 @@ export function ThreadsManager({
     const token = manualTokens[channel];
     if (!token.trim()) return;
     setBusy(true);
-    setError(null);
     const { data, error: actionError } = await actions.threadsSetToken({
       channel,
       token,
     });
     setBusy(false);
     if (actionError) {
-      setError(actionError.message);
+      toast.error(actionError.message);
       return;
     }
     setManualTokens((m) => ({ ...m, [channel]: "" }));
-    setNotice(
+    toast.success(
       `${CHANNEL_LABEL[channel]}のトークンを登録しました (@${data.username ?? "unknown"})`,
     );
     await load();
@@ -814,27 +813,24 @@ export function ThreadsManager({
 
   const cancel = async (id: number) => {
     setBusy(true);
-    setError(null);
     const res = await actions.threadsCancel({ id });
     setBusy(false);
     if (res.error) {
-      setError(res.error.message);
+      toast.error(res.error.message);
       return;
     }
-    setNotice("予約を取り消しました");
+    toast.success("予約を取り消しました");
     await loadPosts();
   };
 
   const publishNow = async (id: number) => {
     setBusy(true);
-    setError(null);
-    setNotice(null);
     const res = await actions.threadsPublishNow({ id });
     setBusy(false);
     if (res.error) {
-      setError(res.error.message);
+      toast.error(res.error.message);
     } else {
-      setNotice(
+      toast.success(
         res.data.replyFailed
           ? "投稿しました（URL リプライのみ失敗。ログを確認してください）"
           : "Threads へ投稿しました",
@@ -897,29 +893,25 @@ export function ThreadsManager({
 
   const deletePost = async (id: number) => {
     setBusy(true);
-    setError(null);
-    setNotice(null);
     const res = await actions.threadsDeletePost({ id });
     setBusy(false);
     if (res.error) {
-      setError(res.error.message);
+      toast.error(res.error.message);
       return;
     }
-    setNotice("Threads から削除しました");
+    toast.success("Threads から削除しました");
     await loadPosts();
   };
 
   const purgeLog = async (id: number) => {
     setBusy(true);
-    setError(null);
-    setNotice(null);
     const res = await actions.threadsPurgeLog({ id });
     setBusy(false);
     if (res.error) {
-      setError(res.error.message);
+      toast.error(res.error.message);
       return;
     }
-    setNotice("履歴から削除しました");
+    toast.success("履歴から削除しました");
     await loadPosts();
   };
 
@@ -945,12 +937,7 @@ export function ThreadsManager({
 
   return (
     <div className="flex flex-col gap-4">
-      {notice && (
-        <div className="alert alert-success text-sm">
-          <span>{notice}</span>
-        </div>
-      )}
-      {error && <ErrorAlert>{error}</ErrorAlert>}
+      <Toaster toast={toast} />
 
       <Card>
         <h2 className="mb-3 text-sm font-semibold text-base-content/70">
