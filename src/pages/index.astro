@@ -19,7 +19,7 @@ import {
   tLines,
 } from "@/lib/i18n";
 import { listRootTweets, loadGalleryDays } from "@/lib/microcms";
-import { papers, works } from "@/lib/works";
+import { papers, talks, works } from "@/lib/works";
 import type { Day } from "@/types/microcms";
 
 export const prerender = false;
@@ -370,8 +370,27 @@ setEdgeCache(Astro.response);
     }
   </script>
 
+  {/* 講演実績 — 発表論文リストの上。同じテキストのみの体裁で揃える。 */}
+  <section class="ml-col-2 mt-16 min-[880px]:mt-24">
+    <p class="k-label-mini m-0 mb-6">{t(locale, "talks.label")}</p>
+    <ul
+      data-reveal
+      class="m-0 flex list-none flex-col gap-5 p-0 font-serif text-[14px] leading-[1.85] tracking-wide"
+    >
+      {
+        talks.map((talk) => (
+          <li class="m-0">
+            <span class="text-(--ink-50)">{pick(talk.when, locale)}</span>
+            <br />
+            <span class="text-(--ink)">{pick(talk.where, locale)}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
   {/* 発表論文リスト — Works グリッドの下。サムネイル無しのテキストのみ。 */}
-  <section class="ml-col-2 mt-16 mb-8 min-[880px]:mt-24 min-[880px]:mb-24">
+  <section class="ml-col-2 mt-12 mb-8 min-[880px]:mt-16 min-[880px]:mb-24">
     <p class="k-label-mini m-0 mb-6">{t(locale, "papers.label")}</p>
     <ul
       data-reveal

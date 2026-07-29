@@ -99,6 +99,7 @@ const uiJa = {
   "works.cat.text": "執筆",
   "works.cat.music": "音楽",
   "works.cat.photo": "撮影",
+  "talks.label": "講演",
   "papers.label": "論文",
   "contact.before": "執筆 / 講演 / 取材のご依頼・協業のお誘いは",
   "contact.after": "まで。",
@@ -117,6 +118,7 @@ const uiZh: Partial<Record<UIKey, string>> = {
   "works.cat.text": "寫作",
   "works.cat.music": "音樂",
   "works.cat.photo": "攝影",
+  "talks.label": "演講",
   // contact.before + メールリンク + contact.after の順で描画される。
   "contact.before": "撰稿、演講、採訪與合作邀約，歡迎來信至",
   "contact.after": "。",

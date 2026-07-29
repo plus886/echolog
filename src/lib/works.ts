@@ -119,3 +119,25 @@ export const papers: Paper[] = [
     source: "《台灣文學研究雧刊》第 35 期",
   },
 ];
+
+// 講演実績。論文リストの上に並べる。
+// 論文と違い開催地・団体名は言語ごとに書き分けるので Localized で持つ
+// (when は年月、where は開催地・団体)。新しい順ではなく時系列順。
+export type Talk = {
+  when: Localized;
+  where: Localized;
+};
+
+export const talks: Talk[] = [
+  {
+    when: { ja: "2025年11月", zh: "2025年11月" },
+    where: {
+      ja: "台湾・台北旭日ロータリークラブ にて",
+      zh: "臺灣・台北旭日扶輪社",
+    },
+  },
+  {
+    when: { ja: "2026年7月", zh: "2026年7月" },
+    where: { ja: "日本・法政大学 にて", zh: "日本・法政大學" },
+  },
+];
