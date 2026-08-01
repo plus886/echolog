@@ -1151,7 +1151,7 @@ export function ThreadsManager({
             予約キュー
           </h2>
           <span className="text-xs opacity-50">
-            台湾時間 20–22時 / 1日2件 / 60分以上間隔
+            台湾時間 20–22時 / 1日1件 / 60分以上間隔
           </span>
           <div className="flex-1" />
           <Button

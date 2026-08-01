@@ -184,7 +184,7 @@ export async function listThreadsPosts(limit = 200): Promise<ThreadsPost[]> {
 
 // 枠割当の入力になる「アクティブな予約」(scheduled / publishing) の時刻一覧。
 // 2 チャンネルは同じ時刻に対で積まれるので DISTINCT で 1 つに畳む
-// (1日2件・60分間隔の枠ルールはアカウントごとの体感频度に対するもの)。
+// (1日1件・60分間隔の枠ルールはアカウントごとの体感頻度に対するもの)。
 export async function listActiveThreadsScheduleTimes(): Promise<string[]> {
   const res = await getThreadsDb()
     .prepare(

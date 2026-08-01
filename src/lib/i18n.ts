@@ -99,7 +99,7 @@ const uiJa = {
   "works.cat.text": "執筆",
   "works.cat.music": "音楽",
   "works.cat.photo": "撮影",
-  "talks.label": "講演",
+  "talks.label": "講演実績",
   "papers.label": "論文",
   "contact.before": "執筆 / 講演 / 取材のご依頼・協業のお誘いは",
   "contact.after": "まで。",

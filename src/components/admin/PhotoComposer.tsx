@@ -29,7 +29,9 @@ type SchemaState = "loading" | "ready" | "error";
 
 // 撮影地を市ごとの optgroup にまとめる (件数が多いので探しやすくする)。
 // 市が空のものは末尾の「その他」へ。並びは microCMS の返す順を保つ。
-function groupByCity(locations: LocationOption[]): [string, LocationOption[]][] {
+function groupByCity(
+  locations: LocationOption[],
+): [string, LocationOption[]][] {
   const groups = new Map<string, LocationOption[]>();
   for (const loc of locations) {
     const city = loc.cityJa || "その他";
@@ -73,6 +75,12 @@ export function PhotoComposer({
 
   // 文章生成モデル。写真タブ全体で共通。既定 Opus。
   const [model, setModel] = useState<PassageModelChoice>("opus");
+
+  // 投稿後に Threads の予約キューへ積むか。既定 off (明示的に選ばせる)。
+  // 選択はフォームリセット後も引き継ぐ (連続投稿で毎回入れ直さずに済む)。
+  const [enqueueThreads, setEnqueueThreads] = useState(false);
+  // 予約が一部/全部通らなかったときの注記 (投稿自体は成功している)。
+  const [queueNotice, setQueueNotice] = useState<string | null>(null);
 
   const [isDetecting, startDetect] = useTransition();
   const [detectNotice, setDetectNotice] = useState<string | null>(null);
@@ -154,6 +162,7 @@ export function PhotoComposer({
   const handlePrepare = () => {
     if (!file || !camera || isPreparing) return;
     setError(null);
+    setQueueNotice(null); // 前回の投稿の注記を残さない
     startPrepare(async () => {
       // iPhone のライブラリ写真は数十 MB ある場合がありサーバ上限を超える。
       // microCMS は配信時に ?w=N で変換するので、長辺 2048px に縮小して送る。
@@ -353,6 +362,38 @@ export function PhotoComposer({
           </span>
         </label>
 
+        {/* 投稿後に Threads の予約キューへ積むか。投稿自体とは分けて扱い、
+            予約に失敗しても写真の投稿は成立させる (下の注記で知らせる)。 */}
+        <label className="flex items-start gap-2 text-[13px] font-medium text-base-content/70">
+          <input
+            type="checkbox"
+            checked={enqueueThreads}
+            onChange={(e) => setEnqueueThreads(e.target.checked)}
+            className="checkbox checkbox-sm mt-0.5"
+          />
+          <span className="flex flex-col gap-0.5">
+            投稿後に Threads の予約キューへ追加する
+            <span className="text-[12px] font-normal text-base-content/50">
+              中文・日本語の 2 チャンネルへ、空き枠（台湾時間 20–22時 /
+              1日1件）で予約されます。
+            </span>
+          </span>
+        </label>
+
+        {queueNotice && (
+          <div className="alert alert-warning text-sm">
+            <span className="flex-1">{queueNotice}</span>
+            <button
+              type="button"
+              aria-label="閉じる"
+              className="btn btn-ghost btn-xs"
+              onClick={() => setQueueNotice(null)}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {error && <ErrorAlert>{error}</ErrorAlert>}
 
         <div className="flex flex-col items-end gap-1.5">
@@ -393,9 +434,26 @@ export function PhotoComposer({
               altZh: prepared.altZh,
             });
             if (res.error) return res.error.message ?? "投稿に失敗しました";
+
+            // 投稿は成立済み。予約はここから先の付随処理なので、失敗しても
+            // 投稿を巻き戻さず注記だけ残す (Threads タブから手動で予約可能)。
+            let queueNote: string | null = null;
+            if (enqueueThreads) {
+              const q = await actions.threadsEnqueue({ dayId: res.data.id });
+              if (q.error) {
+                queueNote = `写真 ${res.data.id} は投稿しましたが、Threads の予約に失敗しました: ${q.error.message}`;
+              } else if (q.data.skipped.length > 0) {
+                queueNote = `写真 ${res.data.id} を投稿・予約しました。${q.data.skipped
+                  .map((s) => `${s.label} はスキップ (${s.reason})`)
+                  .join(" / ")}`;
+              }
+            }
+
             resetForm();
-            // 投稿成功 → 親が文章管理タブへ切り替え、一覧を最新化する。
-            onPublished?.();
+            setQueueNotice(queueNote);
+            // 問題なく終わったときだけ文章管理タブへ移す。注記があるときは
+            // このタブに留めて読ませる (切り替えると hidden になって見えない)。
+            if (!queueNote) onPublished?.();
             return null;
           }}
           onClose={() => setPrepared(null)}
