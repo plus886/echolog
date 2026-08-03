@@ -25,7 +25,7 @@ export function PassageManager({
   refreshKey?: number;
   threadsRefreshKey?: number;
 }) {
-  const [model, setModel] = useState<PassageModelChoice>("opus");
+  const [model, setModel] = useState<PassageModelChoice>("fable");
 
   return (
     <div className="flex flex-col gap-6">
