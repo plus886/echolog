@@ -73,8 +73,8 @@ export function PhotoComposer({
   // 文章生成時に Claude へ渡す留意事項 (任意・単発投稿のみ)。
   const [notes, setNotes] = useState("");
 
-  // 文章生成モデル。写真タブ全体で共通。既定 Opus。
-  const [model, setModel] = useState<PassageModelChoice>("opus");
+  // 文章生成モデル。写真タブ全体で共通。既定 Fable。
+  const [model, setModel] = useState<PassageModelChoice>("fable");
 
   // 投稿後に Threads の予約キューへ積むか。既定 off (明示的に選ばせる)。
   // 選択はフォームリセット後も引き継ぐ (連続投稿で毎回入れ直さずに済む)。
