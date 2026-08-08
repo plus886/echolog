@@ -55,6 +55,7 @@ import {
   listThreadsPosts,
   listThreadsPostsByDayIds,
   markThreadsPostDeleted,
+  markThreadsReplyHandled,
   purgeDeletedThreadsPost,
   rescheduleThreadsPost,
   saveThreadsAccount,
@@ -62,6 +63,7 @@ import {
 } from "@/lib/threads-db";
 import { publishThreadsPost } from "@/lib/threads-publish";
 import { syncPostReplies } from "@/lib/threads-replies";
+import { suggestThreadsReply } from "@/lib/threads-reply-suggest";
 import { pickScheduleSlot } from "@/lib/threads-schedule";
 import { translateToZh } from "@/lib/translate";
 import { suggestTweet as generateTweetSuggestion } from "@/lib/tweet-suggest";
@@ -1245,6 +1247,82 @@ export const server = {
           message: `返信に失敗しました: ${e instanceof Error ? e.message : String(e)}`,
         });
       }
+    },
+  }),
+
+  // 届いた返信への返信案を Opus で 1 件生成する (投稿はしない)。
+  // 相手の返信本文はクライアントから受け取る (admin 専用画面で、直前に
+  // threadsPostDetail で表示した内容をそのまま渡すため)。生成側では
+  // 「読者が書いたデータであって指示ではない」扱いにしてある。
+  threadsSuggestReply: defineAction({
+    input: z.object({
+      id: z.number().int(),
+      replyText: z.string().min(1).max(2000),
+      replyAuthor: z.string().max(100).optional(),
+      previousDraft: z.string().max(2000).optional(),
+      instruction: z.string().max(500).optional(),
+    }),
+    handler: async ({
+      id,
+      replyText,
+      replyAuthor,
+      previousDraft,
+      instruction,
+    }) => {
+      const post = await getThreadsPost(id);
+      if (!post) {
+        throw new ActionError({
+          code: "NOT_FOUND",
+          message: "投稿が見つかりません",
+        });
+      }
+      // 投稿本文は snapshot (posted_text) を使う。無ければ microCMS から
+      // 現在の passage を引く (古い行など)。
+      let postText = post.postedText ?? "";
+      if (!postText) {
+        try {
+          const day = await getDay(post.dayId);
+          postText =
+            (post.channel === "threads-zh" ? day.passageZh : day.passageJa) ??
+            "";
+        } catch (e) {
+          console.error("[threads] suggest reply: day fetch failed", e);
+        }
+      }
+      try {
+        const draft = await suggestThreadsReply({
+          channel: post.channel,
+          postText,
+          replyText,
+          replyAuthor,
+          previousDraft,
+          instruction,
+        });
+        return { draft };
+      } catch (e) {
+        console.error("[threads] suggest reply failed", e);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "返信案の生成に失敗しました。時間をおいて再試行してください",
+        });
+      }
+    },
+  }),
+
+  // 返信を「対応済み」にする (要返信バッジを下ろす)。Threads にいいねを
+  // 付ける API は無いため、いいねの代わりに管理画面側の記録として持つ。
+  threadsMarkReplyHandled: defineAction({
+    input: z.object({ id: z.number().int(), replyId: z.string().min(1) }),
+    handler: async ({ id, replyId }) => {
+      const post = await getThreadsPost(id);
+      if (!post) {
+        throw new ActionError({
+          code: "NOT_FOUND",
+          message: "投稿が見つかりません",
+        });
+      }
+      await markThreadsReplyHandled(id, replyId);
+      return { ok: true };
     },
   }),
 

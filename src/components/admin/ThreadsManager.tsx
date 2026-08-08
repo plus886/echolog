@@ -62,6 +62,8 @@ type PostItem = {
   replyCount: number;
   needsReply: boolean;
   replySyncedAt: string | null;
+  // 対応済みにした受信返信の ID (いいねの代わりの印)。
+  handledReplyId: string | null;
 };
 
 type ReplyItem = {
@@ -389,6 +391,7 @@ function LogRow({
   detail,
   onOpenDetail,
   onReply,
+  onMarkHandled,
   onDelete,
   onPurge,
 }: {
@@ -401,6 +404,7 @@ function LogRow({
     replyToId: string,
     text: string,
   ) => Promise<string | null>;
+  onMarkHandled: (postId: number, replyId: string) => Promise<string | null>;
   onDelete: (id: number) => Promise<void>;
   onPurge: (id: number) => Promise<void>;
 }) {
@@ -610,7 +614,9 @@ function LogRow({
               channel={post.channel}
               reply={reply}
               busy={busy}
+              handled={post.handledReplyId === reply.id}
               onReply={onReply}
+              onMarkHandled={onMarkHandled}
             />
           ))}
         </div>
@@ -626,23 +632,32 @@ function ReplyRow({
   channel,
   reply,
   busy,
+  handled,
   onReply,
+  onMarkHandled,
 }: {
   postId: number;
   channel: ThreadsChannel;
   reply: ReplyItem;
   busy: boolean;
+  // この返信を「対応済み」にしてあるか (D1 の handled_reply_id と一致)。
+  handled: boolean;
   onReply: (
     postId: number,
     replyToId: string,
     text: string,
   ) => Promise<string | null>;
+  onMarkHandled: (postId: number, replyId: string) => Promise<string | null>;
 }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  // AI 提案。draft を出したら再提案では前回案として渡す。
+  const [suggesting, setSuggesting] = useState(false);
+  const [lastDraft, setLastDraft] = useState<string | null>(null);
+  const [marking, setMarking] = useState(false);
 
   const send = async () => {
     if (!text.trim()) return;
@@ -656,8 +671,42 @@ function ReplyRow({
       return;
     }
     setText("");
+    setLastDraft(null);
     setOpen(false);
     setSent(true);
+  };
+
+  // 返信案を 1 件もらってテキストエリアへ入れる。すでに案がある状態で
+  // 押したときは「前回案 + 今の編集内容」を渡して別案を出させる。
+  const suggest = async () => {
+    setSuggesting(true);
+    setError(null);
+    const res = await actions.threadsSuggestReply({
+      id: postId,
+      replyText: reply.text,
+      replyAuthor: reply.username ?? undefined,
+      previousDraft: lastDraft ?? undefined,
+      // 案を手直ししてから再提案を押したら、その手直しを指示として渡す。
+      instruction:
+        lastDraft && text.trim() && text.trim() !== lastDraft
+          ? `手直し後の案: ${text.trim()}`
+          : undefined,
+    });
+    setSuggesting(false);
+    if (res.error) {
+      setError(res.error.message);
+      return;
+    }
+    setText(res.data.draft);
+    setLastDraft(res.data.draft);
+  };
+
+  const markHandled = async () => {
+    setMarking(true);
+    setError(null);
+    const message = await onMarkHandled(postId, reply.id);
+    setMarking(false);
+    if (message) setError(message);
   };
 
   return (
@@ -686,6 +735,21 @@ function ReplyRow({
         )}
         <div className="flex-1" />
         {sent && <span className="text-success">返信しました</span>}
+        {handled && (
+          <span className="badge badge-success badge-xs">対応済み</span>
+        )}
+        {/* 対応済みは自分の返信には出さない (相手の発言に付ける印) */}
+        {!reply.isReplyOwnedByMe && !handled && (
+          <Button
+            variant="ghost"
+            className="btn-xs"
+            disabled={busy || marking}
+            onClick={() => void markHandled()}
+            title="返信せずに片付ける（要返信バッジを下ろす）"
+          >
+            {marking ? "…" : "対応済みにする"}
+          </Button>
+        )}
         <Button
           variant="ghost"
           className="btn-xs"
@@ -713,9 +777,18 @@ function ReplyRow({
             disabled={sending}
           />
           {error && <p className="m-0 text-xs text-error">{error}</p>}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs opacity-50">{text.length} / 500</span>
             <div className="flex-1" />
+            <Button
+              variant="neutral"
+              className="btn-sm"
+              disabled={sending || suggesting}
+              onClick={() => void suggest()}
+              title="Opus に返信案を書かせる（送信はしません）"
+            >
+              {suggesting ? "生成中…" : lastDraft ? "別の案" : "AI で提案"}
+            </Button>
             <Button
               variant="primary"
               className="btn-sm"
@@ -966,6 +1039,23 @@ export function ThreadsManager({
       );
       onRepliesChanged?.();
     }
+  };
+
+  // 返信せずに片付ける。行のバッジとタブの未返信件数へ即反映する。
+  const markHandled = async (postId: number, replyId: string) => {
+    setBusy(true);
+    const res = await actions.threadsMarkReplyHandled({ id: postId, replyId });
+    setBusy(false);
+    if (res.error) return res.error.message;
+    setPosts((list) =>
+      list.map((p) =>
+        p.id === postId
+          ? { ...p, needsReply: false, handledReplyId: replyId }
+          : p,
+      ),
+    );
+    onRepliesChanged?.();
+    return null;
   };
 
   const replyTo = async (postId: number, replyToId: string, text: string) => {
@@ -1228,6 +1318,7 @@ export function ThreadsManager({
                 detail={details[post.id] ?? EMPTY_DETAIL}
                 onOpenDetail={openDetail}
                 onReply={replyTo}
+                onMarkHandled={markHandled}
                 onDelete={deletePost}
                 onPurge={purgeLog}
               />

@@ -129,6 +129,8 @@ export type ThreadsPost = {
   replyCount: number;
   needsReply: boolean;
   replySyncedAt: string | null;
+  // 対応済みにした最新の受信返信 ID (migrations/0004 参照)。
+  handledReplyId: string | null;
 };
 
 type ThreadsPostRow = {
@@ -149,6 +151,7 @@ type ThreadsPostRow = {
   reply_count: number;
   needs_reply: number;
   reply_synced_at: string | null;
+  handled_reply_id: string | null;
 };
 
 function toPost(row: ThreadsPostRow): ThreadsPost {
@@ -169,6 +172,7 @@ function toPost(row: ThreadsPostRow): ThreadsPost {
     replyCount: row.reply_count ?? 0,
     needsReply: row.needs_reply === 1,
     replySyncedAt: row.reply_synced_at,
+    handledReplyId: row.handled_reply_id,
   };
 }
 
@@ -382,6 +386,21 @@ export async function updateThreadsReplyStats(
       stats.needsReply ? 1 : 0,
       new Date().toISOString(),
     )
+    .run();
+}
+
+// 返信を「対応済み」にする。Threads にいいねを付ける API は無いので、
+// 管理画面側の記録として持つ (migrations/0004 参照)。needs_reply も同時に
+// 下ろし、次の cron 同期でも handled_reply_id を見て維持される。
+export async function markThreadsReplyHandled(
+  id: number,
+  replyId: string,
+): Promise<void> {
+  await getThreadsDb()
+    .prepare(
+      "UPDATE threads_posts SET handled_reply_id = ?2, needs_reply = 0 WHERE id = ?1",
+    )
+    .bind(id, replyId)
     .run();
 }
 

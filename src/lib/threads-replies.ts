@@ -29,12 +29,18 @@ export function selectIncomingReplies(
 }
 
 // 返信の要約。fetchPostReplies は chronological (古い順) で返すので、
-// 末尾が最新。最新が自分以外なら「まだ返していない」と見なす。
-export function summarizeReplies(replies: ThreadsReply[]): ReplyStats {
+// 末尾が最新。最新が自分以外なら「まだ返していない」と見なす。ただし
+// その返信を「対応済み」にしてあれば (handledReplyId と一致)、返信を
+// 書かなくても片付いたものとして扱う。
+export function summarizeReplies(
+  replies: ThreadsReply[],
+  handledReplyId?: string | null,
+): ReplyStats {
   const latest = replies[replies.length - 1];
+  const unanswered = Boolean(latest && !latest.isReplyOwnedByMe);
   return {
     replyCount: replies.length,
-    needsReply: Boolean(latest && !latest.isReplyOwnedByMe),
+    needsReply: unanswered && latest?.id !== handledReplyId,
   };
 }
 
@@ -49,7 +55,7 @@ export async function syncPostReplies(
   }
   const all = await fetchPostReplies(post.threadsMediaId, token);
   const replies = selectIncomingReplies(all, post.replyMediaId);
-  const stats = summarizeReplies(replies);
+  const stats = summarizeReplies(replies, post.handledReplyId);
   await updateThreadsReplyStats(post.id, stats);
   return { replies, stats };
 }
