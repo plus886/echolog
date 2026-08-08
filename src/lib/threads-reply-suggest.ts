@@ -41,7 +41,9 @@ export type SuggestReplyInput = {
 // 分かるよう見出し付きのブロックに閉じ込めて渡す。
 function buildUserMessage(input: SuggestReplyInput): string {
   const parts: string[] = [
-    `【返信を書く言語】${LANGUAGE_LABEL[input.channel]}`,
+    // 言語は原則「届いた返信の言語」に合わせる (system prompt 参照)。
+    // ここで渡すのは判別できないときのフォールバックだけ。
+    `【既定の言語 — 相手の言語が判別できないときだけ使う】${LANGUAGE_LABEL[input.channel]}`,
     "",
     "【自分の投稿本文】",
     input.postText.trim() || "(本文なし)",
