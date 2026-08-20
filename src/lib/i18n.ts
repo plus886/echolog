@@ -115,6 +115,14 @@ export type UIKey = keyof typeof uiJa;
 // 台湾華語訳。未記入のキーは t() が ja にフォールバックする。
 // TODO(i18n): 残りのキーも順次追記する。
 const uiZh: Partial<Record<UIKey, string>> = {
+  "about.bio": [
+    "在野台灣研究者。日本名為出田康一郎。",
+    "透過日常生活與研究、創作活動，致力於從內部理解台灣。",
+    "1981年生於東京。2011年起定居台灣。",
+    "麻布高中畢業。東京藝術大學音樂學部樂理科畢業。",
+    "國立台灣師範大學文學院台灣語文學系碩士班畢業。文學碩士。",
+    "關注領域為台灣思想與文化史、日治時期文學等。",
+  ].join("\n"),
   "works.cat.text": "寫作",
   "works.cat.music": "音樂",
   "works.cat.photo": "攝影",

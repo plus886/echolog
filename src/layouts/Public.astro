@@ -49,6 +49,31 @@ const logicalPath = Astro.locals.path ?? Astro.url.pathname;
     locale={locale}
     className="k-wordmark-pin fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light) no-underline"
   />
+  {
+    /* 言語切替ピン — 右下 fixed。nav と同じ .is-scrolled cascade で
+      下からスライドインする (portfolio.css の .k-lang-pin)。 */
+  }
+  <p
+    class="k-lang-pin fixed z-20 text-[12px] text-(--grey-light) mix-blend-difference"
+  >
+    {
+      locales.map((loc, i) => (
+        <>
+          {i > 0 && <span class="mx-1.5 opacity-40">/</span>}
+          {loc === locale ? (
+            <span class="font-serif">{languages[loc]}</span>
+          ) : (
+            <a
+              href={localeUrl(logicalPath, loc)}
+              data-locale={loc}
+              class="font-serif italic opacity-60 transition-opacity hover:opacity-100"
+              set:text={languages[loc]}
+            />
+          )}
+        </>
+      ))
+    }
+  </p>
   <slot />
   {
     /* credits footer — 全 (public) ルート共通。body は flex-col + min-h-screen
@@ -78,27 +103,11 @@ const logicalPath = Astro.locals.path ?? Astro.url.pathname;
         <p class="mb-1">Made in Taiwan with &hearts;.</p>
         <p class="mb-1"><em>© {year} Ko Kaiji.</em></p>
       </div>
-      <div class="text-left min-[880px]:text-right">
-        <p class="mb-1">
-          {
-            locales.map((loc, i) => (
-              <>
-                {i > 0 && <span class="mx-1.5 text-(--ink-30)">/</span>}
-                {loc === locale ? (
-                  <span class="font-serif text-(--ink)">{languages[loc]}</span>
-                ) : (
-                  <a
-                    href={localeUrl(logicalPath, loc)}
-                    data-locale={loc}
-                    class="font-serif text-(--ink-50) italic transition-colors hover:text-(--ink)"
-                    set:text={languages[loc]}
-                  />
-                )}
-              </>
-            ))
-          }
-        </p>
-      </div>
+      {
+        /* 右カラム: 言語切替は fixed の .k-lang-pin に移設。3-col grid の
+          中央寄せを保つための空セル。 */
+      }
+      <div aria-hidden="true"></div>
     </div>
   </footer>
   <SmoothScroll client:only="react" />

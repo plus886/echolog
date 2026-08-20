@@ -241,6 +241,28 @@ html.lenis body {
   transition: none;
 }
 
+/* ─── 言語切替ピン (右下 fixed)。nav の slide-in と同じ .is-scrolled で
+   下から現れる。隠れ位置は自身の高さ + bottom オフセットぶん画面外。 */
+.k-shell .k-lang-pin {
+  --pin-bottom: 22px;
+  right: var(--k-gutter);
+  bottom: var(--pin-bottom);
+  transition: transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  transform: translateY(calc(100% + var(--pin-bottom)));
+}
+.k-shell.is-scrolled .k-lang-pin {
+  transform: translateY(0);
+}
+.k-shell.no-shell-transitions .k-lang-pin {
+  transition: none;
+}
+@media (min-width: 880px) {
+  /* nav (px-col-1) と右端を揃える */
+  .k-shell .k-lang-pin {
+    right: calc(1 / 24 * 100%);
+  }
+}
+
 /* ─── Wordmark pin */
 .k-shell .k-wordmark-pin {
   visibility: hidden;
@@ -524,6 +546,7 @@ html.lenis body {
 /* ─── prefers-reduced-motion: kill animation */
 @media (prefers-reduced-motion: reduce) {
   .k-shell .k-nav,
+  .k-shell .k-lang-pin,
   .k-shell .k-scroll-cue,
   .k-shell [data-reveal] {
     transition: none;
