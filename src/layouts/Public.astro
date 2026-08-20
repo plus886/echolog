@@ -50,30 +50,34 @@ const logicalPath = Astro.locals.path ?? Astro.url.pathname;
     className="k-wordmark-pin fixed left-1/2 top-9 z-20 -translate-x-1/2 mix-blend-difference text-[12px] uppercase tracking-[0.16em] text-(--grey-light) no-underline"
   />
   {
-    /* 言語切替ピン — 右下 fixed。nav と同じ .is-scrolled cascade で
-      下からスライドインする (portfolio.css の .k-lang-pin)。 */
+    /* 言語切替ピン — 右下 sticky。スクロール中は画面右下に浮き
+      (nav と同じ .is-scrolled cascade で下からスライドイン)、ページ末尾
+      ではドック (.k-lang-dock = ページ全高に伸びる絶対配置カラム) の
+      下端に着地してフッターの他カラムと下が揃う (portfolio.css)。 */
   }
-  <p
-    class="k-lang-pin fixed z-20 text-[12px] text-(--grey-light) mix-blend-difference"
-  >
-    {
-      locales.map((loc, i) => (
-        <>
-          {i > 0 && <span class="mx-1.5 opacity-40">/</span>}
-          {loc === locale ? (
-            <span class="font-serif">{languages[loc]}</span>
-          ) : (
-            <a
-              href={localeUrl(logicalPath, loc)}
-              data-locale={loc}
-              class="font-serif italic opacity-60 transition-opacity hover:opacity-100"
-              set:text={languages[loc]}
-            />
-          )}
-        </>
-      ))
-    }
-  </p>
+  <div class="k-lang-dock">
+    <p
+      class="k-lang-pin sticky z-20 text-[12px] text-(--grey-light) mix-blend-difference"
+    >
+      {
+        locales.map((loc, i) => (
+          <>
+            {i > 0 && <span class="mx-1.5 opacity-40">/</span>}
+            {loc === locale ? (
+              <span class="font-serif">{languages[loc]}</span>
+            ) : (
+              <a
+                href={localeUrl(logicalPath, loc)}
+                data-locale={loc}
+                class="font-serif italic opacity-60 transition-opacity hover:opacity-100"
+                set:text={languages[loc]}
+              />
+            )}
+          </>
+        ))
+      }
+    </p>
+  </div>
   <slot />
   {
     /* credits footer — 全 (public) ルート共通。body は flex-col + min-h-screen
@@ -103,11 +107,7 @@ const logicalPath = Astro.locals.path ?? Astro.url.pathname;
         <p class="mb-1">Made in Taiwan with &hearts;.</p>
         <p class="mb-1"><em>© {year} Ko Kaiji.</em></p>
       </div>
-      {
-        /* 右カラム: 言語切替は fixed の .k-lang-pin に移設。3-col grid の
-          中央寄せを保つための空セル。 */
-      }
-      <div aria-hidden="true"></div>
+      {/* 右カラム相当の言語切替は sticky の .k-lang-pin がここに着地する */}
     </div>
   </footer>
   <SmoothScroll client:only="react" />
