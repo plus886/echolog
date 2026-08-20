@@ -274,9 +274,9 @@ html.lenis body {
   transition: none;
 }
 @media (min-width: 880px) {
-  /* nav (px-col-1) と右端を揃える */
+  /* 着地先のフッター (px-col-2) と右端を揃える */
   .k-shell .k-lang-dock {
-    right: calc(1 / 24 * 100%);
+    right: calc(2 / 24 * 100%);
   }
 }
 
